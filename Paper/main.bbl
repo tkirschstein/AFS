@@ -1,0 +1,171 @@
+\begin{thebibliography}{14}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\href}[2]{#2}
+\providecommand{\path}[1]{#1}
+\providecommand{\DOIprefix}{doi:}
+\providecommand{\ArXivprefix}{arXiv:}
+\providecommand{\URLprefix}{URL: }
+\providecommand{\Pubmedprefix}{pmid:}
+\providecommand{\doi}[1]{\href{http://dx.doi.org/#1}{\path{#1}}}
+\providecommand{\Pubmed}[1]{\href{pmid:#1}{\path{#1}}}
+\providecommand{\bibinfo}[2]{#2}
+\ifx\xfnm\relax \def\xfnm[#1]{\unskip,\space#1}\fi
+%Type = Article
+\bibitem[{De~Meyer et~al.(2015)De~Meyer, Cattrysse, Rasinm{\"a}ki and
+  Van~Orshoven}]{DeMeyer2015_OPTIMASS}
+\bibinfo{author}{De~Meyer, A.}, \bibinfo{author}{Cattrysse, D.},
+  \bibinfo{author}{Rasinm{\"a}ki, J.}, \bibinfo{author}{Van~Orshoven, J.},
+  \bibinfo{year}{2015}.
+\newblock \bibinfo{title}{A generic mathematical model to optimise strategic
+  and tactical decisions in biomass-based supply chains (optimass)}.
+\newblock \bibinfo{journal}{European Journal of Operational Research}
+  \bibinfo{volume}{245}, \bibinfo{pages}{247--264}.
+\newblock \URLprefix
+  \url{https://www.sciencedirect.com/science/article/pii/S0377221715001654},
+  \DOIprefix\doi{10.1016/j.ejor.2015.02.042}.
+%Type = Article
+\bibitem[{De~Meyer et~al.(2016)De~Meyer, Cattrysse, Rasinm{\"a}ki and
+  Van~Orshoven}]{DeMeyer2016_tOPTIMASS}
+\bibinfo{author}{De~Meyer, A.}, \bibinfo{author}{Cattrysse, D.},
+  \bibinfo{author}{Rasinm{\"a}ki, J.}, \bibinfo{author}{Van~Orshoven, J.},
+  \bibinfo{year}{2016}.
+\newblock \bibinfo{title}{Considering biomass growth and regeneration in the
+  optimisation of biomass supply chains}.
+\newblock \bibinfo{journal}{Renewable Energy} \bibinfo{volume}{87},
+  \bibinfo{pages}{990--1002}.
+\newblock \URLprefix
+  \url{https://www.sciencedirect.com/science/article/pii/S0960148115301397},
+  \DOIprefix\doi{10.1016/j.renene.2015.09.038}.
+%Type = Article
+\bibitem[{Espinoza et~al.(2017)Espinoza, Chejne, Ponce-Ortega and
+  Nápoles-Rivera}]{Espinoza2017_Biorefinery_SC_review}
+\bibinfo{author}{Espinoza, D.}, \bibinfo{author}{Chejne, F.},
+  \bibinfo{author}{Ponce-Ortega, J.M.}, \bibinfo{author}{Nápoles-Rivera, F.},
+  \bibinfo{year}{2017}.
+\newblock \bibinfo{title}{Sustainable biorefinery supply chain design and
+  management: A review}.
+\newblock \bibinfo{journal}{Bioresource Technology} \bibinfo{volume}{243},
+  \bibinfo{pages}{1223--1235}.
+\newblock \DOIprefix\doi{10.1016/j.biortech.2017.07.089}.
+%Type = Article
+\bibitem[{Huber et~al.(2018)Huber, Matiu and
+  H{\"u}lsbergen}]{Huber2018_SRAFS_growth}
+\bibinfo{author}{Huber, J.A.}, \bibinfo{author}{Matiu, M.},
+  \bibinfo{author}{H{\"u}lsbergen, K.J.}, \bibinfo{year}{2018}.
+\newblock \bibinfo{title}{First-rotation growth and stand structure dynamics of
+  tree species in organic and conventional short-rotation agroforestry
+  systems}.
+\newblock \bibinfo{journal}{Heliyon} \bibinfo{volume}{4},
+  \bibinfo{pages}{e00645}.
+\newblock \URLprefix
+  \url{https://www.sciencedirect.com/science/article/pii/S2405844017334904},
+  \DOIprefix\doi{10.1016/j.heliyon.2018.e00645}.
+%Type = Article
+\bibitem[{Huber et~al.(2016)Huber, May and
+  H{\"u}lsbergen}]{Huber2016_Allometric_SRAFS}
+\bibinfo{author}{Huber, J.A.}, \bibinfo{author}{May, K.},
+  \bibinfo{author}{H{\"u}lsbergen, K.J.}, \bibinfo{year}{2016}.
+\newblock \bibinfo{title}{Allometric tree biomass models of various species
+  grown in short-rotation agroforestry systems}.
+\newblock \bibinfo{journal}{European Journal of Forest Research}
+  \bibinfo{volume}{135}, \bibinfo{pages}{283--296}.
+\newblock \DOIprefix\doi{10.1007/s10342-015-0932-5}.
+%Type = Article
+\bibitem[{Lamers et~al.(2015)Lamers, Hamelinck, Junginger and
+  Faaij}]{Lamers2015_Feedstock_Design}
+\bibinfo{author}{Lamers, P.}, \bibinfo{author}{Hamelinck, C.},
+  \bibinfo{author}{Junginger, M.}, \bibinfo{author}{Faaij, A.},
+  \bibinfo{year}{2015}.
+\newblock \bibinfo{title}{Strategic supply system design for biomass-based
+  production chains: A review of supply chain models and optimization
+  approaches}.
+\newblock \bibinfo{journal}{Biofuels, Bioproducts and Biorefining}
+  \bibinfo{volume}{9}, \bibinfo{pages}{772--790}.
+\newblock \DOIprefix\doi{10.1002/bbb.1573}.
+%Type = Article
+\bibitem[{Mansoornejad et~al.(2013)Mansoornejad, Chambost and
+  Stuart}]{Mansoornejad2013_Forest_Biorefinery_SC}
+\bibinfo{author}{Mansoornejad, B.}, \bibinfo{author}{Chambost, V.},
+  \bibinfo{author}{Stuart, P.}, \bibinfo{year}{2013}.
+\newblock \bibinfo{title}{Multi-period optimization of forest biorefinery
+  supply chains integrating bioenergy and biofuels production}.
+\newblock \bibinfo{journal}{Chemical Engineering Research and Design}
+  \bibinfo{volume}{91}, \bibinfo{pages}{1454--1468}.
+\newblock \DOIprefix\doi{10.1016/j.cherd.2013.02.009}.
+%Type = Book
+\bibitem[{Nair(1993)}]{Nair1993_IntroAgroforestry}
+\bibinfo{author}{Nair, P.K.R.}, \bibinfo{year}{1993}.
+\newblock \bibinfo{title}{An Introduction to Agroforestry}.
+\newblock \bibinfo{publisher}{Kluwer Academic Publishers},
+  \bibinfo{address}{Dordrecht}.
+%Type = Article
+\bibitem[{Sharma et~al.(2013)Sharma, Ingalls, Jones and
+  Khanchi}]{Sharma2013_BSC_review}
+\bibinfo{author}{Sharma, B.}, \bibinfo{author}{Ingalls, R.G.},
+  \bibinfo{author}{Jones, C.L.}, \bibinfo{author}{Khanchi, A.},
+  \bibinfo{year}{2013}.
+\newblock \bibinfo{title}{A review of biomass supply chain management studies
+  in the context of bioenergy production}.
+\newblock \bibinfo{journal}{Biomass and Bioenergy} \bibinfo{volume}{56},
+  \bibinfo{pages}{147--158}.
+\newblock \DOIprefix\doi{10.1016/j.biombioe.2013.04.005}.
+%Type = Article
+\bibitem[{Spinelli et~al.(2009)Spinelli, Nati and
+  Magagnotti}]{Spinelli2009_SRC_Harvesting}
+\bibinfo{author}{Spinelli, R.}, \bibinfo{author}{Nati, C.},
+  \bibinfo{author}{Magagnotti, N.}, \bibinfo{year}{2009}.
+\newblock \bibinfo{title}{Harvesting short-rotation poplar plantations for
+  biomass production}.
+\newblock \bibinfo{journal}{Croatian Journal of Forest Engineering}
+  \bibinfo{volume}{30}, \bibinfo{pages}{15--26}.
+%Type = Article
+\bibitem[{Testa et~al.(2014)Testa, Di~Trapani, Foder{\`a}, Sgroi and
+  Tudisca}]{Testa2014_Poplar_Economics}
+\bibinfo{author}{Testa, R.}, \bibinfo{author}{Di~Trapani, A.M.},
+  \bibinfo{author}{Foder{\`a}, M.}, \bibinfo{author}{Sgroi, F.},
+  \bibinfo{author}{Tudisca, S.}, \bibinfo{year}{2014}.
+\newblock \bibinfo{title}{Economic evaluation of introduction of poplar as
+  biomass crop in italy}.
+\newblock \bibinfo{journal}{Renewable and Sustainable Energy Reviews}
+  \bibinfo{volume}{38}, \bibinfo{pages}{775--780}.
+\newblock \URLprefix
+  \url{https://www.sciencedirect.com/science/article/pii/S1364032114005473},
+  \DOIprefix\doi{10.1016/j.rser.2014.07.054}.
+%Type = Incollection
+\bibitem[{Toensmeier(2017)}]{Toensmeier2017_Carbon_Agroforestry}
+\bibinfo{author}{Toensmeier, E.}, \bibinfo{year}{2017}.
+\newblock \bibinfo{title}{Perennial staple crops and agroforestry for climate
+  change mitigation}, in: \bibinfo{editor}{Montagnini, F.} (Ed.),
+  \bibinfo{booktitle}{Integrating Landscapes: Agroforestry for Biodiversity
+  Conservation and Food Sovereignty}. \bibinfo{publisher}{Springer},
+  \bibinfo{address}{Cham}. volume~\bibinfo{volume}{12} of
+  \textit{\bibinfo{series}{Advances in Agroforestry}}, pp.
+  \bibinfo{pages}{431--453}.
+\newblock \DOIprefix\doi{10.1007/978-3-319-69371-2_18}.
+%Type = Article
+\bibitem[{Trnka et~al.(2008)Trnka, Trnka, Fialov{\'a}, Kouteck{\'y}, Fajman,
+  {\v{S}}alud and Hejduk}]{Trnka2008_Poplar_SRF}
+\bibinfo{author}{Trnka, M.}, \bibinfo{author}{Trnka, M.},
+  \bibinfo{author}{Fialov{\'a}, J.}, \bibinfo{author}{Kouteck{\'y}, V.},
+  \bibinfo{author}{Fajman, M.}, \bibinfo{author}{{\v{S}}alud, Z.},
+  \bibinfo{author}{Hejduk, S.}, \bibinfo{year}{2008}.
+\newblock \bibinfo{title}{Biomass production and survival rates of selected
+  poplar clones grown under a short-rotation system on arable land}.
+\newblock \bibinfo{journal}{Plant, Soil and Environment} \bibinfo{volume}{54},
+  \bibinfo{pages}{78--88}.
+\newblock \URLprefix
+  \url{https://www.agriculturejournals.cz/web/pse.htm?type=article&id=419_2007-PSE}.
+%Type = Article
+\bibitem[{Zahraee et~al.(2019)Zahraee, Bahrami, Baghery and
+  Ahmadi}]{Zahraee2020_BSC_review}
+\bibinfo{author}{Zahraee, S.M.}, \bibinfo{author}{Bahrami, B.},
+  \bibinfo{author}{Baghery, M.}, \bibinfo{author}{Ahmadi, A.},
+  \bibinfo{year}{2019}.
+\newblock \bibinfo{title}{A comprehensive review of biomass supply chain
+  modelling and optimisation}.
+\newblock \bibinfo{journal}{Renewable and Sustainable Energy Reviews}
+  \bibinfo{volume}{110}, \bibinfo{pages}{1--19}.
+\newblock \DOIprefix\doi{10.1016/j.rser.2019.04.071}.
+
+\end{thebibliography}

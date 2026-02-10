@@ -1,0 +1,236 @@
+\documentclass[preprint,12pt]{elsarticle}
+
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{eurosymb}
+
+\geometry{a4paper, margin=2.5cm}
+\journal{Journal of Cleaner Production}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Multi-Cycle Agroforestry Biomass Harvest Scheduling and Supply Chain Design under Age-Lag Constraints}
+
+\author[1,2]{Thomas Kirschstein}
+\cortext[cor1]{Corresponding author}
+\address[1]{Fraunhofer IKTS, Leipziger Straße 70/71, Halle, Germany}
+\address[2]{RhineMain University of Applied Sciences, Bleichstraße 44, 65183 Wiesbaden}
+
+\begin{abstract}
+Short-rotation agroforestry systems are increasingly promoted as a low-carbon feedstock option for bio-based value chains, but their economic viability depends on coordinated decisions on stand establishment, multi-cycle harvesting, and product cascading in spatially distributed supply chains. This paper develops a mixed-integer linear programming (MILP) model for the integrated design and operation of an agroforestry biomass supply chain with explicit age-lag constraints that link consecutive harvests at each site. The formulation couples allometric yield functions for different biomass types with a multi-product, multi-period network design model including storage, processing, and product quality cascades. The model is applied to a stylised case study of Central European poplar-based alley-cropping systems to explore trade-offs between harvest rotation length, product portfolios, and infrastructure configuration. We outline a computational experimentation plan to test the impact of allometric parameter uncertainty, price scenarios, and policy incentives on the optimal deployment of agroforestry systems in cleaner bioeconomy pathways.
+\end{abstract}
+
+\begin{keyword}
+Agroforestry \sep Short-rotation coppice \sep Biomass supply chain \sep Allometric models \sep Mixed-integer linear programming \sep Product cascading
+\end{keyword}
+
+\end{frontmatter}
+
+\section{Introduction}
+
+Agroforestry systems that integrate trees with agricultural crops are increasingly recognised as a promising land-use option to reconcile climate mitigation, biodiversity conservation, and rural income generation on the same hectare of land \citep{Nair1993_IntroAgroforestry,Toensmeier2017_Carbon_Agroforestry}. Temperate short-rotation agroforestry systems (SRAFS) based on fast-growing species such as poplar, willow, alder, and black locust can deliver competitive biomass yields while improving soil quality and providing multiple ecosystem services compared to conventional monocultures \citep{Huber2018_SRAFS_growth,Trnka2008_Poplar_SRF}. At the same time, the deployment of wood-based bioenergy and bioproduct value chains raises concerns regarding land competition, lifecycle emissions, and economic risks, which calls for integrative planning tools that capture both landscape dynamics and supply chain performance \citep{Zahraee2020_BSC_review,Espinoza2017_Biorefinery_SC_review}.
+
+In the last two decades, a large body of research has analysed biomass supply chains for bioenergy and biorefineries using mathematical programming models, often in the form of mixed-integer linear programming (MILP) \citep{Zahraee2020_BSC_review,Sharma2013_BSC_review}. These models typically optimise network configuration, feedstock sourcing, and logistics under cost or profit objectives, but they often treat biomass availability as an exogenous input or rely on simplified yield functions that neglect stand growth dynamics and age-related constraints. Recent work has started to integrate biomass growth and regeneration processes in multi-period supply chain models, yet most applications focus on grassland or forest residues rather than agroforestry systems with repeated coppice cycles and strong interactions between stand structure and harvesting decisions \citep{DeMeyer2016_tOPTIMASS}.
+
+Short-rotation agroforestry systems exhibit pronounced temporal variability in biomass production due to species-specific growth trajectories, competition, and management practices, which has been documented in long-term trials in Central Europe \citep{Huber2018_SRAFS_growth,Trnka2008_Poplar_SRF}. For poplar, willow, alder, and black locust, allometric tree biomass models based on stem base diameter (SBD) or similar biometric variables provide a compact and empirically grounded link between stand structure and aboveground woody biomass at the tree and stand level \citep{Huber2016_Allometric_SRAFS}. These models allow the derivation of age-dependent yield coefficients for different product types, but they are rarely coupled with tactical and strategic supply chain optimisation. From a cleaner production perspective, it is particularly relevant to capture the cascading use of biomass along quality gradients (e.g., chemical feedstocks, pulp, and energy), as this can significantly affect both economic returns and environmental outcomes \citep{DeMeyer2015_OPTIMASS,Lamers2015_Feedstock_Design}.
+
+The present paper contributes to this literature in four ways. First, we propose a novel MILP formulation for agroforestry biomass supply chain design that explicitly links consecutive harvest cycles through age-lag constraints and binary path variables, ensuring that harvesting decisions at each site are consistent with minimum and maximum rotation ages over multiple cycles. Second, we embed allometric yield functions for different biomass types into the model by translating age-specific biomass increments into site- and product-specific yield parameters, thereby capturing species- and management-dependent growth dynamics in an optimisation-compatible way \citep{Huber2016_Allometric_SRAFS,Trnka2008_Poplar_SRF}. Third, we model a product cascading hierarchy in which higher-quality products can satisfy lower-quality demands, which is relevant for cleaner production strategies that prioritise material uses before energy recovery \citep{DeMeyer2015_OPTIMASS,Lamers2015_Feedstock_Design}. Finally, we outline a computational experimentation framework for a regional case study in Central Europe that will test the sensitivity of optimal system design to rotation length, allometric parameter uncertainty, price and policy scenarios, and infrastructure options.
+
+The remainder of the paper is structured as follows. Section~\ref{sec:litreview} reviews the relevant literature on agroforestry biomass systems, allometric biomass modelling, and biomass supply chain optimisation. Section~\ref{sec:allometrics} introduces the allometric models adopted to represent biomass growth of different tree species and biomass types. Section~\ref{sec:milp} summarises the MILP formulation for the agroforestry supply chain with age-lag constraints. Section~\ref{sec:experiments} outlines the planned computational experiments for the case study and discusses expected insights for cleaner production strategies.
+
+\section{Literature review}
+\label{sec:litreview}
+
+\subsection{Agroforestry and short-rotation systems}
+
+Agroforestry encompasses a wide range of land-use systems in which woody perennials are deliberately integrated with crops and/or livestock on the same land management unit \citep{Nair1993_IntroAgroforestry}. In temperate regions, short-rotation agroforestry systems (SRAFS) often take the form of alley-cropping, where double or multiple rows of fast-growing trees alternate with crop strips, enabling simultaneous production of agricultural commodities and woody biomass \citep{Huber2018_SRAFS_growth}. Empirical studies in Southern Germany and Central Europe have shown that SRAFS based on poplar, willow, black alder, and black locust can achieve mean annual increments (MAI) of about 7--10~t~ha\(^{-1}\)~a\(^{-1}\) in aboveground woody biomass during the first rotation, with species-specific differences in growth dynamics, size hierarchies, and mortality \citep{Huber2018_SRAFS_growth,Trnka2008_Poplar_SRF}.
+
+\citet{Huber2018_SRAFS_growth} analyse the growth dynamics and stand structure development of four tree species in organic and conventional SRAFS over a four-year rotation in Southern Germany. They report that poplar and black locust exhibit the highest mean annual biomass increments (around 10~t~ha\(^{-1}\)~a\(^{-1}\) over four years), while willow shows lower biomass due to lower diameter growth and wood density, despite high shoot numbers. \citet{Trnka2008_Poplar_SRF} report similar MAI ranges (10--15~t~ha\(^{-1}\)~a\(^{-1}\)) for short-rotation poplar clones under high-density plantations in the Czech-Moravian highlands, highlighting the importance of clone selection and site conditions. These findings underline that species choice, rotation length, planting density, and management practices (e.g., coppicing, weed control) crucially influence biomass yields and thus the design of downstream supply chains.
+
+Economic assessments of short-rotation coppice (SRC) and very short rotation coppice (vSRC) poplar plantations in Italy and Central Europe show that SRC systems with 5--7~year rotations and moderate planting densities can be financially competitive with conventional arable crops, particularly when biomass prices and policy support are favourable \citep{Testa2014_Poplar_Economics}. However, profitability is sensitive to yield assumptions, establishment costs, and logistics, motivating integrated analyses that couple stand-level growth models with supply chain optimisation.
+
+Beyond yield and economics, agroforestry and SRC systems are widely studied for their environmental performance, including carbon sequestration, nutrient cycling, biodiversity, and soil and water protection \citep{Toensmeier2017_Carbon_Agroforestry,Huber2018_SRAFS_growth}. Cleaner production strategies that leverage agroforestry biomass in biorefinery and bioenergy systems therefore require tools that can simultaneously account for temporal biomass availability, quality differentiation, and value chain design.
+
+\subsection{Allometric models for tree biomass}
+
+Allometric tree biomass models relate easily measurable biometric variables such as diameter and height to aboveground biomass, typically using power-law relationships of the form
+\[
+M = b_0 \cdot \text{SBD}^{\,b_1},
+\]
+where \(M\) is the oven-dry biomass of an individual tree, SBD is stem base diameter, and \(b_0\) and \(b_1\) are species-specific coefficients \citep{Huber2016_Allometric_SRAFS}. Such models are attractive because they allow the estimation of tree and stand biomass from non-destructive measurements and can be embedded in growth and yield models for management and planning purposes \citep{Huber2018_SRAFS_growth}.
+
+For SRAFS in Southern Germany, \citet{Huber2016_Allometric_SRAFS} and \citet{Huber2018_SRAFS_growth} develop species-specific allometric models based on SBD measured 10~cm above ground to predict aboveground leafless dry biomass of black alder, black locust, poplar (Max~3), and willow (Inger). They report common exponents \(b_1 = 2.603\) across species, with species-specific factors \(b_0\) of 0.025, 0.041, 0.036, and 0.037, respectively, reflecting differences in wood density and branching patterns \citep{Huber2016_Allometric_SRAFS}. These models, calibrated on destructive sampling at the same site, are used to estimate annual biomass increments and derive MAI and current annual increment (CAI) for each species and management system \citep{Huber2018_SRAFS_growth}. The study emphasises that diameter distributions, stand inequality, and mortality strongly affect aggregate yields, particularly for black locust, which shows large size asymmetry and high mortality, and for willow, where late sprouting leads to bimodal size distributions \citep{Huber2018_SRAFS_growth}.
+
+Similar allometric approaches have been applied to SRC and SRF poplar plantations. \citet{Trnka2008_Poplar_SRF} use diameter and height measurements to estimate aboveground biomass and assess clone-specific biomass production and survival over a six-year rotation in the Czech Republic. Laureysens and co-authors provide allometric equations for poplar and willow clones on waste disposal sites and agricultural land, often highlighting the role of wood density, site conditions, and stand structure for biomass estimates. In agroforestry contexts, allometric models have also been developed for mixed-species systems and silvopastoral systems, which can be used to derive carbon stock estimates and evaluate management options \citep{Toensmeier2017_Carbon_Agroforestry}.
+
+From a modelling perspective, allometric functions can be used in two main ways when coupling stand growth with supply chain optimisation. First, they can generate age-specific yield tables (e.g., t~ha\(^{-1}\) at each stand age) that serve as exogenous parameters in linear or integer programming models. Second, they can be integrated more dynamically into optimisation models through piecewise linear approximations or age-class state variables. For large-scale MILP models, the first approach is often preferred due to computational tractability and the linearity requirement, but it needs to capture key nonlinearities such as the timing of MAI peaks and constraints on minimum and maximum harvest ages.
+
+\subsection{Biomass supply chain modelling and MILP approaches}
+
+Biomass supply chain design and planning has been widely studied using MILP models at strategic, tactical, and operational levels \citep{Zahraee2020_BSC_review,Sharma2013_BSC_review}. Comprehensive reviews classify models according to decision scope (location, capacity, routing, inventory), time horizon, uncertainty treatment, and sustainability metrics \citep{Zahraee2020_BSC_review,Espinoza2017_Biorefinery_SC_review}. Many models focus on bioenergy supply chains for electricity, heat, or biofuels, considering feedstocks such as agricultural residues, forestry residues, dedicated energy crops, and municipal wastes \citep{Sharma2013_BSC_review}. Environmental aspects, including greenhouse gas emissions and land use, are increasingly integrated, often using life-cycle assessment (LCA) data or emission factors \citep{Espinoza2017_Biorefinery_SC_review}.
+
+Among generic models, OPTIMASS is a notable example of a multi-product MILP that optimises biomass supply chains with changing biomass characteristics and by-product re-injection \citep{DeMeyer2015_OPTIMASS}. It models the flow of multiple biomass types and products through supply chain stages, capturing conversion yields, storage, and cascading uses. The t-OPTIMASS extension further incorporates biomass growth and regeneration over multiple periods, enabling the representation of time-dependent availability for biomass supply chains \citep{DeMeyer2016_tOPTIMASS}. However, these formulations generally assume exogenous biomass availability profiles per period, and do not explicitly model stand-level age dynamics or rotation constraints.
+
+Several scenario-based approaches have been developed for forest biorefinery supply chains, linking product portfolios, process choices, and supply chain design under market volatility \citep{Mansoornejad2013_Forest_Biorefinery_SC}. \citet{Lamers2015_Feedstock_Design} discuss strategic feedstock supply system design for biorefineries, emphasising the importance of economies of scale, conversion yields, and logistics in achieving cost-efficient and robust systems. Reviews highlight that only a limited subset of models explicitly consider biomass growth, spatially explicit land-use change, or agroforestry systems \citep{Zahraee2020_BSC_review,Sharma2013_BSC_review}. There is therefore a clear opportunity to develop models that couple agroforestry stand dynamics with network design and cleaner production objectives.
+
+\subsection{Cleaner production and cascading use of biomass}
+
+From a cleaner production perspective, the cascading use of biomass---prioritising high-value material uses before energy recovery---is widely advocated to maximise resource efficiency and mitigate environmental impacts \citep{Lamers2015_Feedstock_Design}. In wood-based value chains, this implies that high-quality timber or chemical feedstock fractions should first be allocated to material products such as engineered wood products, pulp and paper, or biochemicals, while lower-quality fractions and residues are used for energy \citep{DeMeyer2015_OPTIMASS,Lamers2015_Feedstock_Design}. MILP models can represent such cascades by defining product quality classes and allowing substitution of higher-quality products for lower-quality demands, subject to hierarchy constraints.
+
+The OPTIMASS framework explicitly models such product cascades by defining a product quality order and allowing flows from higher-quality products to lower-quality demand nodes \citep{DeMeyer2015_OPTIMASS}. Similar ideas have been applied in forest-based biorefinery supply chains, where product portfolios include platform chemicals, fuels, and electricity \citep{Mansoornejad2013_Forest_Biorefinery_SC}. For agroforestry biomass, poplar and willow can supply different product streams, including sawlogs, peeled veneers, pulpwood, and energy chips, with quality primarily defined by diameter, straightness, and defect rates \citep{Testa2014_Poplar_Economics,Spinelli2009_SRC_Harvesting}. Economic analyses in Italy and Central Europe suggest that the economic viability of SRC systems depends on access to higher-value markets such as panel products and pulp, in addition to energy markets \citep{Testa2014_Poplar_Economics}.
+
+Cleaner production strategies that integrate agroforestry biomass into regional bioeconomies therefore require models that can allocate biomass flows along such cascades while respecting stand growth dynamics, rotation constraints, and logistical capacities. Explicit representation of age-dependent yield quality (e.g., diameter distributions, wood density) remains challenging in large-scale MILP models, but can be approximated through age- and species-specific product yield fractions.
+
+\section{Allometric models for biomass growth}
+\label{sec:allometrics}
+
+\subsection{Tree-level allometry in short-rotation agroforestry}
+
+In the SRAFS trial in Southern Germany, \citet{Huber2016_Allometric_SRAFS} estimate aboveground leafless dry biomass of individual trees using allometric functions with SBD as predictor, derived from destructive sampling at the same site. The general functional form is
+\[
+M_{ij} = b_{0,j} \cdot \text{SBD}_{i}^{\,b_{1,j}},
+\]
+where \(M_{ij}\) is the aboveground dry biomass (kg) of tree \(i\) of species \(j\), \(\text{SBD}_{i}\) is stem base diameter (cm) at 10~cm above ground, and \(b_{0,j}\), \(b_{1,j}\) are species-specific parameters \citep{Huber2016_Allometric_SRAFS}. The coefficients reported for the four species are summarised in Table~\ref{tab:allometrics}. All biomass values are expressed as oven-dry mass \citep{Huber2016_Allometric_SRAFS}.
+
+\begin{table}[h]
+\centering
+\caption{Allometric coefficients for aboveground biomass of tree species in SRAFS \citep{Huber2016_Allometric_SRAFS}.}
+\label{tab:allometrics}
+\begin{tabular}{lcc}
+\toprule
+Species & \(b_0\) & \(b_1\) \\
+\midrule
+Black alder (\emph{Alnus glutinosa})          & 0.025 & 2.603 \\
+Black locust (\emph{Robinia pseudoacacia})    & 0.041 & 2.603 \\
+Poplar Max~3 (\emph{Populus} hybrid)          & 0.036 & 2.603 \\
+Willow Inger (\emph{Salix} hybrid)            & 0.037 & 2.603 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These functions are applied to all shoots per tree to compute total tree biomass, which is then aggregated at plot and stand level (t~ha\(^{-1}\)) using observed tree densities \citep{Huber2018_SRAFS_growth}. By repeating measurements annually over four years, the authors derive CAI and MAI for each species and management system, and analyse the evolution of size distributions, Gini coefficients, and skewness as indicators of stand structure \citep{Huber2018_SRAFS_growth}. Their results show that black locust exhibits high wood density (around 0.60~g~cm\(^{-3}\)) and some large-diameter trees, leading to biomass comparable to poplar despite lower mean diameter and height \citep{Huber2018_SRAFS_growth}. Willow, in contrast, shows low wood density and lower diameter growth, resulting in lower biomass despite vigorous sprouting and high shoot densities \citep{Huber2018_SRAFS_growth}.
+
+\subsection{Stand-level yield functions and age classes}
+
+To integrate allometric growth into a MILP formulation, we abstract from individual trees and construct age-class yield functions for each biomass type \(p\) and age \(a\). Following common practice in forest and SRC modelling, we define discrete annual age classes and compute the stand biomass yield \(Y_{pa}\) (t~ha\(^{-1}\)) associated with harvesting at age \(a\) by combining allometric functions with empirically observed diameter distributions and stand densities \citep{Huber2018_SRAFS_growth,Trnka2008_Poplar_SRF}. Where detailed stand structure data are available, this can be done by simulating SBD distributions over time (e.g., via mixed-effects models) and applying tree-level allometrics to each diameter class \citep{Huber2018_SRAFS_growth}. In the absence of such detailed data, age-dependent MAI and CAI curves reported in the literature can be used to approximate \(Y_{pa}\) \citep{Trnka2008_Poplar_SRF,Huber2018_SRAFS_growth}.
+
+In the context of the agroforestry supply chain design (SCD) model, we assume that each agroforestry site \(i\) is characterised by a species or species mix, a planting density, and management regime, which jointly determine a site-specific yield profile \(\eta_{pa}\) (t~ha\(^{-1}\)) for each product type \(p\) at age \(a\). These yield profiles can be interpreted as the maximum harvestable biomass per hectare for product \(p\) if the stand is harvested at age \(a\), conditional on the stand having been established at an earlier time. In the current MILP formulation, these profiles are captured through the parameter \(\eta_{pa}\), termed base yield, and are linked to decision variables via the constraint
+\[
+Y_{ipt} = \sum_{s=1}^{t-1} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist}  \quad \forall i,p,t \in \mathcal{T}^{\text{harv}}.
+\]
+Here, \(Y_{ipt}\) is the maximum harvest quantity of product \(p\) at site \(i\) in period \(t\), \(\text{AREA}_i\) is the site area (ha), and \(z_{ist}\) is a binary variable indicating that harvests at site \(i\) in periods \(s\) and \(t\) form consecutive harvests with an age lag \(t-s\) within allowed bounds. The term \(\eta_{p(t-s)}\) thus plays the role of an allometrically derived yield coefficient that depends only on stand age \(a = t-s\), not on calendar time.
+
+\subsection{Biomass types and product quality classes}
+
+In the model, three product types are distinguished: \(p = 1\) (chemical-grade biomass), \(p = 2\) (pulp-grade biomass), and \(p = 3\) (energy-grade biomass). This tripartite classification reflects a product quality hierarchy, with product~1 having the highest quality and price, and product~3 being the lowest-quality fraction typically used for energy \citep{DeMeyer2015_OPTIMASS,Lamers2015_Feedstock_Design}. From an allometric perspective, the differentiation among these products can be linked to diameter classes, stem straightness, and defect rates, as these determine the suitability of biomass fractions for different processing routes \citep{Testa2014_Poplar_Economics,Spinelli2009_SRC_Harvesting}.
+
+In practice, allometric models provide estimates of total aboveground woody biomass, which can be split into product classes using empirical conversion factors or allocation rules derived from product recovery studies (e.g., share of biomass suitable for veneer vs.\ pulp vs.\ chips as a function of diameter and log length) \citep{Spinelli2009_SRC_Harvesting}. For the purposes of the SCD model, we can represent this by specifying product-specific yield coefficients \(\eta_{pa}\) that sum to the total biomass yield at age \(a\) and reflect the expected proportion of each product class under a given management regime.
+
+The cascading hierarchy in the MILP formulation is implemented through demand satisfaction constraints that allow higher-quality products to satisfy lower-quality demands. Specifically, demand \(D_{kpt}^{\max}\) at consumer \(k\) for product class \(p\) in period \(t\) can be met by flows of product \(p\) and all higher-quality classes \(p' \leq p\) from storage hubs, as captured by
+\[
+\sum_{j \in \mathcal{J}, p' \in \mathcal{P}: p' \leq p } X_{jkp'pt} \leq D_{kpt}^{\max} \quad \forall k,p,t.
+\]
+This structure supports cleaner production by favouring material uses when possible and relegating residual fractions to energy uses, depending on revenue parameters \(R_{k,p}\) and system constraints \citep{DeMeyer2015_OPTIMASS,Lamers2015_Feedstock_Design}.
+
+\section{MILP model for agroforestry supply chain design}
+\label{sec:milp}
+
+In this section we briefly summarise the MILP formulation for the agroforestry biomass SCD model, focusing on its integration of age-lag constraints, allometric yield coefficients, and product cascading. A full mathematical description of sets, variables, and constraints is provided in the model definition.
+
+\subsection{Sets, indices, and time structure}
+
+The model considers a set of agroforestry sites \(\mathcal{I}\), storage/processing facilities \(\mathcal{J}\), consumer sites \(\mathcal{K}\), and product types \(\mathcal{P} = \{1,2,3\}\). Time is discretised into annual periods \(t \in \mathcal{T} = \{1,\dots,T_{\max}\}\). To represent stand establishment and harvest timing, extended time sets \(\mathcal{T}^{+} = \{0,\dots,T_{\max}+1\}\) and harvest periods \(\mathcal{T}^{\text{harv}} = \{A^{\min}+1,\dots,T_{\max}\}\) are defined, where \(A^{\min}\) and \(A^{\max}\) are minimum and maximum stand ages (years) at harvest. The set \(\mathcal{S}\) comprises all ordered pairs \((s,t)\) of consecutive harvest periods (including establishment at \(s=0\)) satisfying the age-lag bounds:
+\[
+\mathcal{S} = \{(s,t) \mid s,t \in \{0,\dots,T_{\max}+1\},\; t-s \in \{A^{\min},\dots,A^{\max}\} \}.
+\]
+
+\subsection{Decision variables}
+
+Binary variables \(z_{ist}\) indicate whether, at site \(i\), periods \(s\) and \(t\) form consecutive harvests (or establishment and first harvest if \(s=0\)), with \((s,t) \in \mathcal{S}\). These variables define a path of consecutive harvest cycles at each site over the planning horizon. Continuous variables \(Y_{ipt} \ge 0\) represent the maximum harvest quantity (t) of product \(p\) at site \(i\) in harvest period \(t\). Flow variables \(X_{ijpt}\) and \(X_{jkpp't}\) represent transport of products from sites to storage and from storage to consumers, respectively, and \(S_{jpt}\) represent inventories at storage locations.
+
+\subsection{Objective function}
+
+The model maximises net present value over the planning horizon, expressed as total revenues minus establishment, opportunity, harvest, transport, and storage costs:
+\begin{align*}
+\max Z =\;&
+\sum_{k,p,t} R_{k,p} \cdot \sum_{j \in \mathcal{J},\, p' \in \mathcal{P}: p' \leq p} X_{jkp'pt} \\
+& - \sum_{i} C^{\text{est}}_{i} \cdot \text{AREA}_i \cdot \sum_{t \in \mathcal{T}} z_{i0t} \\
+& - \sum_{i} C^{\text{opp}}_{i} \cdot \text{AREA}_i \cdot \sum_{t \in \mathcal{T}} (T_{\max}-t) \cdot z_{i0t} \\
+& - \sum_{i,(s,t)\in \mathcal{S}: s>0} C^{\text{harv}}_{i} \cdot \text{AREA}_i \cdot z_{ist} \\
+& - c^{\text{tr-raw}} \sum_{i,j,p,t} d_{ij} \cdot X_{ijpt}
+ - c^{\text{tr-pre}} \sum_{j,k,p,t} d_{jk} \cdot X_{jkpt}
+ - \sum_{j,p,t} c^{\text{stor}}_{j} \cdot S_{jpt}.
+\end{align*}
+Here, \(R_{k,p}\) are product- and consumer-specific revenues (\euro/t), \(C^{\text{est}}_{i}\) are establishment costs per hectare, \(C^{\text{opp}}_{i}\) are annual opportunity costs per hectare, and \(C^{\text{harv}}_{i}\) are harvest and refitting costs per hectare \citep{Testa2014_Poplar_Economics}. Transport costs are proportional to flow and distance with rates \(c^{\text{tr-raw}}\) and \(c^{\text{tr-pre}}\) for raw and pre-treated biomass, respectively, and storage incurs linear holding costs \(c^{\text{stor}}_j\) per tonne.
+
+\subsection{Key constraints}
+
+The path connectivity constraint ensures that each harvest period at a site has exactly one predecessor and one successor in the age-lag graph, effectively forming a path over \(\mathcal{T}^{+}\):
+\[
+\sum_{s=0: (s,t)\in \mathcal{S}}^{t} z_{ist} = \sum_{u = t+1: (t,u) \in \mathcal{S}}^{T_{\max}+1} z_{itu}
+\quad \forall i \in \mathcal{I}, t \in \mathcal{T}.
+\]
+Establishment is restricted to at most one time per site:
+\[
+\sum_{t \in \mathcal{T}^{+}} z_{i0t} \le 1 \quad \forall i \in \mathcal{I}.
+\]
+
+Biomass yield is linked to age-lag decisions through the allometric yield coefficients:
+\[
+Y_{ipt} = \sum_{s=1}^{t-1} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist}
+\quad \forall i \in \mathcal{I}, p \in \mathcal{P}, t \in \mathcal{T}^{\text{harv}}.
+\]
+This ensures that harvestable biomass at period \(t\) depends on the time since the previous harvest (or establishment) and the site area, with yields given by allometrically derived \(\eta_{pa}\).
+
+Harvest quantities bound outbound flows from each site:
+\[
+\sum_{j \in \mathcal{J}} X_{ijpt} \le Y_{ipt}
+\quad \forall i,p,t \in \mathcal{T}^{\text{harv}}.
+\]
+
+At storage hubs, inventories obey standard balance equations with initial inventory zero:
+\[
+S_{jpt} = S_{jp,t-1} + \sum_{i} X_{ijpt} - \sum_{k, p' \ge p} X_{jkpp't}
+\quad \forall j,p,t \in \mathcal{T}^{\text{harv}}.
+\]
+Storage and processing capacities are enforced via:
+\begin{align*}
+\sum_{p} S_{jpt} &\le \text{CAP}^{\text{stor}}_j && \forall j,t, \\
+\sum_{i,p} X_{ijpt} &\le \text{CAP}^{\text{proc}}_j && \forall j,t.
+\end{align*}
+
+Demand satisfaction with cascades is modelled as described above, where higher-quality products can satisfy lower-quality demands up to maximum demand levels \(D^{\max}_{kpt}\).
+
+\section{Case study and computational experiment plan}
+\label{sec:experiments}
+
+The proposed MILP model is intended to support the design of agroforestry biomass supply chains for cleaner production in specific regional contexts. In a forthcoming case study, we focus on poplar-based alley-cropping systems in a temperate European setting, informed by empirical data from SRAFS trials in Southern Germany and SRC plantations in Central Europe \citep{Huber2018_SRAFS_growth,Trnka2008_Poplar_SRF,Testa2014_Poplar_Economics}.
+
+We envisage the following steps and experimental scenarios for computational analysis:
+
+\begin{enumerate}
+  \item \textbf{Parameterisation of allometric yield profiles}: Use species- and site-specific allometric models and observed growth trajectories to construct age-dependent yield coefficients \(\eta_{pa}\) for chemical, pulp, and energy product classes at representative agroforestry sites. Where necessary, scenario ranges will be defined to capture uncertainty in MAI and CAI due to climate variability and management differences \citep{Huber2016_Allometric_SRAFS,Huber2018_SRAFS_growth,Trnka2008_Poplar_SRF}.
+  \item \textbf{Baseline optimisation}: Solve the MILP model for a baseline configuration with fixed prices, capacities, and policy settings, obtaining optimal establishment timing, harvest schedules, and supply chain structure (locations, flows, inventories).
+  \item \textbf{Rotation length scenarios}: Vary the age-lag bounds \(A^{\min}\) and \(A^{\max}\) to represent alternative rotation strategies (e.g., 3--5~years vs.\ 8--10~years) and analyse their impacts on profitability, product mix, and land use. This will shed light on trade-offs between shorter rotations favouring energy chips and longer rotations enabling higher shares of material products \citep{Trnka2008_Poplar_SRF,Testa2014_Poplar_Economics}.
+  \item \textbf{Product price and cascading scenarios}: Explore scenarios with different relative prices for chemical, pulp, and energy products, reflecting changes in market demand and policy incentives (e.g., bioenergy subsidies, green chemicals markets). Assess how the product cascade hierarchy and yield quality structure influence the marginal value of species and rotation decisions \citep{DeMeyer2015_OPTIMASS,Lamers2015_Feedstock_Design}.
+  \item \textbf{Infrastructure and logistics scenarios}: Evaluate the effect of alternative storage and processing network configurations (e.g., decentralised vs.\ centralised hubs, different capacity levels, transport cost parameters) on the optimal spatial deployment of agroforestry sites and biomass flows \citep{DeMeyer2015_OPTIMASS,DeMeyer2016_tOPTIMASS,Lamers2015_Feedstock_Design}.
+  \item \textbf{Sensitivity to allometric and growth uncertainty}: Conduct parametric sensitivity and, where computationally feasible, stochastic analyses to quantify the impact of uncertainty in allometric parameters and growth responses (e.g., under drought or management differences) on optimal decisions and system robustness \citep{Huber2018_SRAFS_growth,Trnka2008_Poplar_SRF}.
+  \item \textbf{Cleaner production indicators}: For selected solutions, compute derived indicators such as biomass cascading index (share of biomass used for material products before energy), utilisation rates of higher-quality fractions, and, where coupled with LCA data, greenhouse gas emission savings relative to fossil benchmarks \citep{Espinoza2017_Biorefinery_SC_review,Zahraee2020_BSC_review}.
+\end{enumerate}
+
+These experiments will provide insights into how integrated planning of agroforestry stand management and biomass supply chains can support cleaner production pathways in regional bioeconomies, and how robust such strategies are to uncertainties in growth, prices, and policy contexts.
+
+\section{Conclusions}
+
+This paper outlines a research framework that couples allometric biomass growth models with a MILP-based agroforestry biomass supply chain design model featuring age-lag constraints and product cascading. Building on empirical evidence from temperate SRAFS and SRC systems and established biomass supply chain models, the proposed approach aims to capture key interactions between stand-level growth dynamics and network-level design decisions that are central to the cleaner production potential of agroforestry \citep{Huber2018_SRAFS_growth,DeMeyer2015_OPTIMASS,DeMeyer2016_tOPTIMASS}. Future work will implement and calibrate the model for a regional case study, conduct the computational experiments sketched above, and extend the framework towards multi-objective optimisation including environmental indicators such as greenhouse gas emissions and biodiversity proxies.
+
+\bibliographystyle{elsarticle-harv}
+\bibliography{references}
+
+\end{document}
