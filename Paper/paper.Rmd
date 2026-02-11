@@ -15,6 +15,19 @@ bibliography: references.bib
 csl: elsevier-harvard.csl
 ---
 
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(patchwork)  # install.packages("patchwork") if needed
+
+# Chapman–Richards biomass function
+B_cr <- function(t, Bmax, k, m) {
+  Bmax * (1 - exp(-k * t))^m
+}
+
+```
+
 # Abstract
 
 Short-rotation agroforestry systems are increasingly promoted as a low-carbon feedstock option for bio-based value chains, but their economic viability depends on coordinated decisions on stand establishment, multi-cycle harvesting, and product cascading in spatially distributed supply chains. This paper develops a mixed-integer linear programming (MILP) model for the integrated design and operation of an agroforestry biomass supply chain with explicit age-lag constraints that link consecutive harvests at each site. The formulation couples allometric yield functions for different biomass types with a multi-product, multi-period network design model including storage, processing, and product quality cascades. The model is applied to a stylised case study of Central European poplar-based alley-cropping systems to explore trade-offs between harvest rotation length, product portfolios, and infrastructure configuration. We outline a computational experimentation plan to test the impact of allometric parameter uncertainty, price scenarios, and policy incentives on the optimal deployment of agroforestry systems in cleaner bioeconomy pathways.
@@ -58,6 +71,93 @@ For SRAFS in Southern Germany, @Huber2016_Allometric_SRAFS and @Huber2018_SRAFS_
 Similar allometric approaches have been applied to SRC and SRF poplar plantations. @Trnka2008_Poplar_SRF use diameter and height measurements to estimate aboveground biomass and assess clone-specific biomass production and survival over a six-year rotation in the Czech Republic. Laureysens and co-authors provide allometric equations for poplar and willow clones on waste disposal sites and agricultural land, often highlighting the role of wood density, site conditions, and stand structure for biomass estimates. In agroforestry contexts, allometric models have also been developed for mixed-species systems and silvopastoral systems, which can be used to derive carbon stock estimates and evaluate management options [@Toensmeier2017_Carbon_Agroforestry].
 
 From a modelling perspective, allometric functions can be used in two main ways when coupling stand growth with supply chain optimisation. First, they can generate age-specific yield tables (e.g., t ha\(^{-1}\) at each stand age) that serve as exogenous parameters in linear or integer programming models. Second, they can be integrated more dynamically into optimisation models through piecewise linear approximations or age-class state variables. For large-scale MILP models, the first approach is often preferred due to computational tractability and the linearity requirement, but it needs to capture key nonlinearities such as the timing of MAI peaks and constraints on minimum and maximum harvest ages.
+
+## Age-dependent biomass yield functions
+
+Existing allometric models link tree biomass to diameter or height but do not yet provide **stand-level** biomass as an explicit function of stand age. Age-dependent biomass functions are useful for yield projections in short-rotation forestry and agroforestry, where management is organized in discrete rotations (e.g. 5–15 years). [@Niemczyk2021; @Testa2014]
+
+A common approach is to derive age functions from rotation trials that report mean annual increment (MAI) over time and identify the age at which MAI plateaus. For poplar SRWC in northern Poland, Niemczyk et al. (2021) showed that MAI in aboveground dry biomass increases up to about age 10; beyond this, the MAI curve flattens, suggesting a biologically optimal rotation age around 10 years because the slope of MAI is near zero. [@Niemczyk2021] Reported MAI values for single-stem poplar plantations in a 10-year rotation ranged approximately from 1–15 Mg DM ha\(^{-1}\) yr\(^{-1}\) depending on cultivar. [@Niemczyk2021] Similar magnitudes and rotation lengths (about 5–7 years for SRC, up to 10–15 years for SRC/SRF) are reported for poplar SRC systems in Italy, where whole-rotation averages of roughly 15 Mg DM ha\(^{-1}\) yr\(^{-1}\) are considered economically viable. [@Testa2014]
+
+A simple and widely used parametric form for age-dependent stand biomass \(B(t)\) is the Chapman–Richards (or Mitscherlich/monomolecular) function:
+\[
+B(t) = B_{\max}\left(1 - e^{-k\,t}\right)^m
+\]
+with stand age \(t\) in years, asymptotic biomass \(B_{\max}\) (Mg DM ha\(^{-1}\)), rate parameter \(k\) (year\(^{-1}\)), and shape parameter \(m\). This formulation captures the rapid juvenile growth, a phase of approximately linear biomass accumulation, and a saturating phase where growth slows. [@Niemczyk2021] The corresponding current annual increment (CAI) and mean annual increment (MAI) are
+\[
+\text{CAI}(t) = \frac{dB}{dt}, \qquad \text{MAI}(t) = \frac{B(t)}{t}.
+\]
+The age maximizing MAI (optimal rotation under a volume/biomass criterion) can be derived analytically or determined numerically. Fitting such functions to observed age–biomass or age–volume series from rotation trials (e.g. Niemczyk et al. 2021 for poplar, Testa et al. 2014 for Italian SRC) allows cultivar-specific yield curves that are directly usable in agroforestry simulation models. [@Niemczyk2021; @Testa2014]
+
+For illustration, we parameterize three stylized poplar curves representing low, medium, and high productivity on temperate mineral soils. Parameter values are loosely informed by the ranges reported by Niemczyk et al. (2021) and Testa et al. (2014) and should be recalibrated when site-specific data are available. [@Niemczyk2021; @Testa2014]
+
+- Low productivity: \(B_{\max} = 80\) Mg DM ha\(^{-1}\), \(k = 0.18\), \(m = 1.1\)
+- Medium productivity: \(B_{\max} = 120\) Mg DM ha\(^{-1}\), \(k = 0.20\), \(m = 1.2\)
+- High productivity: \(B_{\max} = 160\) Mg DM ha\(^{-1}\), \(k = 0.22\), \(m = 1.3\)
+
+These values yield MAI maxima between about 8 and 12 years with peak MAI values of roughly 8–16 Mg DM ha\(^{-1}\) yr\(^{-1}\), consistent with the empirical range where 10-year rotations produced MAI of about 10–15 Mg DM ha\(^{-1}\) yr\(^{-1}\) for the best poplar cultivars in northern Poland and Italy. [@Niemczyk2021; @Testa2014]
+
+In the agroforestry context, such age functions can be combined with tree density and allometric partitioning to above- and below-ground biomass to obtain tree-row biomass over time for different designs. Calibration against local inventory data or growth measurements (e.g. basal area increment and height growth) is recommended before using the curves for scenario analysis.
+
+```{r age-biomass-functions, echo=F, message=FALSE, warning=FALSE, fig.cap="Age-dependent stand biomass (a) and mean annual increment (b) for three stylized poplar productivity levels.", fig.width=8, fig.height=4, out.width='100%'}
+# Parameter sets (to be calibrated with local data)
+param_sets <- tibble::tribble(
+  ~scenario,      ~Bmax, ~k,    ~m,
+  "Low productivity",    80, 0.18, 1.1,
+  "Medium productivity", 120, 0.20, 1.2,
+  "High productivity",   160, 0.22, 1.3
+)
+
+ages <- seq(1, 20, by = 0.25)
+
+biomass_df <- param_sets %>%
+  tidyr::crossing(age = ages) %>%
+  mutate(
+    B = B_cr(age, Bmax, k, m),  # stand biomass (Mg DM ha^-1)
+    MAI = B / age               # mean annual increment
+  )
+
+
+# Build plots with legend: put legend in 1 row, 3 columns (horizontal)
+p_B_full <- ggplot(biomass_df, aes(x = age, y = B, colour = scenario)) +
+  geom_line(linewidth = 1) +
+  labs(
+    x = "Stand age (years)",
+    y = "dry biomass in t per ha and year",
+    colour = "Productivity level",
+    title = "a) Stand biomass over age"
+  ) +
+  theme_bw() +
+  guides(colour = guide_legend(nrow = 1, byrow = TRUE))
+
+p_MAI_full <- ggplot(biomass_df, aes(x = age, y = MAI, colour = scenario)) +
+  geom_line(linewidth = 1) +
+  labs(
+    x = "Stand age (years)",
+    y = "dry biomass in t per ha and year",
+    colour = "Productivity level",
+    title = "b) Mean annual increment over age"
+  ) +
+  theme_bw() +
+  guides(colour = guide_legend(nrow = 1, byrow = TRUE))
+
+# Extract a single legend
+get_legend <- function(p) {
+  g <- ggplotGrob(p)
+  leg <- g$grobs[[which(sapply(g$grobs, function(x) x$name) == "guide-box")]]
+  leg
+}
+
+legend <- get_legend(p_B_full)
+
+# Remove legends from the panels
+p_B   <- p_B_full  + theme(legend.position = "none")
+p_MAI <- p_MAI_full + theme(legend.position = "none")
+
+# Arrange side by side with one shared legend below
+(p_B | p_MAI) / patchwork::wrap_elements(legend) +
+  plot_layout(heights = c(5, 1))
+```
+
 
 ## Biomass supply chain modelling and MILP approaches
 
