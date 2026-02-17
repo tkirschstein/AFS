@@ -14,6 +14,7 @@
 % TODO: Currently lineno needs to be loaded after amsmath because of conflict
 % https://github.com/latex-lineno/lineno/issues/5
 \usepackage{lineno} % add
+  \linenumbers % turns line numbering on
 \usepackage{ifxetex,ifluatex}
 \usepackage{fixltx2e} % provides \textsubscript
 % use upquote if available, for straight quotes in verbatim environments
@@ -49,9 +50,8 @@
             linkcolor=magenta,
             pdfborder={0 0 0}}
 
-\setcounter{secnumdepth}{0}
+\setcounter{secnumdepth}{5}
 % Pandoc toggle for numbering sections (defaults to be off)
-\setcounter{secnumdepth}{0}
 
 
 % tightlist command for lists without linebreak
@@ -72,8 +72,7 @@
 
 
 
-\usepackage{setspace}
-\doublespacing        % or \onehalfspacing for 1.5 lines
+
 
 
 
@@ -83,41 +82,39 @@
 \begin{frontmatter}
 
   \title{Agroforestry SmartAgroforst: Poplar biomass modelling}
-    \author[1,2]{Thomas Kirschstein%
-  %
+    \author[1]{Thomas Kirschstein%
+  \corref{cor1}%
   }
    \ead{thomas.kirschstein@ikts.fraunhofer.de} 
       \cortext[cor1]{Corresponding author}
   
   \begin{abstract}
-  
+  Short-rotation agroforestry systems are increasingly promoted as a
+  low-carbon feedstock option for bio-based value chains, but their
+  economic viability depends on coordinated decisions on stand
+  establishment, multi-cycle harvesting, and product cascading in
+  spatially distributed supply chains. This paper develops a
+  mixed-integer linear programming (MILP) model for the integrated
+  design and operation of an agroforestry biomass supply chain with
+  explicit age-lag constraints that link consecutive harvests at each
+  site. The formulation couples allometric yield functions for different
+  biomass types with a multi-product, multi-period network design model
+  including storage, processing, and product quality cascades. The model
+  is applied to a stylised case study of Central European poplar-based
+  alley-cropping systems to explore trade-offs between harvest rotation
+  length, product portfolios, and infrastructure configuration. We
+  outline a computational experimentation plan to test the impact of
+  allometric parameter uncertainty, price scenarios, and policy
+  incentives on the optimal deployment of agroforestry systems in
+  cleaner bioeconomy pathways.
   \end{abstract}
+    \begin{keyword}
+    Agroforestry \sep Short-rotation coppice \sep Biomass supply
+chain \sep 
+    Product cascading
+  \end{keyword}
   
  \end{frontmatter}
-
-\section{Abstract}\label{abstract}
-
-Short-rotation agroforestry systems are increasingly promoted as a
-low-carbon feedstock option for bio-based value chains, but their
-economic viability depends on coordinated decisions on stand
-establishment, multi-cycle harvesting, and product cascading in
-spatially distributed supply chains. This paper develops a mixed-integer
-linear programming (MILP) model for the integrated design and operation
-of an agroforestry biomass supply chain with explicit age-lag
-constraints that link consecutive harvests at each site. The formulation
-couples allometric yield functions for different biomass types with a
-multi-product, multi-period network design model including storage,
-processing, and product quality cascades. The model is applied to a
-stylised case study of Central European poplar-based alley-cropping
-systems to explore trade-offs between harvest rotation length, product
-portfolios, and infrastructure configuration. We outline a computational
-experimentation plan to test the impact of allometric parameter
-uncertainty, price scenarios, and policy incentives on the optimal
-deployment of agroforestry systems in cleaner bioeconomy pathways.
-
-\textbf{Keywords:} Agroforestry; Short-rotation coppice; Biomass supply
-chain; Allometric models; Mixed-integer linear programming; Product
-cascading
 
 \section{Introduction}\label{introduction}
 
