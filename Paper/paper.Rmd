@@ -1,16 +1,27 @@
 ---
-title: "Multi-Cycle Agroforestry Biomass Harvest Scheduling and Supply Chain Design under Age-Lag Constraints"
+title: "Agroforestry SmartAgroforst: Poplar biomass modelling"
 author:
-  - "Thomas Kirschstein"
-affiliations:
-  - "Fraunhofer IKTS, Leipziger Straße 70/71, Halle, Germany"
-  - "RhineMain University of Applied Sciences, Bleichstraße 44, 65183 Wiesbaden"
+  - name: "Thomas Kirschstein"
+    affiliation: "1,2"
+    email: "thomas.kirschstein@ikts.fraunhofer.de"
+institute:
+  - "1" : "Fraunhofer IKTS, Leipziger Straße 70/71, Halle, Germany"
+  - "2" : "RhineMain University of Applied Sciences, Bleichstraße 44, 65183 Wiesbaden"
+
+journal: "Journal Name"
+# elsarticle options: preprint preview style, 1p or 3p for layout
+classoption: "preprint,review,1p"
+
 output:
-  pdf_document:
-    toc: false
-    number_sections: true
-geometry: "a4paper, margin=2.5cm"
-documentclass: elsarticle
+  rticles::elsevier_article:
+    keep_tex: true
+    latex_engine: xelatex
+
+header-includes:
+  # Use elsarticle’s review layout and set 1.5 line spacing
+  - \usepackage{setspace}
+  - \doublespacing        % or \onehalfspacing for 1.5 lines
+
 bibliography: references.bib
 csl: elsevier-harvard.csl
 ---
