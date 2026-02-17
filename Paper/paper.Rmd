@@ -7,7 +7,7 @@ affiliations:
   - "RhineMain University of Applied Sciences, Bleichstraße 44, 65183 Wiesbaden"
 output:
   pdf_document:
-    toc: true
+    toc: false
     number_sections: true
 geometry: "a4paper, margin=2.5cm"
 documentclass: elsarticle
