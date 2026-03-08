@@ -82,7 +82,7 @@
 \begin{frontmatter}
 
   \title{Agroforestry SmartAgroforst: Poplar biomass modelling}
-    \author[1]{Thomas Kirschstein%
+    \author[Fraunhofer IKTS, Dresden, Germany]{Thomas Kirschstein%
   \corref{cor1}%
   }
    \ead{thomas.kirschstein@ikts.fraunhofer.de} 
@@ -308,6 +308,58 @@ tractability and the linearity requirement, but it needs to capture key
 nonlinearities such as the timing of MAI peaks and constraints on
 minimum and maximum harvest ages.
 
+\subsection{Tree-level allometry in short-rotation
+agroforestry}\label{tree-level-allometry-in-short-rotation-agroforestry}
+
+In the SRAFS trial in Southern Germany,
+\citet{Huber2016_Allometric_SRAFS} estimate aboveground leafless dry
+biomass of individual trees using allometric functions with SBD as
+predictor, derived from destructive sampling at the same site. The
+general functional form is \[
+M_{ij} = b_{0,j} \cdot \text{SBD}_{i}^{\,b_{1,j}},
+\] where \(M_{ij}\) is the aboveground dry biomass (kg) of tree \(i\) of
+species \(j\), \(\text{SBD}_{i}\) is stem base diameter (cm) at 10 cm
+above ground, and \(b_{0,j}\), \(b_{1,j}\) are species-specific
+parameters \citep{Huber2016_Allometric_SRAFS}. The coefficients reported
+for the four species are summarised in Table @ref(tab:allometrics). All
+biomass values are expressed as oven-dry mass
+\citep{Huber2016_Allometric_SRAFS}.
+
+\begin{longtable}[]{@{}lrr@{}}
+\caption{Allometric coefficients for aboveground biomass of tree species
+in SRAFS \citep{Huber2016_Allometric_SRAFS}.
+\{\#tab:allometrics\}}\tabularnewline
+\toprule\noalign{}
+Species & \(b_0\) & \(b_1\) \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+Species & \(b_0\) & \(b_1\) \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Black alder (\emph{Alnus glutinosa}) & 0.025 & 2.603 \\
+Black locust (\emph{Robinia pseudoacacia}) & 0.041 & 2.603 \\
+Poplar Max 3 (\emph{Populus} hybrid) & 0.036 & 2.603 \\
+Willow Inger (\emph{Salix} hybrid) & 0.037 & 2.603 \\
+\end{longtable}
+
+These functions are applied to all shoots per tree to compute total tree
+biomass, which is then aggregated at plot and stand level (t
+ha\(^{-1}\)) using observed tree densities
+\citep{Huber2018_SRAFS_growth}. By repeating measurements annually over
+four years, the authors derive CAI and MAI for each species and
+management system, and analyse the evolution of size distributions, Gini
+coefficients, and skewness as indicators of stand structure
+\citep{Huber2018_SRAFS_growth}. Their results show that black locust
+exhibits high wood density (around 0.60 g cm\(^{-3}\)) and some
+large-diameter trees, leading to biomass comparable to poplar despite
+lower mean diameter and height \citep{Huber2018_SRAFS_growth}. Willow,
+in contrast, shows low wood density and lower diameter growth, resulting
+in lower biomass despite vigorous sprouting and high shoot densities
+\citep{Huber2018_SRAFS_growth}.
+
 \subsection{Age-dependent biomass yield
 functions}\label{age-dependent-biomass-yield-functions}
 
@@ -389,8 +441,8 @@ using the curves for scenario analysis.
 \includegraphics[width=1\linewidth]{paper_files/figure-latex/age-biomass-functions-1} \caption{Age-dependent stand biomass (a) and mean annual increment (b) for three stylized poplar productivity levels.}\label{fig:age-biomass-functions}
 \end{figure}
 
-\subsection{Biomass supply chain modelling and MILP
-approaches}\label{biomass-supply-chain-modelling-and-milp-approaches}
+\section{Biomass supply chain
+modelling}\label{biomass-supply-chain-modelling}
 
 Biomass supply chain design and planning has been widely studied using
 MILP models at strategic, tactical, and operational levels
@@ -434,8 +486,7 @@ change, or agroforestry systems
 therefore a clear opportunity to develop models that couple agroforestry
 stand dynamics with network design and cleaner production objectives.
 
-\subsection{Cleaner production and cascading use of
-biomass}\label{cleaner-production-and-cascading-use-of-biomass}
+\subsection{Cascading use of biomass}\label{cascading-use-of-biomass}
 
 From a cleaner production perspective, the cascading use of
 biomass---prioritising high-value material uses before energy
@@ -472,60 +523,6 @@ rotation constraints, and logistical capacities. Explicit representation
 of age-dependent yield quality (e.g., diameter distributions, wood
 density) remains challenging in large-scale MILP models, but can be
 approximated through age- and species-specific product yield fractions.
-
-\section{Allometric models for biomass growth}\label{sec:allometrics}
-
-\subsection{Tree-level allometry in short-rotation
-agroforestry}\label{tree-level-allometry-in-short-rotation-agroforestry}
-
-In the SRAFS trial in Southern Germany,
-\citet{Huber2016_Allometric_SRAFS} estimate aboveground leafless dry
-biomass of individual trees using allometric functions with SBD as
-predictor, derived from destructive sampling at the same site. The
-general functional form is \[
-M_{ij} = b_{0,j} \cdot \text{SBD}_{i}^{\,b_{1,j}},
-\] where \(M_{ij}\) is the aboveground dry biomass (kg) of tree \(i\) of
-species \(j\), \(\text{SBD}_{i}\) is stem base diameter (cm) at 10 cm
-above ground, and \(b_{0,j}\), \(b_{1,j}\) are species-specific
-parameters \citep{Huber2016_Allometric_SRAFS}. The coefficients reported
-for the four species are summarised in Table @ref(tab:allometrics). All
-biomass values are expressed as oven-dry mass
-\citep{Huber2016_Allometric_SRAFS}.
-
-\begin{longtable}[]{@{}lrr@{}}
-\caption{Allometric coefficients for aboveground biomass of tree species
-in SRAFS \citep{Huber2016_Allometric_SRAFS}.
-\{\#tab:allometrics\}}\tabularnewline
-\toprule\noalign{}
-Species & \(b_0\) & \(b_1\) \\
-\midrule\noalign{}
-\endfirsthead
-\toprule\noalign{}
-Species & \(b_0\) & \(b_1\) \\
-\midrule\noalign{}
-\endhead
-\bottomrule\noalign{}
-\endlastfoot
-Black alder (\emph{Alnus glutinosa}) & 0.025 & 2.603 \\
-Black locust (\emph{Robinia pseudoacacia}) & 0.041 & 2.603 \\
-Poplar Max 3 (\emph{Populus} hybrid) & 0.036 & 2.603 \\
-Willow Inger (\emph{Salix} hybrid) & 0.037 & 2.603 \\
-\end{longtable}
-
-These functions are applied to all shoots per tree to compute total tree
-biomass, which is then aggregated at plot and stand level (t
-ha\(^{-1}\)) using observed tree densities
-\citep{Huber2018_SRAFS_growth}. By repeating measurements annually over
-four years, the authors derive CAI and MAI for each species and
-management system, and analyse the evolution of size distributions, Gini
-coefficients, and skewness as indicators of stand structure
-\citep{Huber2018_SRAFS_growth}. Their results show that black locust
-exhibits high wood density (around 0.60 g cm\(^{-3}\)) and some
-large-diameter trees, leading to biomass comparable to poplar despite
-lower mean diameter and height \citep{Huber2018_SRAFS_growth}. Willow,
-in contrast, shows low wood density and lower diameter growth, resulting
-in lower biomass despite vigorous sprouting and high shoot densities
-\citep{Huber2018_SRAFS_growth}.
 
 \subsection{Stand-level yield functions and age
 classes}\label{stand-level-yield-functions-and-age-classes}

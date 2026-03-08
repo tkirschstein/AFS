@@ -3,9 +3,9 @@ title: "MILP Formulation for Agroforestry Biomass Supply Chain (v10)"
 author: "SmartAgroforst"
 date: "January 2026"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 documentclass: article
 classoption:
 - 11pt
@@ -36,6 +36,44 @@ t \in \mathcal{T^{harv}} &= \{A^{min}+1, \ldots, T_{\max}\} && \text{ Harvesting
 p \in \mathcal{P} &= \{1, 2, 3\} && \text{Product types (chemical, pulp, energy)} \\
 (s,t) \in \mathcal{S} &= \left\{(s,t) | s,t \in 0,...,(T_{\max}+1) \wedge (t-s) \in \left\{A^{min},...,A^{max}\right\} \right\} && \text{Consecutive harvesting}
 \end{align}
+
+---
+
+# Example set $\mathcal{S}$
+
+let $A^{min}=1$,  $A^{max}=5$ and $T_{\max}=10$, then $\mathcal{S}$ includes pairs like:
+
+| Subset | quantifier | Description |
+|---|------|-------------|
+| $(0,t)$ | $t = 1,...,9$ | establishment arcs |
+| $(t,11)$ | $t = 1,...,10$ | closing arcs  |
+| $(1,t)$ | $t=2,...,6$ | cultivation arcs of period 1 (harvest in $t$) |
+| $(2,t)$ | $t=3,...,7$ | cultivation arcs of period 2 (harvest in $t$) |
+| $(3,t)$ | $t=4,...,8$ | cultivation arcs of period 3 (harvest in $t$) |
+| $(4,t)$ | $t=5,...,9$ | cultivation arcs of period 4 (harvest in $t$) |
+| $(5,t)$ | $t=6,...,10$ | cultivation arcs of period 5 (harvest in $t$) |
+| $(6,t)$ | $t=7,...,10$ | cultivation arcs of period 6 (harvest in $t$) |
+| $(7,t)$ | $t=8,...,10$ | cultivation arcs of period 7 (harvest in $t$) |
+| $(8,t)$ | $t=9,...,10$ | cultivation arcs of period 8 (harvest in $t$) |
+| $(9,10)$ | --- | cultivation arc of period 9 (harvest in $10$) |
+
+If establishment occurs in period 3 and harvests in periods 6 and 10, the following variables would be active: 
+
+* $z_{i,0,3}=1$ (establishment), 
+* $z_{i,3,6}=1$ (harvest in 6 with establishment in 3), 
+* $z_{i,6,10}=1$ (harvest in 10 with predecessor in 6),
+* $z_{i,10,11}=1$ (last harvest in 10),and 
+* $z_{ist}=0$ for all $(s,t) \in \mathcal{S}$
+
+Constraints C1 and C2 read like this
+
+* C1: $\sum_{t=1}^{10} z_{i,0,t} \leq 1$ (at most one establishment) $\rightarrow$ as $z_{i,0,3}=1$ it follows that $z_{i,0,t}=0$ for all $t \neq 3$.
+* C2_1: $z_{i,0,1} = \sum_{u \in 2,...,6,11} z_{i,1,u}$ (if there is establishment in 1, there must be an harvest in $u$ or closing) $\rightarrow$ as $z_{i,0,1}=0$, $\sum_{u\in 2,...,6,11} z_{i,1,u} = 0$.
+* C2_2: $z_{i,0,2} + z_{i,1,2} = \sum_{u \in 3,...,7,11} z_{i,2,u}$ (if there is establishment or harvest in 2, there must be an harvest in $u$ or closing) $\rightarrow$ as $z_{i,0,2}=z_{i,1,2}=0$, $\sum_{u\in 3,...,7,11} z_{i,3,u} = 0$
+* C2_3: $z_{i,0,3} + z_{i,1,3} + z_{i,2,3} = \sum_{u \in 4,...,8,11} z_{i,3,u}$ (if there is establishment or harvest in 3, there must be an harvest in $u$ or closing) $\rightarrow$ as $z_{i,0,3}=1$ and $z_{i,1,3}=z_{i,2,3}=0$, $\sum_{u\in 4,...,8,11} z_{i,3,u} = 1$ $\rightarrow$ as $z_{i,3,6}=1$, it follows that $z_{i,3,u}=0$ for all $u \neq 6$.
+* C2_4: $z_{i,0,4} + z_{i,1,4} + z_{i,2,4} + z_{i,3,4} = \sum_{u \in 5,...,9,11} z_{i,4,u}$ (if there is establishment or harvest in 4, there must be an harvest in $u$ or closing) $\rightarrow$ as $z_{i,0,4} + z_{i,1,4} + z_{i,2,4} + z_{i,3,4} =0$, it follows that $\sum_{u \in 5,...,9,11} z_{i,4,u}=0$.
+* and so on
+
 
 ---
 
@@ -108,7 +146,7 @@ S_{jpt} &\geq 0 && \text{Inventory at storage } j \text{ in period } t  \in \mat
 ## Constraint Set 2: Path connectivity
 
 \begin{align}
-\sum_{s = 0| (s,t) \in \mathcal{S}}^{t} z_{ist} &= \sum_{u = t+1| (s,t) \in \mathcal{S}}^{T_{max}+1} z_{itu} & \forall i \in \mathcal{I}, t \in \mathcal{T} \tag{C2}
+\sum_{ (s,t) \in \mathcal{S}} z_{ist} &= \sum_{(t,u) \in \mathcal{S}} z_{itu} & \forall i \in \mathcal{I}, t \in \mathcal{T} \tag{C2}
 \end{align}
 
 **Interpretation:** If there is a harvest in $t$, there must be an predecessor in $s<t$ and successor in $u>t$.

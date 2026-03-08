@@ -1653,7 +1653,119 @@ p \in \mathcal{P} &amp;= \{1, 2, 3\} &amp;&amp; \text{Product types
 (s,t) \in \mathcal{S} &amp;= \left\{(s,t) | s,t \in 0,...,(T_{\max}+1)
 \wedge (t-s) \in \left\{A^{min},...,A^{max}\right\} \right\} &amp;&amp;
 \text{Consecutive harvesting}
-\end{align}\]</span></p>
+\end{align}\]</span> —</p>
+</div>
+<div id="example-set-mathcals" class="section level1">
+<h1>Example set <span class="math inline">\(\mathcal{S}\)</span></h1>
+<p>let <span class="math inline">\(A^{min}=1\)</span>, <span class="math inline">\(A^{max}=5\)</span> and <span class="math inline">\(T_{\max}=10\)</span>, then <span class="math inline">\(\mathcal{S}\)</span> includes pairs like:</p>
+<table>
+<colgroup>
+<col width="13%" />
+<col width="27%" />
+<col width="59%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Subset</th>
+<th>quantifier</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\((0,t)\)</span></td>
+<td><span class="math inline">\(t = 1,...,9\)</span></td>
+<td>establishment arcs</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\((t,11)\)</span></td>
+<td><span class="math inline">\(t = 1,...,10\)</span></td>
+<td>closing arcs</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\((1,t)\)</span></td>
+<td><span class="math inline">\(t=2,...,6\)</span></td>
+<td>cultivation arcs of period 1 (harvest in <span class="math inline">\(t\)</span>)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\((2,t)\)</span></td>
+<td><span class="math inline">\(t=3,...,7\)</span></td>
+<td>cultivation arcs of period 2 (harvest in <span class="math inline">\(t\)</span>)</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\((3,t)\)</span></td>
+<td><span class="math inline">\(t=4,...,8\)</span></td>
+<td>cultivation arcs of period 3 (harvest in <span class="math inline">\(t\)</span>)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\((4,t)\)</span></td>
+<td><span class="math inline">\(t=5,...,9\)</span></td>
+<td>cultivation arcs of period 4 (harvest in <span class="math inline">\(t\)</span>)</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\((5,t)\)</span></td>
+<td><span class="math inline">\(t=6,...,10\)</span></td>
+<td>cultivation arcs of period 5 (harvest in <span class="math inline">\(t\)</span>)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\((6,t)\)</span></td>
+<td><span class="math inline">\(t=7,...,10\)</span></td>
+<td>cultivation arcs of period 6 (harvest in <span class="math inline">\(t\)</span>)</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\((7,t)\)</span></td>
+<td><span class="math inline">\(t=8,...,10\)</span></td>
+<td>cultivation arcs of period 7 (harvest in <span class="math inline">\(t\)</span>)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\((8,t)\)</span></td>
+<td><span class="math inline">\(t=9,...,10\)</span></td>
+<td>cultivation arcs of period 8 (harvest in <span class="math inline">\(t\)</span>)</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\((9,10)\)</span></td>
+<td>—</td>
+<td>cultivation arc of period 9 (harvest in <span class="math inline">\(10\)</span>)</td>
+</tr>
+</tbody>
+</table>
+<p>If establishment occurs in period 3 and harvests in periods 6 and 10,
+the following variables would be active:</p>
+<ul>
+<li><span class="math inline">\(z_{i,0,3}=1\)</span>
+(establishment),</li>
+<li><span class="math inline">\(z_{i,3,6}=1\)</span> (harvest in 6 with
+establishment in 3),</li>
+<li><span class="math inline">\(z_{i,6,10}=1\)</span> (harvest in 10
+with predecessor in 6),</li>
+<li><span class="math inline">\(z_{i,10,11}=1\)</span> (last harvest in
+10),and</li>
+<li><span class="math inline">\(z_{ist}=0\)</span> for all <span class="math inline">\((s,t) \in \mathcal{S}\)</span></li>
+</ul>
+<p>Constraints C1 and C2 read like this</p>
+<ul>
+<li>C1: <span class="math inline">\(\sum_{t=1}^{10} z_{i,0,t} \leq
+1\)</span> (at most one establishment) <span class="math inline">\(\rightarrow\)</span> as <span class="math inline">\(z_{i,0,3}=1\)</span> it follows that <span class="math inline">\(z_{i,0,t}=0\)</span> for all <span class="math inline">\(t \neq 3\)</span>.</li>
+<li>C2_1: <span class="math inline">\(z_{i,0,1} = \sum_{u \in
+2,...,6,11} z_{i,1,u}\)</span> (if there is establishment in 1, there
+must be an harvest in <span class="math inline">\(u\)</span> or closing)
+<span class="math inline">\(\rightarrow\)</span> as <span class="math inline">\(z_{i,0,1}=0\)</span>, <span class="math inline">\(\sum_{u\in 2,...,6,11} z_{i,1,u} =
+0\)</span>.</li>
+<li>C2_2: <span class="math inline">\(z_{i,0,2} + z_{i,1,2} = \sum_{u
+\in 3,...,7,11} z_{i,2,u}\)</span> (if there is establishment or harvest
+in 2, there must be an harvest in <span class="math inline">\(u\)</span>
+or closing) <span class="math inline">\(\rightarrow\)</span> as <span class="math inline">\(z_{i,0,2}=z_{i,1,2}=0\)</span>, <span class="math inline">\(\sum_{u\in 3,...,7,11} z_{i,3,u} = 0\)</span></li>
+<li>C2_3: <span class="math inline">\(z_{i,0,3} + z_{i,1,3} + z_{i,2,3}
+= \sum_{u \in 4,...,8,11} z_{i,3,u}\)</span> (if there is establishment
+or harvest in 3, there must be an harvest in <span class="math inline">\(u\)</span> or closing) <span class="math inline">\(\rightarrow\)</span> as <span class="math inline">\(z_{i,0,3}=1\)</span> and <span class="math inline">\(z_{i,1,3}=z_{i,2,3}=0\)</span>, <span class="math inline">\(\sum_{u\in 4,...,8,11} z_{i,3,u} = 1\)</span>
+<span class="math inline">\(\rightarrow\)</span> as <span class="math inline">\(z_{i,3,6}=1\)</span>, it follows that <span class="math inline">\(z_{i,3,u}=0\)</span> for all <span class="math inline">\(u \neq 6\)</span>.</li>
+<li>C2_4: <span class="math inline">\(z_{i,0,4} + z_{i,1,4} + z_{i,2,4}
++ z_{i,3,4} = \sum_{u \in 5,...,9,11} z_{i,4,u}\)</span> (if there is
+establishment or harvest in 4, there must be an harvest in <span class="math inline">\(u\)</span> or closing) <span class="math inline">\(\rightarrow\)</span> as <span class="math inline">\(z_{i,0,4} + z_{i,1,4} + z_{i,2,4} + z_{i,3,4}
+=0\)</span>, it follows that <span class="math inline">\(\sum_{u \in
+5,...,9,11} z_{i,4,u}=0\)</span>.</li>
+<li>and so on</li>
+</ul>
 <hr />
 </div>
 <div id="decision-variables" class="section level1">
@@ -1823,9 +1935,9 @@ z_{i0t} &amp;&amp; \text{Establishment} \\
 <div id="constraint-set-2-path-connectivity" class="section level2">
 <h2>Constraint Set 2: Path connectivity</h2>
 <p><span class="math display">\[\begin{align}
-\sum_{s = 0| (s,t) \in \mathcal{S}}^{t} z_{ist} &amp;= \sum_{u = t+1|
-(s,t) \in \mathcal{S}}^{T_{max}+1} z_{itu} &amp; \forall i \in
-\mathcal{I}, t \in \mathcal{T} \tag{C2}
+\sum_{ (s,t) \in \mathcal{S}} z_{ist} &amp;= \sum_{(t,u) \in
+\mathcal{S}} z_{itu} &amp; \forall i \in \mathcal{I}, t \in \mathcal{T}
+\tag{C2}
 \end{align}\]</span></p>
 <p><strong>Interpretation:</strong> If there is a harvest in <span class="math inline">\(t\)</span>, there must be an predecessor in <span class="math inline">\(s&lt;t\)</span> and successor in <span class="math inline">\(u&gt;t\)</span>.</p>
 <hr />
