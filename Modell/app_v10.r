@@ -388,7 +388,17 @@ ui <- dashboardPage(
             )
           )
         ),
-        
+        # instance size
+        fluidRow(
+          box(
+            width = 12,
+            title = "Instance Size",
+            status = "info",
+            solidHeader = TRUE,
+            helpText("Number of production sites, pretreatment facilities, and consumer facilities in the current instance."),
+            textOutput("instance_size")
+          )
+        ),
         # --- FACILITIES DATA (MOVED FROM TAB 2) ---
         fluidRow(
           column(
@@ -1000,10 +1010,10 @@ server <- function(input, output, session) {
       
       # aggregate flows over time
       flows_df_ij <- flows_df_ij %>%
-        group_by(i, j, p) %>%
+        group_by(i, j) %>%
         summarise(volume = sum(value), .groups = "drop")
       flows_df_jk <- flows_df_jk %>%
-        group_by(j, k, p) %>%
+        group_by(j, k) %>%
         summarise(volume = sum(value), .groups = "drop")
       
       # Get flow coordinates raw biomass
@@ -1036,11 +1046,17 @@ server <- function(input, output, session) {
           by = c("k" = "consumer_id")
         )
       
+      #browser()
+      
       # raw biomass flows
       for (idx in seq_len(nrow(flows_geom_ij))) {
+        
+        print(paste(idx, "of", nrow(flows_geom_ij)))
+        
         flow <- flows_geom_ij[idx, ]
         if (!is.na(flow$from_lat) && !is.na(flow$to_lat)) {
-          color  <- c("red", "blue", "green")[flow$p]
+          #color  <- c("red", "blue", "green")[flow$p]
+          color  <- c("blue")
           weight <- 1
           route  <- calculate_route_info(
             src_lat = flow$from_lat,
@@ -1056,8 +1072,8 @@ server <- function(input, output, session) {
             opacity = 0.8,
             popup  = paste0(
               "Raw Biomass Flow\n",
-              "Volume: ", round(flow$volume, 0), " t\n",
-              "Product: ", flow$p
+              "Volume: ", round(flow$volume, 0), " t\n"#,
+              #"Product: ", flow$p
             ),
             group = "Raw Biomass Flows"
           )
@@ -1066,9 +1082,13 @@ server <- function(input, output, session) {
       
       # pre-treated biomass flows
       for (idx in seq_len(nrow(flows_geom_jk))) {
+        
+        print(paste(idx, "of", nrow(flows_geom_jk)))
+        
         flow <- flows_geom_jk[idx, ]
         if (!is.na(flow$from_lat) && !is.na(flow$to_lat)) {
-          color  <- c("darkred", "darkblue", "darkgreen")[flow$p]
+          #color  <- c("darkred", "darkblue", "darkgreen")[flow$p]
+          color <- c("darkblue")
           weight <- 1
           route  <- calculate_route_info(
             src_lat = flow$from_lat,
@@ -1084,8 +1104,8 @@ server <- function(input, output, session) {
             opacity = 0.8,
             popup  = paste0(
               "Processed Biomass Flow\n",
-              "Volume: ", round(flow$volume, 0), " t\n",
-              "Product: ", flow$p
+              "Volume: ", round(flow$volume, 0), " t\n"#,
+             # "Product: ", flow$p
             ),
             group = "Processed Biomass Flows"
           )
@@ -1104,6 +1124,25 @@ server <- function(input, output, session) {
   })
   
   # Output text displays
+  output$instance_size <- renderText({
+    if (is.null(base_data()$sites) || is.null(user_data$consumers) || is.null(user_data$storages)) {
+      "—"
+    } else {
+      
+      current_sites <- isolate(base_data()$sites)
+      current_storages <- isolate(user_data$storages)
+      current_consumers <- isolate(user_data$consumers)
+      
+      
+      paste0(
+        nrow(current_sites), " production sites, ",
+        nrow(current_storages), " pretreatment facilities, ",
+        nrow(current_consumers), " consumer facilities"
+      )
+    }
+  })
+  
+  
   output$status_text <- renderText({ results$status })
   
   output$objective_value <- renderText({

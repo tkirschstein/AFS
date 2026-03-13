@@ -72,7 +72,7 @@ Constraints C1 and C2 read like this
 * C2_2: $z_{i,0,2} + z_{i,1,2} = \sum_{u \in 3,...,7,11} z_{i,2,u}$ (if there is establishment or harvest in 2, there must be an harvest in $u$ or closing) $\rightarrow$ as $z_{i,0,2}=z_{i,1,2}=0$, $\sum_{u\in 3,...,7,11} z_{i,3,u} = 0$
 * C2_3: $z_{i,0,3} + z_{i,1,3} + z_{i,2,3} = \sum_{u \in 4,...,8,11} z_{i,3,u}$ (if there is establishment or harvest in 3, there must be an harvest in $u$ or closing) $\rightarrow$ as $z_{i,0,3}=1$ and $z_{i,1,3}=z_{i,2,3}=0$, $\sum_{u\in 4,...,8,11} z_{i,3,u} = 1$ $\rightarrow$ as $z_{i,3,6}=1$, it follows that $z_{i,3,u}=0$ for all $u \neq 6$.
 * C2_4: $z_{i,0,4} + z_{i,1,4} + z_{i,2,4} + z_{i,3,4} = \sum_{u \in 5,...,9,11} z_{i,4,u}$ (if there is establishment or harvest in 4, there must be an harvest in $u$ or closing) $\rightarrow$ as $z_{i,0,4} + z_{i,1,4} + z_{i,2,4} + z_{i,3,4} =0$, it follows that $\sum_{u \in 5,...,9,11} z_{i,4,u}=0$.
-* and so on
+* and so on opjas
 
 
 ---
