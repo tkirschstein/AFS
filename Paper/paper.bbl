@@ -1,0 +1,168 @@
+\begin{thebibliography}{16}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Arabi et~al.(2019)Arabi, Yaghoubi, and
+  Tajik]{Arabi2019_Microalgae_Biobutanol_SC}
+Mahsa Arabi, Saeed Yaghoubi, and Javad Tajik.
+\newblock A mathematical model for microalgae-based biobutanol supply chain
+  network design under harvesting and drying uncertainties.
+\newblock \emph{Energy}, 179:\penalty0 1004--1016, 2019.
+\newblock ISSN 0360-5442.
+\newblock \doi{10.1016/j.energy.2019.04.219}.
+
+\bibitem[De~Meyer et~al.(2015)De~Meyer, Cattrysse, Rasinm{\"a}ki, and
+  Van~Orshoven]{DeMeyer2015_OPTIMASS}
+Annelies De~Meyer, Dirk Cattrysse, Jussi Rasinm{\"a}ki, and Jos Van~Orshoven.
+\newblock A generic mathematical model to optimise strategic and tactical
+  decisions in biomass-based supply chains (optimass).
+\newblock \emph{European Journal of Operational Research}, 245\penalty0
+  (1):\penalty0 247--264, 2015.
+\newblock ISSN 0377-2217.
+\newblock \doi{10.1016/j.ejor.2015.02.042}.
+\newblock URL
+  \url{https://www.sciencedirect.com/science/article/pii/S0377221715001654}.
+
+\bibitem[De~Meyer et~al.(2016)De~Meyer, Cattrysse, Rasinm{\"a}ki, and
+  Van~Orshoven]{DeMeyer2016_tOPTIMASS}
+Annelies De~Meyer, Dirk Cattrysse, Jussi Rasinm{\"a}ki, and Jos Van~Orshoven.
+\newblock Considering biomass growth and regeneration in the optimisation of
+  biomass supply chains.
+\newblock \emph{Renewable Energy}, 87:\penalty0 990--1002, 2016.
+\newblock ISSN 0960-1481.
+\newblock \doi{10.1016/j.renene.2015.09.038}.
+\newblock URL
+  \url{https://www.sciencedirect.com/science/article/pii/S0960148115301397}.
+
+\bibitem[Eksioglu et~al.(2009)Eksioglu, Acharya, Leightley, and
+  Arora]{Eksioglu2009_Biorefinery_SC}
+Sandra~D. Eksioglu, Ambarish Acharya, Liam~E. Leightley, and Sumesh Arora.
+\newblock Analyzing the design and management of biomass-to-biorefinery supply
+  chain.
+\newblock \emph{Computers \& Industrial Engineering}, 57\penalty0 (4):\penalty0
+  1342--1352, 2009.
+\newblock ISSN 0360-8352.
+\newblock \doi{10.1016/j.cie.2009.07.003}.
+
+\bibitem[Espinoza et~al.(2017)Espinoza, Chejne, Ponce-Ortega, and
+  N{\'a}poles-Rivera]{Espinoza2017_Biorefinery_SC_review}
+Diego Espinoza, Farid Chejne, Jos{\'e}~M. Ponce-Ortega, and Francisco
+  N{\'a}poles-Rivera.
+\newblock Sustainable biorefinery supply chain design and management: A review.
+\newblock \emph{Bioresource Technology}, 243:\penalty0 1223--1235, 2017.
+\newblock ISSN 0960-8524.
+\newblock \doi{10.1016/j.biortech.2017.07.089}.
+
+\bibitem[Huber et~al.(2016)Huber, May, and
+  H{\"u}lsbergen]{Huber2016_Allometric_SRAFS}
+Julia~A. Huber, Katharina May, and Kurt-J{\"u}rgen H{\"u}lsbergen.
+\newblock Allometric tree biomass models of various species grown in
+  short-rotation agroforestry systems.
+\newblock \emph{European Journal of Forest Research}, 135\penalty0
+  (2):\penalty0 283--296, 2016.
+\newblock ISSN 1612-4669.
+\newblock \doi{10.1007/s10342-015-0932-5}.
+
+\bibitem[Huber et~al.(2018)Huber, Matiu, and
+  H{\"u}lsbergen]{Huber2018_SRAFS_growth}
+Julia~A. Huber, Michael Matiu, and Kurt-J{\"u}rgen H{\"u}lsbergen.
+\newblock First-rotation growth and stand structure dynamics of tree species in
+  organic and conventional short-rotation agroforestry systems.
+\newblock \emph{Heliyon}, 4\penalty0 (7):\penalty0 e00645, 2018.
+\newblock ISSN 2405-8440.
+\newblock \doi{10.1016/j.heliyon.2018.e00645}.
+\newblock URL
+  \url{https://www.sciencedirect.com/science/article/pii/S2405844017334904}.
+
+\bibitem[Lamers et~al.(2015)Lamers, Hamelinck, Junginger, and
+  Faaij]{Lamers2015_Feedstock_Design}
+Patrick Lamers, Carlo Hamelinck, Martin Junginger, and Andr{\'e} Faaij.
+\newblock Strategic supply system design for biomass-based production chains: A
+  review of supply chain models and optimization approaches.
+\newblock \emph{Biofuels, Bioproducts and Biorefining}, 9\penalty0
+  (6):\penalty0 772--790, 2015.
+\newblock ISSN 1932-104X.
+\newblock \doi{10.1002/bbb.1573}.
+
+\bibitem[Mansoornejad et~al.(2013)Mansoornejad, Chambost, and
+  Stuart]{Mansoornejad2013_Forest_Biorefinery_SC}
+Behzad Mansoornejad, Virginie Chambost, and Paul Stuart.
+\newblock Multi-period optimization of forest biorefinery supply chains
+  integrating bioenergy and biofuels production.
+\newblock \emph{Chemical Engineering Research and Design}, 91\penalty0
+  (8):\penalty0 1454--1468, 2013.
+\newblock ISSN 0263-8762.
+\newblock \doi{10.1016/j.cherd.2013.02.009}.
+
+\bibitem[Nair(1993)]{Nair1993_IntroAgroforestry}
+P.~K.~Ramachandran Nair.
+\newblock \emph{An Introduction to Agroforestry}.
+\newblock Kluwer Academic Publishers, Dordrecht, 1993.
+\newblock ISBN 978-0792321347.
+
+\bibitem[Niemczyk et~al.(2021)Niemczyk, Stolarski, Krzy{\.z}aniak,
+  et~al.]{Niemczyk2021_Poplar_Rotation}
+Marzena Niemczyk, Mariusz~J. Stolarski, Marta Krzy{\.z}aniak, et~al.
+\newblock The effects of cultivar and rotation length (5 vs. 10 years) on
+  biomass production and sustainability of poplar (populus spp.) bioenergy
+  plantation.
+\newblock \emph{GCB Bioenergy}, 13:\penalty0 999--1014, 2021.
+\newblock \doi{10.1111/gcbb.12827}.
+
+\bibitem[Sharma et~al.(2013)Sharma, Ingalls, Jones, and
+  Khanchi]{Sharma2013_BSC_review}
+B.~Sharma, R.~G. Ingalls, C.~L. Jones, and A.~Khanchi.
+\newblock A review of biomass supply chain management studies in the context of
+  bioenergy production.
+\newblock \emph{Biomass and Bioenergy}, 56:\penalty0 147--158, 2013.
+\newblock ISSN 0961-9534.
+\newblock \doi{10.1016/j.biombioe.2013.04.005}.
+
+\bibitem[Testa et~al.(2014)Testa, Di~Trapani, Foder{\`a}, Sgroi, and
+  Tudisca]{Testa2014_Poplar_Economics}
+Riccardo Testa, Anna~Maria Di~Trapani, Mario Foder{\`a}, Filippo Sgroi, and
+  Salvatore Tudisca.
+\newblock Economic evaluation of introduction of poplar as biomass crop in
+  italy.
+\newblock \emph{Renewable and Sustainable Energy Reviews}, 38:\penalty0
+  775--780, 2014.
+\newblock ISSN 1364-0321.
+\newblock \doi{10.1016/j.rser.2014.07.054}.
+\newblock URL
+  \url{https://www.sciencedirect.com/science/article/pii/S1364032114005473}.
+
+\bibitem[Toensmeier(2017)]{Toensmeier2017_Carbon_Agroforestry}
+Eric Toensmeier.
+\newblock Perennial staple crops and agroforestry for climate change
+  mitigation.
+\newblock In Florencia Montagnini, editor, \emph{Integrating Landscapes:
+  Agroforestry for Biodiversity Conservation and Food Sovereignty}, volume~12
+  of \emph{Advances in Agroforestry}, pages 431--453. Springer, Cham, 2017.
+\newblock \doi{10.1007/978-3-319-69371-2_18}.
+
+\bibitem[Trnka et~al.(2008)Trnka, Fialov{\'a}, Kouteck{\'y}, Fajman,
+  {\v{S}}alud, and Hejduk]{Trnka2008_Poplar_SRF}
+Miroslav Trnka, J.~Fialov{\'a}, V.~Kouteck{\'y}, M.~Fajman, Z.~{\v{S}}alud, and
+  S.~Hejduk.
+\newblock Biomass production and survival rates of selected poplar clones grown
+  under a short-rotation system on arable land.
+\newblock \emph{Plant, Soil and Environment}, 54\penalty0 (2):\penalty0 78--88,
+  2008.
+\newblock ISSN 1214-1178.
+\newblock URL
+  \url{https://www.agriculturejournals.cz/web/pse.htm?type=article&id=419_2007-PSE}.
+
+\bibitem[Zahraee et~al.(2019)Zahraee, Bahrami, Baghery, and
+  Ahmadi]{Zahraee2020_BSC_review}
+Seyed~Mohammad Zahraee, Bijan Bahrami, Mehdi Baghery, and Arash Ahmadi.
+\newblock A comprehensive review of biomass supply chain modelling and
+  optimisation.
+\newblock \emph{Renewable and Sustainable Energy Reviews}, 110:\penalty0 1--19,
+  2019.
+\newblock ISSN 1364-0321.
+\newblock \doi{10.1016/j.rser.2019.04.071}.
+
+\end{thebibliography}
