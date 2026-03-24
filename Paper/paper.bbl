@@ -77,15 +77,14 @@ Julia~A. Huber, Michael Matiu, and Kurt-J{\"u}rgen H{\"u}lsbergen.
 \newblock URL
   \url{https://www.sciencedirect.com/science/article/pii/S2405844017334904}.
 
-\bibitem[Lamers et~al.(2015)Lamers, Hamelinck, Junginger, and
-  Faaij]{Lamers2015_Feedstock_Design}
-Patrick Lamers, Carlo Hamelinck, Martin Junginger, and Andr{\'e} Faaij.
-\newblock Strategic supply system design for biomass-based production chains: A
-  review of supply chain models and optimization approaches.
+\bibitem[Lamers et~al.(2015)Lamers, Tan, Searcy, Scarlata, Cafferty, and
+  Jacobson]{Lamers2015_Feedstock_Design}
+Patrick Lamers, Eric Tan, Erin Searcy, Christopher Scarlata, Kara Cafferty, and
+  Jacob Jacobson.
+\newblock Strategic supply system design – a holistic evaluation of
+  operational and production cost for a biorefinery supply chain.
 \newblock \emph{Biofuels, Bioproducts and Biorefining}, 9\penalty0
-  (6):\penalty0 772--790, 2015.
-\newblock ISSN 1932-104X.
-\newblock \doi{10.1002/bbb.1573}.
+  (6):\penalty0 648--660, 2015.
 
 \bibitem[Mansoornejad et~al.(2013)Mansoornejad, Chambost, and
   Stuart]{Mansoornejad2013_Forest_Biorefinery_SC}

@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  24 MAR 2026 14:36
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  24 MAR 2026 16:39
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -659,29 +659,23 @@ Overfull \hbox (2.22pt too wide) has occurred while \output is active
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\<def>-command' on input line 120.
+(hyperref)                removing `\<def>-command' on input line 125.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\cnotenum' on input line 120.
+(hyperref)                removing `\cnotenum' on input line 125.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\<def>-command' on input line 120.
+(hyperref)                removing `\<def>-command' on input line 125.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\@corref' on input line 120.
+(hyperref)                removing `\@corref' on input line 125.
 
 [1
 
 ]
-Overfull \hbox (4.38002pt too wide) in paragraph at lines 140--157
-[]\TU/lmr/m/n/10 Short-rotation agroforestry systems exhibit pronounced tempora
-l variability in biomass
- []
-
-
 
 [2]
 
@@ -692,7 +686,7 @@ l variability in biomass
 [5]
 
 [6]
-Overfull \hbox (4.00403pt too wide) in paragraph at lines 374--380
+Overfull \hbox (4.00403pt too wide) in paragraph at lines 367--373
 []\TU/lmr/m/n/10 For illustration, we parameterize three stylized poplar curves
  representing low, medium,
  []
@@ -703,12 +697,12 @@ Overfull \hbox (4.00403pt too wide) in paragraph at lines 374--380
 File: figures/max3-growth-1.pdf Graphic file (type pdf)
 <use figures/max3-growth-1.pdf>
 
-Overfull \hbox (72.70511pt too wide) in paragraph at lines 410--411
+Overfull \hbox (72.70511pt too wide) in paragraph at lines 403--404
  [][] 
  []
 
 
-Overfull \hbox (9.94202pt too wide) in paragraph at lines 420--433
+Overfull \hbox (9.94202pt too wide) in paragraph at lines 413--426
 []\TU/lmr/m/n/10 From a cleaner production perspective, cascading use of biomas
 s—prioritising high‑value
  []
@@ -722,20 +716,21 @@ s—prioritising high‑value
 [10]
 
 Package natbib Warning: Citation `Spinelli2009_SRC_Harvesting' on page 11 undef
-ined on input line 561.
+ined on input line 554.
 
 
 
 [11]
 
+Package natbib Warning: Citation `Spinelli2009_SRC_Harvesting' on page 12 undef
+ined on input line 620.
+
+
+
 [12]
 
 Package natbib Warning: Citation `Spinelli2009_SRC_Harvesting' on page 13 undef
 ined on input line 627.
-
-
-Package natbib Warning: Citation `Spinelli2009_SRC_Harvesting' on page 13 undef
-ined on input line 634.
 
 
 
@@ -764,7 +759,7 @@ Package rerunfilecheck Info: File `paper.out' has not changed.
 Here is how much of TeX's memory you used:
  19071 strings out of 403246
  347564 string characters out of 5460781
- 815112 words of memory out of 5000000
+ 815126 words of memory out of 5000000
  47289 multiletter control sequences out of 15000+600000
  650553 words of font info for 81 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
