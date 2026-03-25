@@ -45,7 +45,7 @@ REGION_BUNDESLAENDER <- c("Sachsen-Anhalt", "Thüringen", "Sachsen")
 
 # ZIELREGION Landkreise (Süd-Sachsen-Anhalt)
 ZIEL_LANDKREISE <- c("Burgenlandkreis", "Saalekreis", "Mansfeld-Südharz",
-                     "Wittenberg", "Anhalt-Bitterfeld", "Halle (Saale)")
+                     "Wittenberg", "Anhalt-Bitterfeld", "Halle (Saale)","Kyffhäuserkreis", "Sömmerda", "Weimarer Land", "Saale-Holzland-Kreis", "Landkreis Leipzig", "Nordsachsen")
 
 # Stromerzeuger: Region + in Betrieb
 strom_region <- strom_raw %>%
@@ -55,7 +55,7 @@ strom_region <- strom_raw %>%
   ) %>%
   mutate(
     lat = as.numeric(str_replace(`Koordinate: Breitengrad (WGS84)`, ",", ".")),
-    lng = as.numeric(str_replace(`Koordinate: L\u00e4ngengrad (WGS84)`, ",", ".")),
+    lng = as.numeric(str_replace(`Koordinate: Längengrad (WGS84)`, ",", ".")),
     kW  = as.numeric(str_replace(`Bruttoleistung der Einheit`, ",", "."))
   )
 
@@ -67,7 +67,7 @@ gas_region <- gas_raw %>%
   ) %>%
   mutate(
     lat    = as.numeric(str_replace(`Koordinate: Breitengrad (WGS84)`, ",", ".")),
-    lng    = as.numeric(str_replace(`Koordinate: L\u00e4ngengrad (WGS84)`, ",", ".")),
+    lng    = as.numeric(str_replace(`Koordinate: Längengrad (WGS84)`, ",", ".")),
     kWh_h  = as.numeric(str_replace(`Erzeugungsleistung in kWh/h`, ",", "."))
   )
 
@@ -140,9 +140,8 @@ cat("  → Relevant als P1-Konsument (Stroh-Cellulose, kein direktes AFS-Holz)\n
 # Aggregation: Biogas-BHKW nach Gemeinde (Cluster, max. 5 km)
 # Vereinfacht: nach Landkreis aggregiert als "virtueller Consumer"
 agg_by_lk <- biogas_ziel %>%
-  group_by(Landkreis, Bundesland) %>%
+  group_by(Postleitzahl) %>%
   summarise(
-    name       = paste0("Biogas-Cluster ", Landkreis),
     lat        = mean(lat, na.rm = TRUE),
     lng        = mean(lng, na.rm = TRUE),
     n_anlagen  = n(),
@@ -151,6 +150,7 @@ agg_by_lk <- biogas_ziel %>%
     .groups = "drop"
   ) %>%
   mutate(
+    name       = paste0("Biogas-Cluster ", Postleitzahl),
     demand_P1_kt = 0,
     demand_P2_kt = 0,
     P1 = 0, P2 = 0, P3 = 35  # €/t Hackschnitzel am Werkstor
