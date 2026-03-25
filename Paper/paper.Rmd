@@ -72,6 +72,37 @@ gomp <- function(t, A, k, t0) {
 
 ```
 
+```{r load-model-data, echo=FALSE, message=FALSE, warning=FALSE}
+library(sf)
+library(leaflet)
+library(osrm)
+library(ompr)
+library(ompr.roi)
+library(ROI.plugin.glpk)
+# gurobi
+library(gurobi)
+library(ROI.plugin.gurobi)
+
+# Modell-Hilfsfunktionen laden
+source("../Modell/!helper_func.r")
+source("../Modell/!helper_instance_builder_v8a.R")
+source("../Modell/build_agroforestry_lp_v10.R")
+
+# Basisdaten laden (Sites, Storages, Consumers, Distanzmatrizen)
+load("../Modell/!base_data.rdata")
+
+# Yield-Tabelle aus Chapman-Richards ableiten (3 Produkte)
+yields_by_age <- expand_grid(product = 1:3, age = 1:15) %>%
+  mutate(
+    B_total = B_cr(age, 
+                   Bmax = c(80,120,160)[product], 
+                   k   = c(0.18, 0.20, 0.22)[product],
+                   m   = c(1.1, 1.2, 1.3)[product]),
+    # Produktfraktionen: chemisch 20%, Zellstoff 35%, Energie 45%
+    yield_ha = B_total * c(0.20, 0.35, 0.45)[product]
+  )
+```
+
 # Introduction
 
 Agroforestry systems that integrate trees with agricultural crops (silvoarable systems) are increasingly recognised as a promising land-use option to reconcile climate mitigation, biodiversity conservation, and rural income generation on the same hectare of land [@Toensmeier2017_Carbon_Agroforestry]. Temperate agroforestry systems (AFS) based on fast-growing species such as poplar, willow, alder, and black locust can deliver substantial biomass yields while improving soil quality and providing multiple ecosystem services compared to conventional monocultures [@Huber2018_SRAFS_growth]. Biomasses produced in AFS is considered as a sustainable feedstock and can be used either energetically, chemically or materially (e.g. in the building sector). The latter two options are generally preferred over the energetic usage from a cleaner production perspective as biogenic carbon is stored in products during their life span which contributes to climate change mitigation. 
