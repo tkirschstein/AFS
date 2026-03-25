@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  24 MAR 2026 16:56
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  25 MAR 2026 20:02
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -678,6 +678,9 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 ]
 
 [2]
+File: figures/fig-supply-chain-network-1.pdf Graphic file (type pdf)
+<use figures/fig-supply-chain-network-1.pdf>
+
 
 [3]
 
@@ -686,69 +689,71 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 [5]
 
 [6]
-Overfull \hbox (4.00403pt too wide) in paragraph at lines 367--373
+
+[7]
+Overfull \hbox (4.00403pt too wide) in paragraph at lines 376--382
 []\TU/lmr/m/n/10 For illustration, we parameterize three stylized poplar curves
  representing low, medium,
  []
 
 
 
-[7]
+[8]
 File: figures/max3-growth-1.pdf Graphic file (type pdf)
 <use figures/max3-growth-1.pdf>
 
-Overfull \hbox (72.70511pt too wide) in paragraph at lines 403--404
+Overfull \hbox (72.70511pt too wide) in paragraph at lines 412--413
  [][] 
  []
 
 
-Overfull \hbox (9.94202pt too wide) in paragraph at lines 413--426
+Overfull \hbox (9.94202pt too wide) in paragraph at lines 422--435
 []\TU/lmr/m/n/10 From a cleaner production perspective, cascading use of biomas
 s—prioritising high‑value
  []
 
 
 
-[8]
-
 [9]
 
 [10]
 
-Package natbib Warning: Citation `Spinelli2009_SRC_Harvesting' on page 11 undef
-ined on input line 554.
-
-
-
 [11]
 
 Package natbib Warning: Citation `Spinelli2009_SRC_Harvesting' on page 12 undef
-ined on input line 620.
+ined on input line 563.
 
 
 
 [12]
 
 Package natbib Warning: Citation `Spinelli2009_SRC_Harvesting' on page 13 undef
-ined on input line 627.
+ined on input line 629.
 
 
 
 [13]
 
+Package natbib Warning: Citation `Spinelli2009_SRC_Harvesting' on page 14 undef
+ined on input line 636.
+
+
+
 [14]
 
 [15]
 
-[16] (paper.bbl
+[16]
 
-[17])
+[17] (paper.bbl
+
+[18])
 
 Package natbib Warning: There were undefined citations.
 
 
 
-[18] (paper.aux)
+[19] (paper.aux)
  ***********
 LaTeX2e <2025-06-01> patch level 1
 L3 programming layer <2025-09-02>
@@ -757,12 +762,12 @@ Package rerunfilecheck Info: File `paper.out' has not changed.
 (rerunfilecheck)             Checksum: 510553930E87C393025FC5D781B55ECC;1873.
  ) 
 Here is how much of TeX's memory you used:
- 19071 strings out of 403246
- 347564 string characters out of 5460781
- 815126 words of memory out of 5000000
- 47289 multiletter control sequences out of 15000+600000
+ 19083 strings out of 403246
+ 348072 string characters out of 5460781
+ 815439 words of memory out of 5000000
+ 47300 multiletter control sequences out of 15000+600000
  650553 words of font info for 81 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  72i,10n,79p,1004b,525s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on paper.pdf (18 pages).
+Output written on paper.pdf (19 pages).

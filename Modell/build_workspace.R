@@ -52,13 +52,13 @@ cat("[1/5] Lade !base_data.rdata ...\n")
 load("!base_data.rdata")
 
 # Kleine Feldblöcke ausfiltern (< 10 ha, analog app_v10.r Zeile 38/39)
-data_fb_filtered   <- data_fb_filtered   %>% filter(area >= 10)
-fb_zentroide_wgs84 <- fb_zentroide_wgs84 %>% filter(area >= 10)
+data_fb_filtered   <- data_fb_filtered   %>% filter(area >= 0)
+fb_zentroide_wgs84 <- fb_zentroide_wgs84 %>% filter(area >= 0)
 
 # Nur Ackerflächen (HBN == "AL" = Ackerland), falls Spalte vorhanden
 if ("HBN" %in% colnames(data_fb_filtered) && "AL" %in% unique(data_fb_filtered$HBN)) {
   data_fb_filtered   <- data_fb_filtered   %>% filter(HBN == "AL")
-  fb_zentroide_wgs84 <- fb_zentroide_wgs84 %>% filter(area >= 10)
+  fb_zentroide_wgs84 <- fb_zentroide_wgs84 %>% filter(area >= 0)
   cat("   → Ackerflächen (HBN=AL) gefiltert\n")
 }
 
@@ -190,7 +190,7 @@ KOEFF_BIOGAS <- 8760 * 0.70 / (0.30 * 4000 * 1000)
 
 # Aggregierung nach Landkreis → virtuelle Cluster-Consumer
 mastr_biogas_consumers <- strom_region %>%
-  group_by(Landkreis, Bundesland) %>%
+  group_by(Postleitzahl) %>%
   summarise(
     lat          = mean(lat, na.rm = TRUE),
     lng          = mean(lng, na.rm = TRUE),
@@ -199,7 +199,7 @@ mastr_biogas_consumers <- strom_region %>%
     .groups = "drop"
   ) %>%
   mutate(
-    name         = paste0("Biogas-Cluster ", Landkreis),
+    name         = paste0("Biogas-Cluster ", Postleitzahl),
     # P3: Holz-Kosubstrat-Potenzial (8% des Energieeinsatzes)
     demand_P1    = 0,
     demand_P2    = 0,

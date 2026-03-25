@@ -19,7 +19,7 @@
 
 suppressPackageStartupMessages({
   library(leaflet)
-  library(leaflet.extras)
+  #library(leaflet.extras)
   library(sf)
   library(dplyr)
   library(htmltools)
