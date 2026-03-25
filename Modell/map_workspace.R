@@ -15,14 +15,25 @@
 #
 # Konsistent mit app_v10.r:
 #   Farben/Radius/Popups analog zum Shiny-Map-Output
+#
+# Paketabhängigkeiten:
+#   leaflet          -- CRAN (stabil)
+#   leaflet.extras2  -- CRAN (stabil, Nachfolger von leaflet.extras)
+#   sf, dplyr, htmltools -- CRAN
+#
+# HINWEIS: leaflet.extras wurde im August 2024 von CRAN entfernt.
+#   Workaround A (empfohlen): leaflet.extras2 aus CRAN
+#     install.packages("leaflet.extras2")
+#   Workaround B: Direkt von GitHub
+#     remotes::install_github("trafficonese/leaflet.extras")
 # ============================================================================
 
 suppressPackageStartupMessages({
   library(leaflet)
-  #library(leaflet.extras)
   library(sf)
   library(dplyr)
   library(htmltools)
+  library(leaflet.extras2)
 })
 
 # ============================================================================
@@ -57,7 +68,6 @@ COL_STORAGE_FILL  <- "#fd8d3c"   # orange
 COL_CONSUMER_P1   <- "#6a0dad"   # darkviolet  = Chemisch/Zellstoff
 COL_CONSUMER_P2   <- "#08519c"   # darkblue    = Pulp/Sägewerk
 COL_CONSUMER_P3   <- "#a50026"   # darkred     = Energie/Biogas
-COL_CONSUMER_MIX  <- "#4d004b"   # sehr dunkel = Misch-Consumer
 
 # Consumer-Farbe nach dominantem Produkttyp
 get_consumer_color <- function(p1, p2, p3) {
@@ -71,12 +81,10 @@ get_consumer_color <- function(p1, p2, p3) {
 
 consumers <- consumers %>%
   mutate(
-    color      = get_consumer_color(demand_P1, demand_P2, demand_P3),
+    color        = get_consumer_color(demand_P1, demand_P2, demand_P3),
     total_demand = demand_P1 + demand_P2 + demand_P3,
-    # Radius proportional zu log(Gesamtnachfrage), min 5, max 18
-    radius     = pmin(18, pmax(5, 5 + log1p(total_demand) * 1.8)),
-    # Consumer-Kategorie für Legende
-    kategorie  = dplyr::case_when(
+    radius       = pmin(18, pmax(5, 5 + log1p(total_demand) * 1.8)),
+    kategorie    = dplyr::case_when(
       demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "P1 Chemisch/Zellstoff",
       demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "P2 Pulp/Sägewerk",
       demand_P3 > 0 ~ "P3 Energie/Biogas",
@@ -84,7 +92,6 @@ consumers <- consumers %>%
     )
   )
 
-# Storages: Radius proportional zu log(CAP_proc)
 storages <- storages %>%
   mutate(
     color  = dplyr::if_else(type == "Hub", "#c05000", COL_STORAGE),
@@ -96,37 +103,30 @@ storages <- storages %>%
 # 2. POPUP-TEXTE
 # ============================================================================
 
-# Feldblock-Polygone
 site_polygon_popup <- paste0(
   "<b>Feldblock</b><br>",
   "Fläche: ", round(sites_sf$area, 1), " ha"
 )
 
-# Produktionsstandorte (Zentroide)
 site_point_popup <- paste0(
   "<b>", sites$name, "</b><br>",
   "Fläche: ", round(sites$area_ha, 1), " ha"
 )
 
-# Vorbehandlungsstandorte
 storage_popup <- paste0(
   "<b>", storages$name, "</b><br>",
   "Typ: ", storages$type, "<br>",
-  "Lagerkapazität: ", storages$CAP_stor, " t<br>",
+  "Lagerkapazität: ",       storages$CAP_stor, " t<br>",
   "Verarbeitungskapazität: ", storages$CAP_proc, " kt/Jahr"
 )
 
-# Verbrauchspunkte
 consumer_popup <- paste0(
   "<b>", consumers$name, "</b><br>",
-  "Kategorie: ", consumers$kategorie, "<br>",
-  "P1 Chemisch: ",  consumers$demand_P1, " kt/Jahr ",
-  " (", consumers$P1, " €/t)<br>",
-  "P2 Pulp/Säge: ", consumers$demand_P2, " kt/Jahr ",
-  " (", consumers$P2, " €/t)<br>",
-  "P3 Energie: ",   consumers$demand_P3, " kt/Jahr ",
-  " (", consumers$P3, " €/t)<br>",
-  "<b>Gesamt: ", round(consumers$total_demand, 1), " kt/Jahr</b>"
+  "Kategorie: ",    consumers$kategorie, "<br>",
+  "P1 Chemisch: ",  consumers$demand_P1, " kt/Jahr (", consumers$P1, " €/t)<br>",
+  "P2 Pulp/Säge: ", consumers$demand_P2, " kt/Jahr (", consumers$P2, " €/t)<br>",
+  "P3 Energie: ",   consumers$demand_P3, " kt/Jahr (", consumers$P3, " €/t)<br>",
+  "<b>Gesamt: ",    round(consumers$total_demand, 1), " kt/Jahr</b>"
 )
 
 # ============================================================================
@@ -134,152 +134,120 @@ consumer_popup <- paste0(
 # ============================================================================
 
 cat("Erstelle Leaflet-Karte ...\n")
-cat("  Feldblöcke: ", nrow(sites_sf), "Polygone\n")
-cat("  Zentroide:  ", nrow(sites),    "Punkte\n")
-cat("  Storages:   ", nrow(storages), "Standorte\n")
+cat("  Feldblöcke: ", nrow(sites_sf),  "Polygone\n")
+cat("  Zentroide:  ", nrow(sites),     "Punkte\n")
+cat("  Storages:   ", nrow(storages),  "Standorte\n")
 cat("  Consumers:  ", nrow(consumers), "Verbrauchsorte\n")
 
 afs_map <- leaflet(options = leafletOptions(preferCanvas = TRUE)) %>%
 
   # --- Basiskarten ---
-  addProviderTiles(
-    "CartoDB.Positron",
-    group = "CartoDB (hell)"
-  ) %>%
-  addProviderTiles(
-    "OpenStreetMap.DE",
-    group = "OpenStreetMap DE"
-  ) %>%
-  addProviderTiles(
-    "Esri.WorldImagery",
-    group = "Satellite"
-  ) %>%
+  addProviderTiles("CartoDB.Positron",  group = "CartoDB (hell)") %>%
+  addProviderTiles("OpenStreetMap.DE",  group = "OpenStreetMap DE") %>%
+  addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
 
-  # --- Ansicht: Zielregion Süd-Sachsen-Anhalt ---
   setView(lng = 11.85, lat = 51.55, zoom = 8) %>%
   addScaleBar(position = "bottomleft") %>%
 
   # -------------------------------------------------------
-  # LAYER 1: Feldblock-Polygone (KUP-Potenzialflächen)
+  # LAYER 1: Feldblock-Polygone
   # -------------------------------------------------------
   addPolygons(
-    data        = sites_sf,
-    color       = COL_SITES_BORDER,
-    weight      = 0.5,
-    fillColor   = COL_SITES_FILL,
-    fillOpacity = 0.35,
-    popup       = site_polygon_popup,
-    label       = ~paste0(round(area, 0), " ha"),
-    labelOptions = labelOptions(noHide = FALSE, textsize = "11px"),
-    group       = "Feldblöcke (Polygone)",
+    data             = sites_sf,
+    color            = COL_SITES_BORDER,
+    weight           = 0.5,
+    fillColor        = COL_SITES_FILL,
+    fillOpacity      = 0.35,
+    popup            = site_polygon_popup,
+    label            = ~paste0(round(area, 0), " ha"),
+    labelOptions     = labelOptions(noHide = FALSE, textsize = "11px"),
+    group            = "Feldblöcke (Polygone)",
     highlightOptions = highlightOptions(
       weight = 2, color = "#005a00", fillOpacity = 0.6, bringToFront = FALSE
     )
   ) %>%
 
   # -------------------------------------------------------
-  # LAYER 2: Feldblock-Zentroide (Produktionsstandorte)
+  # LAYER 2: Zentroide
   # -------------------------------------------------------
   addCircleMarkers(
     data        = sites,
-    lng         = ~lng,
-    lat         = ~lat,
+    lng         = ~lng, lat = ~lat,
     radius      = 3,
     color       = COL_SITES_BORDER,
     fillColor   = COL_SITES_FILL,
-    weight      = 1.5,
-    opacity     = 0.9,
-    fillOpacity = 0.7,
+    weight      = 1.5, opacity = 0.9, fillOpacity = 0.7,
     popup       = site_point_popup,
     group       = "Produktionsstandorte (Zentroide)"
   ) %>%
 
   # -------------------------------------------------------
-  # LAYER 3: Vorbehandlungsstandorte (Sägewerke + Hubs)
+  # LAYER 3: Vorbehandlung / Umschlag
   # -------------------------------------------------------
   addCircleMarkers(
-    data        = storages,
-    lng         = ~lng,
-    lat         = ~lat,
-    radius      = ~radius,
-    color       = ~color,
-    fillColor   = ~fill,
-    weight      = 2.5,
-    opacity     = 1.0,
-    fillOpacity = 0.85,
-    popup       = storage_popup,
-    label       = ~name,
+    data         = storages,
+    lng          = ~lng, lat = ~lat,
+    radius       = ~radius,
+    color        = ~color, fillColor = ~fill,
+    weight       = 2.5, opacity = 1.0, fillOpacity = 0.85,
+    popup        = storage_popup,
+    label        = ~name,
     labelOptions = labelOptions(noHide = FALSE, textsize = "12px", direction = "top"),
-    group       = "Vorbehandlung / Umschlag"
+    group        = "Vorbehandlung / Umschlag"
   ) %>%
 
   # -------------------------------------------------------
-  # LAYER 4a: Consumer P1 – Chemisch/Zellstoff
+  # LAYER 4a: P1 Chemisch/Zellstoff
   # -------------------------------------------------------
   addCircleMarkers(
     data        = consumers %>% filter(kategorie == "P1 Chemisch/Zellstoff"),
-    lng         = ~lng,
-    lat         = ~lat,
-    radius      = ~radius,
-    color       = COL_CONSUMER_P1,
-    fillColor   = COL_CONSUMER_P1,
-    weight      = 2.5,
-    opacity     = 1.0,
-    fillOpacity = 0.75,
-    popup       = ~paste0(
+    lng = ~lng, lat = ~lat, radius = ~radius,
+    color = COL_CONSUMER_P1, fillColor = COL_CONSUMER_P1,
+    weight = 2.5, opacity = 1.0, fillOpacity = 0.75,
+    popup = ~paste0(
       "<b>", name, "</b><br>Kategorie: ", kategorie, "<br>",
       "P1: ", demand_P1, " kt/Jahr (", P1, " €/t)<br>",
       "<b>Gesamt: ", round(total_demand, 1), " kt/Jahr</b>"
     ),
-    label       = ~name,
+    label = ~name,
     labelOptions = labelOptions(noHide = FALSE, textsize = "12px", direction = "top"),
-    group       = "P1 Chemisch / Zellstoff"
+    group = "P1 Chemisch / Zellstoff"
   ) %>%
 
   # -------------------------------------------------------
-  # LAYER 4b: Consumer P2 – Pulp/Sägewerk
+  # LAYER 4b: P2 Pulp/Sägewerk
   # -------------------------------------------------------
   addCircleMarkers(
     data        = consumers %>% filter(kategorie == "P2 Pulp/Sägewerk"),
-    lng         = ~lng,
-    lat         = ~lat,
-    radius      = ~radius,
-    color       = COL_CONSUMER_P2,
-    fillColor   = COL_CONSUMER_P2,
-    weight      = 2.5,
-    opacity     = 1.0,
-    fillOpacity = 0.75,
-    popup       = ~paste0(
+    lng = ~lng, lat = ~lat, radius = ~radius,
+    color = COL_CONSUMER_P2, fillColor = COL_CONSUMER_P2,
+    weight = 2.5, opacity = 1.0, fillOpacity = 0.75,
+    popup = ~paste0(
       "<b>", name, "</b><br>Kategorie: ", kategorie, "<br>",
       "P2: ", demand_P2, " kt/Jahr (", P2, " €/t)<br>",
       "<b>Gesamt: ", round(total_demand, 1), " kt/Jahr</b>"
     ),
-    label       = ~name,
+    label = ~name,
     labelOptions = labelOptions(noHide = FALSE, textsize = "12px", direction = "top"),
-    group       = "P2 Pulp / Sägewerk"
+    group = "P2 Pulp / Sägewerk"
   ) %>%
 
   # -------------------------------------------------------
-  # LAYER 4c: Consumer P3 – Energie/Biogas
+  # LAYER 4c: P3 Energie/Biogas
   # -------------------------------------------------------
   addCircleMarkers(
     data        = consumers %>% filter(kategorie == "P3 Energie/Biogas"),
-    lng         = ~lng,
-    lat         = ~lat,
-    radius      = ~radius,
-    color       = COL_CONSUMER_P3,
-    fillColor   = COL_CONSUMER_P3,
-    weight      = 2.5,
-    opacity     = 1.0,
-    fillOpacity = 0.75,
-    popup       = ~paste0(
+    lng = ~lng, lat = ~lat, radius = ~radius,
+    color = COL_CONSUMER_P3, fillColor = COL_CONSUMER_P3,
+    weight = 2.5, opacity = 1.0, fillOpacity = 0.75,
+    popup = ~paste0(
       "<b>", name, "</b><br>Kategorie: ", kategorie, "<br>",
       "P3: ", round(demand_P3, 1), " kt/Jahr (", P3, " €/t)<br>",
       "<b>Gesamt: ", round(total_demand, 1), " kt/Jahr</b>"
     ),
-    label       = ~name,
+    label = ~name,
     labelOptions = labelOptions(noHide = FALSE, textsize = "12px", direction = "top"),
-    group       = "P3 Energie / Biogas-BHKW"
+    group = "P3 Energie / Biogas-BHKW"
   ) %>%
 
   # -------------------------------------------------------
@@ -297,8 +265,8 @@ afs_map <- leaflet(options = leafletOptions(preferCanvas = TRUE)) %>%
       "P2 Pulp / Sägewerk",
       "P3 Energie / Biogas-BHKW"
     ),
-    opacity  = 0.85,
-    title    = HTML("<b>AFS Supply Chain</b><br><small>Süd-Sachsen-Anhalt</small>")
+    opacity = 0.85,
+    title   = HTML("<b>AFS Supply Chain</b><br><small>Süd-Sachsen-Anhalt</small>")
   ) %>%
 
   # -------------------------------------------------------
@@ -317,7 +285,7 @@ afs_map <- leaflet(options = leafletOptions(preferCanvas = TRUE)) %>%
     options = layersControlOptions(collapsed = FALSE)
   ) %>%
 
-  # Polygon-Layer standardmäßig ausblenden (Performance bei vielen Polygonen)
+  # Polygone standardmäßig ausgeblendet (Performance)
   hideGroup("Feldblöcke (Polygone)")
 
 # ============================================================================
@@ -337,5 +305,4 @@ cat("\nObjekt: 'afs_map' (interaktive Leaflet-Karte)\n")
 cat("Aufruf:  afs_map\n")
 cat("Export:  htmlwidgets::saveWidget(afs_map, 'afs_map.html')\n")
 
-# Karte ausgeben
 afs_map
