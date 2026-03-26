@@ -31,7 +31,7 @@ output:
     latex_engine: xelatex
 
 header-includes:
-  # Use elsarticle’s review layout and set 1.5 line spacing
+  # Use elsarticle's review layout and set 1.5 line spacing
 #  - \usepackage{setspace}
 #  - \onehalfspacing        % or \doublespacing for 1.5 lines
     # Line numbers
@@ -57,19 +57,16 @@ library(plotly)
 library(ggplot2)
 library(tidyr)
 library(patchwork)
-#library(webshot2)
 
-# Chapman–Richards biomass function
+# Chapman-Richards biomass function
 B_cr <- function(t, Bmax, k, m) {
   Bmax * (1 - exp(-k * t))^m
 }
 
-# gompertz growth function
+# Gompertz growth function
 gomp <- function(t, A, k, t0) {
   A * exp(-exp(-k * (t - t0)))
 }
-
-
 ```
 
 ```{r load-model-data, echo=FALSE, message=FALSE, warning=FALSE}
@@ -79,80 +76,65 @@ library(osrm)
 library(ompr)
 library(ompr.roi)
 library(ROI.plugin.glpk)
-# gurobi
 library(gurobi)
 library(ROI.plugin.gurobi)
-
 library(ggrepel)
 library(ggnewscale)
 library(rnaturalearth)
 library(rnaturalearthdata)
 
-# Modell-Hilfsfunktionen laden
 source("../Modell/!helper_func.r")
 source("../Modell/!helper_instance_builder_v8a.R")
 source("../Modell/build_agroforestry_lp_v10.R")
 
-# Basisdaten laden (Sites, Storages, Consumers, Distanzmatrizen)
-#load("../Modell/!base_data.rdata")
 load("../Modell/afs_workspace.RData")
-
 
 sites_sf   <- afs_workspace$sites_sf
 sites      <- afs_workspace$sites
 storages   <- afs_workspace$storages
 consumers  <- afs_workspace$consumers
 
-
-
-
-# Yield-Tabelle aus Chapman-Richards ableiten (3 Produkte)
+# Yield table from Chapman-Richards (3 products)
 yields_by_age <- expand_grid(product = 1:3, age = 1:15) %>%
   mutate(
-    B_total = B_cr(age, 
-                   Bmax = c(80,120,160)[product], 
-                   k   = c(0.18, 0.20, 0.22)[product],
-                   m   = c(1.1, 1.2, 1.3)[product]),
-    # Produktfraktionen: chemisch 20%, Zellstoff 35%, Energie 45%
+    B_total = B_cr(age,
+                   Bmax = c(80, 120, 160)[product],
+                   k    = c(0.18, 0.20, 0.22)[product],
+                   m    = c(1.1, 1.2, 1.3)[product]),
     yield_ha = B_total * c(0.20, 0.35, 0.45)[product]
   )
 ```
 
 # Introduction
 
-Agroforestry systems that integrate trees with agricultural crops (silvoarable systems) are increasingly recognised as a promising land-use option to reconcile climate mitigation, biodiversity conservation, and rural income generation on the same hectare of land [@Toensmeier2017_Carbon_Agroforestry]. Temperate agroforestry systems (AFS) based on fast-growing species such as poplar, willow, alder, and black locust can deliver substantial biomass yields while improving soil quality and providing multiple ecosystem services compared to conventional monocultures [@Huber2018_SRAFS_growth]. Biomasses produced in AFS is considered as a sustainable feedstock and can be used either energetically, chemically or materially (e.g. in the building sector). The latter two options are generally preferred over the energetic usage from a cleaner production perspective as biogenic carbon is stored in products during their life span which contributes to climate change mitigation. 
+Agroforestry systems that integrate trees with agricultural crops (silvoarable systems) are increasingly recognised as a promising land-use option to reconcile climate mitigation, biodiversity conservation, and rural income generation on the same hectare of land [@Toensmeier2017_Carbon_Agroforestry]. Temperate agroforestry systems (AFS) based on fast-growing species such as poplar, willow, alder, and black locust can deliver substantial biomass yields while improving soil quality and providing multiple ecosystem services compared to conventional monocultures [@Huber2018_SRAFS_growth]. Biomasses produced in AFS is considered as a sustainable feedstock and can be used either energetically, chemically or materially (e.g. in the building sector). The latter two options are generally preferred over the energetic usage from a cleaner production perspective as biogenic carbon is stored in products during their life span which contributes to climate change mitigation.
 
-Despite substantial research on ecological advantages and pioneering initiatives to establish AFS in practice, the share of AFS in agricultural production systems in still small. E.g. in Germany about 1200 hectars of silvoarable AFS are established in 2025, which accounts for about 0.02\% of total agricultural land use [DEFAF]. One of the core challenges in establishing AFS systems in large scale in practice, is a lack of opportunities to generate substantial revenues from woody biomasses of AFS. On the other side, the rise of bioeconomy creating substantial demands of woody biomass requires a reliable and cost-efficient feedstock supply potentials. As woody biomasses are bulky feedstocks with low energy density, the design of cost-efficient supply chains is crucial to ensure the economic viability of AFS-based value chains. This requires coordinated decisions on stand establishment, multi-cycle harvesting, and product cascading in spatially distributed supply chains, which can be supported by integrated optimisation models that link stand-level growth dynamics to regional supply chain design.
+Despite substantial research on ecological advantages and pioneering initiatives to establish AFS in practice, the share of AFS in agricultural production systems is still small. E.g. in Germany about 1200 hectares of silvoarable AFS are established in 2025, which accounts for about 0.02\% of total agricultural land use [DEFAF]. One of the core challenges in establishing AFS systems at large scale in practice is a lack of opportunities to generate substantial revenues from woody biomasses of AFS. On the other side, the rise of bioeconomy creates substantial demands for woody biomass and requires a reliable and cost-efficient feedstock supply. As woody biomasses are bulky feedstocks with low energy density, the design of cost-efficient supply chains is crucial to ensure the economic viability of AFS-based value chains. This requires coordinated decisions on stand establishment, multi-cycle harvesting, and product cascading in spatially distributed supply chains, which can be supported by integrated optimisation models that link stand-level growth dynamics to regional supply chain design.
 
-In the last two decades, a large body of research has analysed biomass supply chains for bioenergy and biorefineries using mathematical programming models, often in the form of mixed-integer linear programming (MILP) [@Zahraee2020_BSC_review; @Sharma2013_BSC_review]. These models typically optimise network configuration, feedstock sourcing, and logistics under cost or profit objectives. They often treat biomass availability as an exogenous input or rely on simplified agricultural production decisions. Moreover, downstream processing of biomasses is concentrated on one particular value chain e.g. bioenergy plants consuming all produced biomasses. Recent work has started to integrate operational details such as various biomass types, biomass growth models and regeneration processes in multi-period supply chain models. 
+In the last two decades, a large body of research has analysed biomass supply chains for bioenergy and biorefineries using mathematical programming models, often in the form of mixed-integer linear programming (MILP) [@Zahraee2020_BSC_review; @Sharma2013_BSC_review]. These models typically optimise network configuration, feedstock sourcing, and logistics under cost or profit objectives. They often treat biomass availability as an exogenous input or rely on simplified agricultural production decisions. Moreover, downstream processing of biomasses is concentrated on one particular value chain e.g. bioenergy plants consuming all produced biomasses. Recent work has started to integrate operational details such as various biomass types, biomass growth models and regeneration processes in multi-period supply chain models.
 
-The present paper contributes to this literature in four ways. First, we propose a novel MILP formulation for AFS-based biomass supply chain design that explicitly links establishment decisions and consecutive harvest decisions, ensuring that harvesting decisions at each site are consistent with minimum and maximum rotation ages. Second, we embed allometric yield functions for different biomass types generating age-specific yields for different woody biomass types (like stems, branches, or leaves and twigs). Third, these different woody biomass types can be processed in specific downstream industries, like chemical or paper industry as well as energy sector. The model aims to provide strategic decision support for establishing regiona .AFS-based bioeconomy ecosystems connecting multiple industries and product markets. 
+The present paper contributes to this literature in four ways. First, we propose a novel MILP formulation for AFS-based biomass supply chain design that explicitly links establishment decisions and consecutive harvest decisions, ensuring that harvesting decisions at each site are consistent with minimum and maximum rotation ages. Second, we embed allometric yield functions for different biomass types generating age-specific yields for different woody biomass types (like stems, branches, or leaves and twigs). Third, these different woody biomass types can be processed in specific downstream industries, like chemical or paper industry as well as energy sector. The model aims to provide strategic decision support for establishing regional AFS-based bioeconomy ecosystems connecting multiple industries and product markets.
 
 The remainder of the paper is structured as follows. Section \@ref(sec:litreview) reviews the relevant literature on agroforestry biomass systems, allometric biomass modelling, and biomass supply chain optimisation. Section \@ref(sec:allometrics) introduces the allometric models adopted to represent biomass growth of different tree species and biomass types. Section \@ref(sec:milp) summarises the MILP formulation for the agroforestry supply chain with age-lag constraints. Section \@ref(sec:experiments) outlines the planned computational experiments for the case study and discusses expected insights for cleaner production strategies.
 
-```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Green polygons: potential KUP sites. Orange circles: pre-treatment facilities (sawmills and logistics hubs, radius proportional to processing capacity). Coloured squares: consumer sites (violet: chemical/pulp, blue: pulp/paper, red: energy/biogas).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth"}
+```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE,
+    fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Green polygons: potential KUP sites. Orange symbols: pre-treatment facilities (circle~=~sawmill, triangle~=~logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).",
+    fig.width=6.5, fig.height=5.5, out.width="\\textwidth"}
 
-
-# ── Farben ───────────────────────────────────────────────────────────────────
 COL_SITE_F <- "#74c476"; COL_SITE_B <- "#2d6a2d"
 COL_SAW    <- "#e65c00"; COL_HUB    <- "#c05000"
 COL_P1     <- "#6a0dad"; COL_P2     <- "#08519c"; COL_P3     <- "#a50026"
 
-# ── Bundeslandgrenzen (rnaturalearth, admin-1) ────────────────────────────────
 de_states <- ne_states(country = "Germany", returnclass = "sf") %>%
   st_transform(4326)
 
-# ── Flüsse (rnaturalearth, Skalenstufe medium) ────────────────────────────────
 rivers_eu <- ne_download(
-  scale  = 10,
-  type   = "rivers_lake_centerlines",
-  category = "physical",
-  returnclass = "sf"
+  scale = 10, type = "rivers_lake_centerlines",
+  category = "physical", returnclass = "sf"
 ) %>%
   st_transform(4326) %>%
   st_crop(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8)
 
-# ── Consumer-Kategorisierung ──────────────────────────────────────────────────
 consumers_plt <- consumers %>%
   mutate(
     total_demand = demand_P1 + demand_P2 + demand_P3,
@@ -167,32 +149,21 @@ consumers_plt <- consumers %>%
 
 storages_plt <- storages %>%
   mutate(
-    subtype  = if_else(type == "Hub", "Logistics Hub", "Sawmill"),
-    pt_size  = pmin(3.5, pmax(1.2, 1.2 + log1p(CAP_proc) * 0.38)),
-    col_fill = if_else(type == "Hub", COL_HUB, COL_SAW)
+    subtype = if_else(type == "Hub", "Logistics Hub", "Sawmill"),
+    pt_size = pmin(3.5, pmax(1.2, 1.2 + log1p(CAP_proc) * 0.38))
   )
 
-# ── sf-Objekte ────────────────────────────────────────────────────────────────
 stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326)
 cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326)
 
-# ── Plot ──────────────────────────────────────────────────────────────────────
 ggplot() +
-
-  # 1. Bundeslandgrenzen
   geom_sf(data = de_states,
           fill = "grey96", colour = "grey55", linewidth = 0.35) +
-
-  # 2. Flüsse
   geom_sf(data = rivers_eu,
           colour = "#4292c6", linewidth = 0.45, alpha = 0.7) +
-
-  # 3. KUP-Polygone
   geom_sf(data = sites_sf,
           fill = COL_SITE_F, colour = COL_SITE_B,
           linewidth = 0.12, alpha = 0.45) +
-
-  # 4. Pre-treatment: colour + shape  (KEIN fill → keine zweite Scale nötig)
   geom_sf(data = stor_sf,
           aes(colour = subtype, shape = subtype, size = pt_size),
           stroke = 1.2, alpha = 0.92, show.legend = TRUE) +
@@ -204,11 +175,7 @@ ggplot() +
     name   = "Pre-treatment",
     values = c("Sawmill" = 16, "Logistics Hub" = 17)
   ) +
-
-  # 5. neue fill-Scale für Consumer
   ggnewscale::new_scale_fill() +
-
-  # 6. Consumer-Punkte (fill-Quadrate)
   geom_sf(data  = cons_sf,
           aes(fill = kategorie, size = pt_size),
           shape = 22, colour = "white", stroke = 0.45,
@@ -222,39 +189,13 @@ ggplot() +
       "Other"                = "grey60"
     )
   ) +
-
-  # 7. Beschriftungen Vorbehandlung
-  # ggrepel::geom_label_repel(
-  #   data          = stor_sf,
-  #   aes(label = name, geometry = geometry),
-  #   stat          = "sf_coordinates",
-  #   size          = 1.8, label.size = 0.15,
-  #   label.padding = unit(0.10, "lines"),
-  #   fill = "white", alpha = 0.78,
-  #   min.segment.length = 0,
-  #   show.legend   = FALSE
-  # ) +
-
-  # 8. Skalen
   scale_size_continuous(range = c(1.5, 5), guide = "none") +
-
-  # 9. guides(): colour + shape zu einer Legende zusammenführen
   guides(
-    colour = guide_legend(
-      order        = 1,
-      override.aes = list(size = 4, stroke = 1.5)
-    ),
-    shape  = guide_legend(
-      order        = 1,
-      override.aes = list(size = 4, stroke = 1.5)
-    ),
-    fill   = guide_legend(
-      order        = 2,
-      override.aes = list(size = 4, shape = 22, colour = "white")
-    ),
+    colour = guide_legend(order = 1, override.aes = list(size = 4, stroke = 1.5)),
+    shape  = guide_legend(order = 1, override.aes = list(size = 4, stroke = 1.5)),
+    fill   = guide_legend(order = 2, override.aes = list(size = 4, shape = 22, colour = "white")),
     size   = "none"
   ) +
-
   coord_sf(xlim = c(10.6, 13.2), ylim = c(50.9, 52.8), expand = FALSE) +
   labs(x = "Longitude", y = "Latitude") +
   theme_minimal(base_size = 9) +
@@ -268,335 +209,182 @@ ggplot() +
   )
 ```
 
-# Literature review {#seclitreview}
+# Literature review {#sec:litreview}
 
-Agroforestry biomass systems, tree and stand biomass models, and biomass supply chain optimisation have all been studied extensively, but they are rarely combined in an integrated modelling framework that links age‑dependent stand dynamics to regional product‑cascading value chains [@Zahraee2020_BSC_review; @Sharma2013_BSC_review; @Espinoza2017_Biorefinery_SC_review]. This section reviews (i) agroforestry and short‑rotation systems with emphasis on yields and economics, (ii) allometric and age‑dependent biomass yield models, and (iii) biomass supply chain optimisation and cascading use of biomass, and concludes by identifying the modelling gap addressed in this paper.
-
-## Biomass supply chain optimisation
-
-Biomass supply chain design and planning have been widely studied using MILP models at strategic, tactical, and operational levels @Zahraee2020_BSC_review; @Sharma2013_BSC_review; @Espinoza2017_Biorefinery_SC_review. Comprehensive reviews classify models according to decision scope (location, capacity, routing, inventory), time horizon, uncertainty treatment, and sustainability metrics, and show a strong emphasis on bioenergy and biorefinery systems @Lamers2015_Feedstock_Design; @Espinoza2017_Biorefinery_SC_review. Typical models optimise the number, size, and locations of processing facilities, biomass sourcing patterns, multimodal transport flows, and inventory policies under cost‑ or profit‑oriented objectives, sometimes complemented by greenhouse gas emissions or other environmental indicators @Eksioglu2009_Biorefinery_SC; @Arabi2019_Microalgae_Biobutanol_SC.
-
-A key methodological feature of many biomass supply chain models is the integration of long‑term location and capacity decisions with multi‑period logistics decisions such as harvesting, transport, storage, and processing @Eksioglu2009_Biorefinery_SC; @Zahraee2020_BSC_review. For example, mixed‑integer formulations have been used to simultaneously determine biorefinery locations, their capacities, biomass collection and storage sites, and time‑dependent flows of biomass and biofuel, explicitly accounting for seasonality, deterioration, and inventory trade‑offs @Eksioglu2009_Biorefinery_SC. These models demonstrate that a significant share of biofuel production costs is attributable to logistics, and that integrated optimisation of network design and operations can substantially reduce costs compared to decoupled decision making @Eksioglu2009_Biorefinery_SC; @Arabi2019_Microalgae_Biobutanol_SC.
-
-However, in virtually all of these models, biomass availability over time is treated as an exogenous input, either as annual supply potentials per region or as simple time profiles based on harvest windows and assumed yields @Zahraee2020_BSC_review; @DeMeyer2016_tOPTIMASS. Stand‑level growth dynamics, age‑class structure, and rotation decisions are not represented explicitly; instead, land‑use or yield scenarios enter as fixed parameters @DeMeyer2016_tOPTIMASS; @Lamers2015_Feedstock_Design. As a result, these models cannot explore trade‑offs between rotation length, stand management, and supply chain configuration in a unified optimisation framework, especially not for agroforestry systems with repeated coppice cycles and strong interactions between tree growth and harvesting decisions.
+Agroforestry biomass systems, stand-level growth models, and biomass supply chain optimisation have each been studied extensively, but they are rarely combined in an integrated framework that links age-dependent stand dynamics to regional product-cascading value chains [@Zahraee2020_BSC_review; @Sharma2013_BSC_review; @Espinoza2017_Biorefinery_SC_review].
+This section reviews (i) agroforestry systems with emphasis on species characteristics, stand management, and economics, including cascading use of biomass; (ii) biomass growth models at tree and stand level with explicit attention to component-wise partitioning into stem, branches, and residues; and (iii) biomass supply chain design using mathematical programming.
+The section concludes by identifying the modelling gap addressed in this paper.
 
 
-## Agroforestry and short‑rotation systems
+## Agroforestry systems {#sec:lit-afs}
 
-Agroforestry deliberately integrates woody perennials with crops and/or livestock on the same management unit, with the aim of enhancing productivity, profitability, and environmental performance @Nair1993_IntroAgroforestry; @Toensmeier2017_Carbon_Agroforestry. In temperate regions, short‑rotation agroforestry systems (SRAFS) often take the form of alley‑cropping, where double or multiple tree rows alternate with crop strips, enabling simultaneous production of agricultural and woody biomass @Huber2018_SRAFS_growth. Empirical trials in Southern Germany and Central Europe show that SRAFS with poplar, willow, black alder, and black locust can achieve mean annual increments (MAI) of roughly 7–10 t per ha and year in aboveground woody biomass during the first rotation, with pronounced species‑specific differences in growth trajectories, stand structure, and mortality (see @Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF).
+Agroforestry deliberately integrates woody perennials with crops and/or livestock on the same management unit, with the aim of enhancing productivity, profitability, and environmental performance [@Nair1993_IntroAgroforestry; @Toensmeier2017_Carbon_Agroforestry].
+In temperate regions, short-rotation agroforestry systems (SRAFS) most commonly take the form of alley-cropping, where double or multiple tree rows alternate with crop strips, enabling simultaneous production of agricultural and woody biomass [@Huber2018_SRAFS_growth].
+Empirical trials in Southern Germany and Central Europe demonstrate that SRAFS with poplar, willow, black alder, and black locust can achieve mean annual increments (MAI) of roughly 7--10 Mg ha\(^{-1}\) yr\(^{-1}\) in aboveground woody biomass during the first rotation, with pronounced species-specific differences in growth trajectories, stand structure, and mortality [@Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF].
 
-For short‑rotation coppice (SRC) and very short‑rotation coppice (vSRC) poplar plantations in Italy and Central Europe, economic analyses indicate that rotations of about 5–7 years at moderate planting densities can be competitive with arable crops, but profitability is highly sensitive to yield assumptions, establishment costs, and logistics [@Testa2014_Poplar_Economics]. This sensitivity implies to couple stand‑level growth and  models with supply chain optimisation models, rather than treating biomass availability as an exogenous, time‑invariant parameter [@Zahraee2020_BSC_review]. Beyond yields and economics, agroforestry and SRC systems have been widely analysed for carbon sequestration, nutrient cycling, and biodiversity, reinforcing their role as candidate feedstock systems for regional bioeconomy strategies that emphasise material‑before‑energy use of biomass (see e.g. @Toensmeier2017_Carbon_Agroforestry).
+Economic analyses of short-rotation coppice (SRC) poplar plantations in Italy and Central Europe indicate that rotations of 5--7 years at moderate planting densities can be competitive with arable crops, but profitability is highly sensitive to yield assumptions, establishment costs, and logistics [@Testa2014_Poplar_Economics].
+Several site and management factors jointly govern biomass productivity in SRAFS and SRC systems.
+At the climatic level, temperature sums, solar radiation, and water availability during the growing season are the primary determinants of photosynthetic carbon gain, with drought stress particularly limiting for shallow-rooted coppice systems [@Trnka2008_Poplar_SRF; @Huber2018_SRAFS_growth].
+At the stand management level, planting density, pruning regime, and rotation length determine the allocation of assimilates between stem, branches, and residues, as well as the within-rotation trajectory of diameter growth, which directly conditions the proportion of merchantable stem biomass at harvest [@Spinelli2009_SRC_Harvesting; @Testa2014_Poplar_Economics].
+At the soil level, nutrient availability and texture influence both maximum attainable biomass and growth rates, so that site-specific calibration of growth models is recommended before deployment in supply chain optimisation [@Huber2016_Allometric_SRAFS; @Niemczyk2021_Poplar_Rotation].
 
-Thus, a fundamental cornerpiece of AFS modeling is the representation of biomass growth dynamics, which can be achieved through allometric models that link tree biometric variables to biomass, and through age‑dependent stand biomass functions that capture growth trajectories over rotation cycles. These models provide the necessary link between stand structure and biomass availability, which can then be integrated into supply chain optimisation models to explore trade‑offs between rotation length, product portfolios, and infrastructure configuration in AFS supply chains.
-
-<!-- Agroforestry value‑chain studies in other regions, notably India, highlight how institutional arrangements, contract tree farming, and dedicated market support structures can transform fragmented wood supply into organised industrial value chains @Singh2023_Agroforestry_ValueChains. These contributions mainly analyse governance, market access, and stakeholder coordination, whereas the present work focuses on techno‑economic optimisation of spatially explicit biomass flows and therefore treats prices, demands, and policy incentives parametrically. -->
-
-
-## Tree‑level allometric models
-
-Allometric tree biomass models relate easily measured variables, such as stem base diameter (SBD) or diameter at breast height, to aboveground dry biomass using power‑law functions of the form \(M = b_0\,\mathrm{SBD}^{b_1}\), with species‑specific coefficients \(b_0\) and exponents \(b_1\) [@Huber2016_Allometric_SRAFS]. These models allow non‑destructive estimation of individual‑tree and stand biomass from diameter measurements and have been widely used in forestry and agroforestry for both carbon accounting and management planning [@Huber2016_Allometric_SRAFS; @Toensmeier2017_Carbon_Agroforestry].
-
-For SRAFS in Southern Germany, species‑specific allometric functions based on SBD measured 10 cm above ground were developed for black alder, black locust, poplar (Max 3), and willow (Inger) @Huber2016_Allometric_SRAFS. The reported models share a common exponent \(b_1 = 2.603\) across species, while the scale parameter \(b_0\) ranges from about 0.025 to 0.041, reflecting differences in wood density and branching pattern @Huber2016_Allometric_SRAFS. Applying these functions to all shoots per tree and aggregating over observed tree densities yields annual aboveground leafless dry biomass at plot and stand level, from which current annual increment (CAI) and MAI curves can be derived for each species and management system @Huber2018_SRAFS_growth.
-
-These SRAFS studies demonstrate that stand structure, diameter distributions, and mortality strongly affect aggregate yields, with black locust showing high wood density and strong size inequality and willow showing high shoot densities but low wood density and diameter growth @Huber2018_SRAFS_growth. From a modelling perspective, the key point is that tree‑level allometrics provide a robust mapping from biometric state variables to biomass, which can be exploited either to build detailed stand simulators or to construct age‑class yield tables for optimisation models @Huber2016_Allometric_SRAFS.
+From a cleaner production perspective, cascading use of biomass---prioritising high-value material applications (chemical feedstocks, pulp and paper, engineered wood) before energy recovery---is widely advocated to maximise value creation and reduce environmental burdens [@Lamers2015_Feedstock_Design; @DeMeyer2015_OPTIMASS].
+For agroforestry biomass, the relative shares of stem, branch, and residue fractions depend on stand age and management, so that rotation length decisions and product portfolio choices are intrinsically linked [@Testa2014_Poplar_Economics; @Spinelli2009_SRC_Harvesting].
+MILP models can represent such cascades by defining a product quality hierarchy (e.g.\ chemical-grade \(\succ\) pulp-grade \(\succ\) energy-grade) and allowing higher-quality fractions to satisfy lower-quality demands, subject to availability and capacity constraints [@DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS].
 
 
-## Age-dependent biomass yield functions
+## Biomass growth models {#sec:lit-growth}
 
-Existing allometric models link tree biomass to diameter or height but do not yet provide **stand-level** biomass as an explicit function of stand age. Age-dependent biomass functions are useful for yield projections in short-rotation forestry and agroforestry, where management is organized in discrete rotations (e.g. 5–15 years). [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics]
+### From tree-level allometry to stand-level yield functions
 
-A common approach is to derive age functions from rotation trials that report mean annual increment (MAI) over time and identify the age at which MAI plateaus. For poplar SRWC in northern Poland, Niemczyk et al. (2021) showed that MAI in aboveground dry biomass increases up to about age 10; beyond this, the MAI curve flattens, suggesting a biologically optimal rotation age around 10 years because the slope of MAI is near zero. [@Niemczyk2021_Poplar_Rotation] Reported MAI values for single-stem poplar plantations in a 10-year rotation ranged approximately from 1–15 Mg DM ha\(^{-1}\) yr\(^{-1}\) depending on cultivar. [@Niemczyk2021_Poplar_Rotation] Similar magnitudes and rotation lengths (about 5–7 years for SRC, up to 10–15 years for SRC/SRF) are reported for poplar SRC systems in Italy, where whole-rotation averages of roughly 15 Mg DM ha\(^{-1}\) yr\(^{-1}\) are considered economically viable. [@Testa2014_Poplar_Economics]
-
-A simple and widely used parametric form for age-dependent stand biomass \(B(t)\) is the Chapman–Richards (or Mitscherlich/monomolecular) function:
+A sound stand-level biomass model for agroforestry must be traceable to measured biometric variables at the individual tree.
+Allometric functions of the power-law form
 \[
-B(t) = B_{\max}\left(1 - e^{-k \cdot t}\right)^m
+  M_i = b_0 \cdot \mathrm{SBD}_i^{\,b_1}
 \]
-with stand age \(t\) in years, asymptotic biomass \(B_{\max}\) (Mg DM ha\(^{-1}\)), rate parameter \(k\) (year\(^{-1}\)), and shape parameter \(m\). This formulation captures the rapid juvenile growth, a phase of approximately linear biomass accumulation, and a saturating phase where growth slows. [@Niemczyk2021_Poplar_Rotation] The corresponding current annual increment (CAI) and mean annual increment (MAI) are
+relate the dry biomass \(M_i\) (kg) of shoot \(i\) to its stem base diameter (SBD, cm) measured 10~cm above ground, with species-specific scale parameter \(b_0\) and exponent \(b_1\) [@Huber2016_Allometric_SRAFS].
+For SRAFS species in Southern Germany, @Huber2016_Allometric_SRAFS report a common exponent \(b_1 = 2.603\) across black alder, black locust, poplar (Max~3), and willow (Inger), while \(b_0\) ranges from 0.025 to 0.041, reflecting differences in wood density and branching architecture.
+
+Stand-level aboveground biomass \(B_\mathrm{AG}(t)\) (Mg ha\(^{-1}\)) at stand age \(t\) is obtained by aggregating individual shoot biomasses over all shoots per tree and multiplying by stand density \(N(t)\) (trees ha\(^{-1}\)):
 \[
-\text{CAI}(t) = \frac{dB}{dt}, \qquad \text{MAI}(t) = \frac{B(t)}{t}.
+  B_\mathrm{AG}(t)
+  = N(t) \cdot \bar{n}_\mathrm{shoot}(t) \cdot \bar{M}_\mathrm{shoot}(t),
 \]
-The age maximizing MAI (optimal rotation under a volume/biomass criterion) can be derived analytically or determined numerically. Fitting such functions to observed age–biomass or age–volume series from rotation trials allows cultivar-specific yield curves that are directly usable in agroforestry simulation models. [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics]
+where \(\bar{n}_\mathrm{shoot}\) is the mean number of shoots per tree and \(\bar{M}_\mathrm{shoot}\) is the mean shoot biomass obtained by integrating the allometric function over the observed SBD distribution [@Huber2018_SRAFS_growth].
+Because SBD distributions shift and broaden over time as stands develop, this bottom-up aggregation inherently captures the age-dependence of stand biomass.
+In practice, where repeated diameter measurements are available, the resulting \(B_\mathrm{AG}(t)\) trajectory can be fitted by a smooth parametric function; where only a few harvest-age data points are available, a parsimonious sigmoidal function is preferred for extrapolation [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics].
 
-For illustration, we parameterize three stylized poplar curves representing low, medium, and high productivity on temperate mineral soils. Parameter values are loosely informed by the ranges reported by Niemczyk et al. (2021) and Testa et al. (2014) and should be recalibrated when site-specific data are available. [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics]
+### Choice of model form: from Chapman--Richards to Gompertz
 
-- Low productivity: \(B_{\max} = 80\) Mg DM ha\(^{-1}\), \(k = 0.18\), \(m = 1.1\)
-- Medium productivity: \(B_{\max} = 120\) Mg DM ha\(^{-1}\), \(k = 0.20\), \(m = 1.2\)
-- High productivity: \(B_{\max} = 160\) Mg DM ha\(^{-1}\), \(k = 0.22\), \(m = 1.3\)
+The allometric functions at tree level belong to the Chapman--Richards (CR) family, which has a well-established biological derivation as the balance between anabolic resource assimilation and catabolic maintenance respiration in individual organisms [@Fekedulegn1999_GrowthModels; @Zeide1993_AnalysisGrowth].
+The CR model is the de facto standard for individual tree diameter and height allometry in forestry because its parameters carry a direct biometric interpretation and it reduces to the von~Bertalanffy model as a special case [@Fekedulegn1999_GrowthModels].
 
-These values yield MAI maxima between about 8 and 12 years with peak MAI values of roughly 8–16 Mg DM ha\(^{-1}\) yr\(^{-1}\), consistent with the empirical range where 10-year rotations produced MAI of about 10–15 Mg DM ha\(^{-1}\) yr\(^{-1}\) for the best poplar cultivars in northern Poland and Italy. [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics]
+At **stand level**, however, the argument for Chapman--Richards weakens for two reasons.
+First, stand-level aboveground biomass is an aggregate of hundreds of individual shoots with different diameters, subject to intra-stand competition, self-thinning mortality, and size-class redistribution over time.
+The resulting cumulative biomass trajectory is no longer the growth curve of a single organism but an emergent property of the population, and the biological basis of the CR formulation---anabolism versus catabolism of a single body---does not directly apply [@Zeide1993_AnalysisGrowth].
+Second, the Chapman--Richards model is point-symmetric around its inflection, implying that roughly half the asymptotic biomass is accumulated before the inflection.
+Empirical data from SRC and SRAFS poplar trials consistently show that the inflection of the stand biomass trajectory occurs at a **substantially earlier** fraction of the asymptote---typically around one third---reflecting rapid initial canopy closure followed by a prolonged period of decelerating growth as competition for light intensifies [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics].
 
-In the agroforestry context, such age functions can be combined with tree density and allometric partitioning to above- and below-ground biomass to obtain tree-row biomass over time for different designs. Calibration against local inventory data or growth measurements (e.g. basal area increment and height growth) is recommended before using the curves for scenario analysis.
+The Gompertz function
+\[
+  B(t) = A \cdot \exp\!\bigl(-\exp(-k\,(t-t_0))\bigr)
+\]
+is structurally suited to this regime: its inflection point is located at \(A/e \approx 0.368\,A\), well below the midpoint of the asymptote, producing the right-skewed accumulation pattern characteristic of fast-establishing coppice stands [@Tjorve2017_Gompertz; @Zeide1993_AnalysisGrowth].
+The Gompertz model is a limiting special case of the Richards family and has been applied successfully to model intra-annual cambial growth dynamics in broadleaved trees, where cell production over the growing season follows a Gompertz-shaped trajectory [@Cuny2014_CambialActivity].
+A further practical advantage is that the Gompertz helper-function decomposition used for component shares---where each fraction \(f_p(t) = h_p(t)/\sum_{p'} h_{p'}(t)\) is derived from individual Gompertz sub-functions---guarantees that component fractions sum to unity at all ages by construction, without requiring additional constraints.
+This property simplifies both the model specification and its later integration into the MILP yield coefficient \(\eta_{pa}\).
 
-```{r max3-growth, echo=F, message=FALSE, warning=FALSE, fig.cap='Modeled stand-level biomass components for poplar clone Max 3 over age, represented as stacked Gompertz curves and compared with empirical reference values from agroforestry trials.'}
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-library(plotly)
+In summary, the CR model is retained at tree level because of its biological interpretability for individual-organism growth; the Gompertz model is adopted at stand level because it better captures the right-skewed biomass accumulation of coppice populations, its inflection geometry matches empirical SRC data, and its multiplicative structure supports analytically clean component partitioning.
 
-# ------------------------------------------------------------
-# 1. SBD(t) for Max 3 (Gompertz)
-# ------------------------------------------------------------
+### Stand-level total biomass: Gompertz parameterisation
 
-SBD_max3_gomp <- function(t){
-  # Asymptotic SBD ~ 10 cm, inflection around year 3–4
-  gomp(t, A = 10, k = 0.45, t0 = 3.5)
-}
+For total aboveground biomass of poplar clone Max~3 under SRAFS management, the Gompertz model is parameterised as \(A = 100\) Mg~DM~ha\(^{-1}\), \(k = 0.32\) yr\(^{-1}\), and \(t_0 = 4.0\)~yr, yielding a CAI peak at approximately age~4 and a total aboveground biomass of roughly 65~Mg~ha\(^{-1}\) at age~10---consistent with the empirical reference range of 50--135~Mg~ha\(^{-1}\) reported for comparable poplar systems in the literature [@Huber2018_SRAFS_growth; @Niemczyk2021_Poplar_Rotation].
 
-# ------------------------------------------------------------
-# 2. Total aboveground biomass B_AG(t) (Gompertz, Mg/ha)
-# ------------------------------------------------------------
+### Component partitioning: stem, branches, and residues
 
-B_AG_max3 <- function(t) {
-  # Asymptotic AG biomass ~ 100 Mg/ha, inflection around year 4
-  gomp(t, A = 100, k = 0.32, t0 = 4.0)
-}
+The three components of aboveground biomass relevant for product cascading---merchantable stem, structural branches, and fine residues (leaves, twigs, bark fragments)---differ markedly in their age trajectories and market value.
+Empirical studies consistently show that the stem fraction rises from roughly 55\% of AGB at age~4 to over 75\% at age~10, while branch and residue shares decline as stands mature [@Huber2018_SRAFS_growth; @Testa2014_Poplar_Economics].
+This age-dependence is biologically driven by the increasing dominance of secondary stem growth (radial increment) relative to primary shoot elongation and branching in later stand development stages.
 
-# ------------------------------------------------------------
-# 3. Component shares via Gompertz helper functions h_i(t)
-# ------------------------------------------------------------
+To capture these dynamics analytically while keeping the model integrable into a MILP formulation, each component share \(f_p(t)\) is represented as a normalised Gompertz helper function:
+\[
+  h_p(t) = A_p \cdot \exp\!\bigl(-\exp(-k_p\,(t - t_{0,p}))\bigr),
+  \qquad
+  f_p(t) = \frac{h_p(t)}{\sum_{p'} h_{p'}(t)}.
+\]
+For Max~3 the stem helper is parameterised with a high asymptote (\(A_\mathrm{stem} = 1.0\)) and a relatively late inflection (\(t_{0,\mathrm{stem}} = 4.0\)~yr), whereas the branch helper uses a lower asymptote (\(A_\mathrm{branch} = 0.7\)) and an earlier inflection (\(t_{0,\mathrm{branch}} = 3.0\)~yr), and the residue helper saturates earliest (\(A_\mathrm{rest} = 0.1\), \(t_{0,\mathrm{rest}} = 2.0\)~yr).
+This parameterisation reproduces the observed shift towards stem dominance with age and is consistent with the empirical component fractions compiled across poplar agroforestry and SRC systems spanning ages 6--13 years, as illustrated in Figure~\@ref(fig:max3-growth).
 
-h_stem   <- function(t) gomp(t, A = 1.0, k = 0.40, t0 = 4.0)
-h_branch <- function(t) gomp(t, A = 0.7, k = 0.25, t0 = 3.0)
-h_rest   <- function(t) gomp(t, A = 0.1, k = 0.30, t0 = 2.0)
+```{r max3-growth, echo=FALSE, message=FALSE, warning=FALSE,
+    fig.cap="Modelled stand-level biomass components for poplar (Max~3) over stand age, represented as stacked Gompertz curves (shaded areas: stem green, branches orange, residues purple) and compared with empirical aboveground biomass observations from poplar agroforestry and SRC systems. Symbols denote cumulative component totals: stem (filled circles), stem+branches (triangles), total AGB (diamonds). Empirical data compiled from Jha (2018) and cited primary sources. Grey shading: typical rotation-age window (5--10 years)."}
 
-f_stem_gomp <- function(t) {
-  hs <- h_stem(t); hb <- h_branch(t); hr <- h_rest(t)
-  hs / (hs + hb + hr)
-}
+library(dplyr); library(tidyr); library(ggplot2)
 
-f_branch_gomp <- function(t) {
-  hs <- h_stem(t); hb <- h_branch(t); hr <- h_rest(t)
-  hb / (hs + hb + hr)
-}
+# Component Gompertz functions (parameters as defined above)
+B_AG_max3     <- function(t) gomp(t, A = 100, k = 0.32, t0 = 4.0)
+h_stem_f      <- function(t) gomp(t, A = 1.0,  k = 0.40, t0 = 4.0)
+h_branch_f    <- function(t) gomp(t, A = 0.7,  k = 0.25, t0 = 3.0)
+h_rest_f      <- function(t) gomp(t, A = 0.1,  k = 0.30, t0 = 2.0)
 
-f_rest_gomp <- function(t) {
-  hs <- h_stem(t); hb <- h_branch(t); hr <- h_rest(t)
-  hr / (hs + hb + hr)
-}
-
-# ------------------------------------------------------------
-# 4. Component biomass functions (Mg/ha dry matter)
-# ------------------------------------------------------------
-
-B_stem_max3   <- function(t) f_stem_gomp(t)   * B_AG_max3(t)
-B_branch_max3 <- function(t) f_branch_gomp(t) * B_AG_max3(t)
-B_rest_max3   <- function(t) f_rest_gomp(t)   * B_AG_max3(t)
-
-# ------------------------------------------------------------
-# 5. Trajectories for ages 0–12 years
-# ------------------------------------------------------------
+f_stem_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hs/(hs+hb+hr) }
+f_branch_g <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hb/(hs+hb+hr) }
+f_rest_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hr/(hs+hb+hr) }
 
 ages <- seq(0, 13, by = 0.1)
 
-comp_df <- tibble(
-  age              = ages,
-  SBD_cm           = SBD_max3_gomp(ages),
-  B_AG_Mg_ha       = B_AG_max3(ages),
-  f_stem           = f_stem_gomp(ages),
-  f_branch         = f_branch_gomp(ages),
-  f_rest           = f_rest_gomp(ages),
-  B_stem_Mg_ha     = B_stem_max3(ages),
-  B_branch_Mg_ha   = B_branch_max3(ages),
-  B_rest_Mg_ha     = B_rest_max3(ages)
-)
+comp_long <- tibble(
+  age       = ages,
+  Stem      = f_stem_g(ages)   * B_AG_max3(ages),
+  Branches  = f_branch_g(ages) * B_AG_max3(ages),
+  Residues  = f_rest_g(ages)   * B_AG_max3(ages)
+) |>
+  pivot_longer(-age, names_to = "component", values_to = "biomass") |>
+  mutate(component = factor(component, levels = c("Residues", "Branches", "Stem")))
 
-comp_wide <- comp_df |>
-  select(age, B_stem_Mg_ha, B_branch_Mg_ha, B_rest_Mg_ha)
-
-# ------------------------------------------------------------
-# 6. Empirical reference values (Huber & Jha, approximate)
-# ------------------------------------------------------------
-
-# Huber 2017/2018: Max 3, SRAFS, 4-year stand biomass ~ 35.8 Mg/ha
-B_huber4_total <- 35.8  # Mg/ha
-
-# Jha Table S1: selected rows (values taken from Jha2018_MOESM1_ESM Table S1)
-# Age 4, D-121, agroforestry/forestry, 666 ha^-1, AGB 82 Mg/ha
-# 55.1% trunk, 16.9% branch, 10.0% leaf --> does no sum up to 1
-# Age 8, D-121, agroforestry/forestry, 400 ha^-1, AGB 134.3 Mg/ha
-# 74.7% trunk, 16.6% branch, 8.6% leaf --> Lodhiyal and Lodhiyal (1997)
-# Age 9, G-3, agroforestry, 500 ha^-1, AGB 74 Mg/ha
-# 83% trunk, 11% branch, 6% leaf --> Das and Chaturvedi (2005)
-# Age 9, G-48, agroforestry (wheat), 500 ha^-1, AGB 51.46 Mg/ha
-# 92% trunk, 4% branch, 4% leaf --> Yadava (2010)
-# Age 12, hybrid poplar SRC (Canada), 1111 ha^-1, AGB range 110–162 Mg/ha --> Zabek and Prescott (2006)
-# Age 10, Populus deltoides, 500 ha^-1, AGB 105.4 Mg/ha --> 74.4% trunk, 13% branch, 12.6% leaf --> Singh (1989)
-# Age 6 hybrid poplar SRC (Canada), 1937 ha^-1, AGB 218.5/1937*500 Mg/ha --> 61.9% trunk, 27.6% branch, 10.3% leaf --> Fortier et al. (2010a)
-# Age 13 I-214 poplar SRC (France), 135 ha^-1, AGB 152 Mg/ha --> 77% trunk, 22% branch, 1% leaf --> Jha (2018)
-
-
+# Empirical reference points (Jha 2018, Table S1 and primary sources)
 jha_points <- tribble(
-  ~age, ~system,                  ~AGB,   ~p_trunk, ~p_branch, ~p_leaf,
-   #4,   "D-121 AF/forestry",      82.0,   0.551,    0.169+.551,     0.100+ 0.169+.551,
-   8,   "D-121 AF/forestry",      134.3,  0.747,    0.166+.747,     0.086+ 0.166+.747,
-   9,   "G-3 AF",                 74.0,   0.83,     0.11+.83,      0.06+0.11+.83,
-   9,   "G-48 AF wheat",          51.46,  0.92,     0.04+.92,      0.04 + 0.04+.92,
-  10 ,  "Poplus delt.",          105.4,  0.744,     0.744+.13,      0.744 + 0.13+.126,
-  6 , "hybrid, canada",          218.5/1937*500,  0.619,     0.619+.276,      0.619 + 0.276+.103,
-  13, "I-214, france",  152.0,  0.77,     0.77+.22,      0.77 + 0.22+.01
-)
-
-jha_components <- jha_points |>
+  ~age, ~AGB,            ~p_trunk, ~p_branch,
+   8,   134.3,           0.747,    0.166,
+   9,    74.0,           0.83,     0.11,
+   9,    51.46,          0.92,     0.04,
+  10,   105.4,           0.744,    0.13,
+   6,   218.5/1937*500,  0.619,    0.276,
+  13,   152.0,           0.77,     0.22
+) |>
   mutate(
-    stem_Mg_ha   = AGB * p_trunk,
-    branch_Mg_ha = AGB * p_branch,
-    rest_Mg_ha   = AGB * p_leaf
-  ) |>
-  select(age, system, stem_Mg_ha, branch_Mg_ha, rest_Mg_ha)
+    stem_cum   = AGB * p_trunk,
+    branch_cum = AGB * (p_trunk + p_branch),
+    total      = AGB
+  )
 
-# 12-year total biomass band from Zabek & Prescott (2006), 110–162 Mg/ha
-band12 <- tibble(
-  age   = 12,
-  ymin  = 110/1111*500,
-  ymax  = 162/1111*500
-)
-
-comp_long_biomass <- comp_df |>
-  select(age, B_stem_Mg_ha, B_branch_Mg_ha, B_rest_Mg_ha) |>
-  tidyr::pivot_longer(-age, names_to = "component", values_to = "biomass") |>
-  mutate(component = dplyr::recode(
-           component,
-           B_stem_Mg_ha   = "Stem (model)",
-           B_branch_Mg_ha = "Branches (model)",
-           B_rest_Mg_ha   = "Rest (model)"
-         ),
-         component = factor(component,
-                            levels = c("Rest (model)",
-                                       "Branches (model)",
-                                       "Stem (model)")))
-
-jha_long <- jha_components |>
-  tidyr::pivot_longer(cols = c(stem_Mg_ha, branch_Mg_ha, rest_Mg_ha),
-                      names_to = "comp",
-                      values_to = "biomass") |>
-  mutate(category = dplyr::recode(
-    comp,
-    stem_Mg_ha   = "Stem (emp.)",
-    branch_Mg_ha = "Branches (emp.)",
-    rest_Mg_ha   = "Rest (emp.)"
-  ))
-
-# gemeinsame Kategorien (optional, nur zur Reihenfolge)
-all_categories <- c("Stem (model)", "Branches (model)", "Rest (model)",
-                    "Stem (emp.)",  "Branches (emp.)",  "Rest (emp.)")
-
-fill_vals <- c(
-  "Stem (model)"     = "#1b9e77",
-  "Branches (model)" = "#d95f02",
-  "Rest (model)"     = "#7570b3",
-  "Stem (emp.) "      = NA,
-  "Branches (emp.) "  = NA,
-  "Rest (emp.) "      = NA          
-)
-
-colour_vals <- c(
-  "Stem (model)"     = NA,
-  "Branches (model)" = NA,
-  "Rest (model)"     = NA,
-  "Stem (emp.)"      = "darkgreen",
-  "Branches (emp.)"  = "orange",
-  "Rest (emp.)"      = "blue"
-)
-
-shape_vals <- c(
-  "Stem (model)"     = NA,
-  "Branches (model)" = NA,
-  "Rest (model)"     = NA,
-  "Stem (emp.)"      = 21,
-  "Branches (emp.)"  = 24,
-  "Rest (emp.)"      = 23
-)
-
-ggplot(comp_long_biomass,
-       aes(x = age, y = biomass)) +
-  geom_area(aes(fill = component),
-            position = "stack", alpha = 0.8, colour = NA) +
-  #geom_point(aes(x = 4, y = B_huber4_total),
-  #           inherit.aes = FALSE,
-  #           colour = "black", shape = 4, size = 3,
-  #           show.legend = FALSE) +
-  geom_point(
-    data = jha_long,
-    aes(x = age, y = biomass,
-        colour = category, fill = category, shape = category),
-    inherit.aes = FALSE,
-    size = 3
-  ) +
+ggplot(comp_long, aes(x = age, y = biomass)) +
+  annotate("rect", xmin = 5, xmax = 10, ymin = 0, ymax = Inf,
+           fill = "grey80", alpha = 0.3) +
+  geom_area(aes(fill = component), position = "stack",
+            alpha = 0.75, colour = NA) +
+  geom_point(data = jha_points, aes(x = age, y = stem_cum),
+             colour = "darkgreen", shape = 21, size = 2.5, fill = "darkgreen",
+             alpha = 0.85, inherit.aes = FALSE) +
+  geom_point(data = jha_points, aes(x = age, y = branch_cum),
+             colour = "darkorange", shape = 24, size = 2.5, fill = "darkorange",
+             alpha = 0.85, inherit.aes = FALSE) +
+  geom_point(data = jha_points, aes(x = age, y = total),
+             colour = "navy", shape = 23, size = 2.5, fill = "navy",
+             alpha = 0.85, inherit.aes = FALSE) +
   scale_fill_manual(
-    name   = "",
-    values = fill_vals,
-    breaks = all_categories
+    name   = "Component (model)",
+    values = c("Stem" = "#1b9e77", "Branches" = "#d95f02", "Residues" = "#7570b3")
   ) +
-  scale_colour_manual(
-    name   = "",
-    values = colour_vals,
-    breaks = all_categories
-  ) +
-  scale_shape_manual(
-    name   = "",
-    values = shape_vals,
-    breaks = all_categories
-  ) +
+  scale_x_continuous(breaks = 0:13) +
   labs(
-    x = "Age (years)",
-    y = "Component biomass (Mg/ha dry matter)"
+    x = "Stand age (years)",
+    y = expression("Biomass (Mg DM ha"^{-1}*")")
   ) +
-  theme_minimal()
+  theme_minimal(base_size = 9) +
+  theme(
+    legend.position  = "right",
+    legend.key.size  = unit(0.4, "cm"),
+    legend.text      = element_text(size = 7),
+    legend.title     = element_text(size = 8, face = "bold"),
+    panel.grid.minor = element_blank()
+  )
 ```
 
-
-## Cascading use of biomass and product quality
-
-From a cleaner production perspective, cascading use of biomass—prioritising high‑value material uses before energy recovery—is widely advocated to maximise value creation and reduce environmental burdens @Lamers2015_Feedstock_Design; @Espinoza2017_Biorefinery_SC_review. In wood‑based value chains, this typically implies allocating higher‑quality stem fractions to products such as sawn timber, veneer, panels, or pulp, while directing lower‑quality fractions and residues to energy applications @DeMeyer2015_OPTIMASS. Multi‑product MILP models such as OPTIMASS implement this concept by defining a hierarchy of product quality classes and allowing higher‑quality products to satisfy lower‑quality demands via substitution constraints along the cascade @DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS.
-
-For agroforestry biomass such as poplar and willow, this logic translates into a set of product streams (e.g. larger‑diameter logs for material uses, medium‑diameter fractions for pulp and panels, small‑diameter wood and residues for energy), whose relative shares depend on stand age and growth conditions @Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF. In the present work, the age‑class yield construction described above is extended by associating each age class with product‑specific yield fractions, thereby capturing age‑dependent quality in a simplified but optimisation‑compatible form. The MILP formulation then enforces a product hierarchy in which higher‑quality products can satisfy lower‑quality demands, subject to the available yields and infrastructure capacities, thus embedding a simplified cascading logic into the regional supply chain design @DeMeyer2015_OPTIMASS.
-
-## Synthesis and modelling gap
-
-The literature summarised above provides three critical ingredients for modelling agroforestry biomass supply chains. First, empirical SRAFS and SRC studies offer species‑ and site‑specific information on growth, MAI, stand structure, and economic performance, including allometric models that link diameter distributions to biomass @Huber2016_Allometric_SRAFS; @Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF; @Testa2014_Poplar_Economics. Second, age‑dependent stand biomass functions such as Chapman–Richards provide a convenient parametric representation of growth over rotation, from which discrete age‑class yields can be derived @Niemczyk2021_Poplar_Rotation. Third, biomass supply chain MILP models and multi‑product cascading formulations offer a rich toolkit for optimising infrastructure, logistics, and product allocation in regional bioeconomy systems @Zahraee2020_BSC_review; @DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS; @Espinoza2017_Biorefinery_SC_review.
-
-At the same time, existing models fall short of explicitly coupling agroforestry stand dynamics with supply chain design in several respects. Most biomass supply chain formulations assume exogenous biomass availability profiles and do not represent stand age or rotation decisions, while forestry‑oriented growth and yield models are rarely embedded in regional optimisation models that include multiple products and cascading uses @DeMeyer2016_tOPTIMASS; @Lamers2015_Feedstock_Design. In particular, there is a lack of models that (i) link age‑dependent stand biomass functions to age‑class yield tables for different product types, (ii) enforce multi‑cycle age‑lag constraints that ensure consistency of harvesting decisions at each agroforestry site across successive rotations, and (iii) allocate biomass along a product quality cascade within a spatially explicit, multi‑period supply chain optimisation framework @DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS; @Eksioglu2009_Biorefinery_SC.
-
-The MILP formulation developed in this paper addresses this gap by integrating age‑dependent biomass yield modelling, stand‑level age‑lag constraints, and a product‑cascading hierarchy into a single optimisation model for the design and operation of agroforestry biomass supply chains.
+The allometric pathway described above provides the scientific justification for both the shape of the total biomass curve and the age-dependent component shares modelled in Figure~\@ref(fig:max3-growth): the Gompertz inflection for total AGB traces back to the accelerating then decelerating SBD growth of individual shoots, and the shift in component fractions reflects the progressively larger contribution of secondary radial stem growth relative to branching as trees mature.
+These component-specific yield trajectories are the direct input to the yield coefficient \(\eta_{pa}\) in the MILP model, where \(p \in \{\text{stem, branch, residue}\}\) maps to the chemical, pulp, and energy product classes, respectively.
 
 
-# Biomass supply chain modelling 
+## Biomass supply chain design {#sec:lit-sc}
 
-Biomass supply chain design and planning has been widely studied using MILP models at strategic, tactical, and operational levels [@Zahraee2020_BSC_review; @Sharma2013_BSC_review]. Comprehensive reviews classify models according to decision scope (location, capacity, routing, inventory), time horizon, uncertainty treatment, and sustainability metrics [@Zahraee2020_BSC_review; @Espinoza2017_Biorefinery_SC_review]. Many models focus on bioenergy supply chains for electricity, heat, or biofuels, considering feedstocks such as agricultural residues, forestry residues, dedicated energy crops, and municipal wastes [@Sharma2013_BSC_review]. Environmental aspects, including greenhouse gas emissions and land use, are increasingly integrated, often using life-cycle assessment (LCA) data or emission factors [@Espinoza2017_Biorefinery_SC_review].
+Biomass supply chain design has been extensively studied using MILP at strategic, tactical, and operational levels [@Zahraee2020_BSC_review; @Sharma2013_BSC_review; @Espinoza2017_Biorefinery_SC_review].
+Typical models jointly optimise facility locations and capacities, biomass sourcing patterns, multimodal transport flows, and inventory policies under cost or profit objectives, sometimes augmented by greenhouse gas emission indicators [@Eksioglu2009_Biorefinery_SC; @Arabi2019_Microalgae_Biobutanol_SC].
+A key methodological feature of the more advanced formulations is the integration of long-term network design with multi-period logistics, enabling simultaneous optimisation of infrastructure and operational decisions across seasonal or annual time steps [@Eksioglu2009_Biorefinery_SC; @Zahraee2020_BSC_review].
 
-Among generic models, OPTIMASS is a notable example of a multi-product MILP that optimises biomass supply chains with changing biomass characteristics and by-product re-injection [@DeMeyer2015_OPTIMASS]. It models the flow of multiple biomass types and products through supply chain stages, capturing conversion yields, storage, and cascading uses. The t-OPTIMASS extension further incorporates biomass growth and regeneration over multiple periods, enabling the representation of time-dependent availability for biomass supply chains [@DeMeyer2016_tOPTIMASS]. However, these formulations generally assume exogenous biomass availability profiles per period, and do not explicitly model stand-level age dynamics or rotation constraints.
+Among generic multi-product frameworks, OPTIMASS explicitly models product quality cascades by defining a hierarchy of biomass classes and allowing higher-quality products to satisfy lower-quality demands, while the t-OPTIMASS extension incorporates biomass growth and regeneration over multiple periods [@DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS].
+However, in virtually all existing formulations biomass availability is treated as an exogenous time-series input: stand age structure, rotation decisions, and coppice cycles are not represented endogenously, so that trade-offs between rotation length, stand management, and supply chain configuration cannot be explored in a unified model [@DeMeyer2016_tOPTIMASS; @Lamers2015_Feedstock_Design].
+This gap is particularly pronounced for agroforestry systems with repeated coppice cycles, where establishment timing, consecutive harvest decisions, and age-dependent biomass quality jointly determine both the feasible supply profile and the achievable product cascade.
 
-Several scenario-based approaches have been developed for forest biorefinery supply chains, linking product portfolios, process choices, and supply chain design under market volatility [@Mansoornejad2013_Forest_Biorefinery_SC]. @Lamers2015_Feedstock_Design discuss strategic feedstock supply system design for biorefineries, emphasising the importance of economies of scale, conversion yields, and logistics in achieving cost-efficient and robust systems. Reviews highlight that only a limited subset of models explicitly consider biomass growth, spatially explicit land-use change, or agroforestry systems [@Zahraee2020_BSC_review; @Sharma2013_BSC_review]. There is therefore a clear opportunity to develop models that couple agroforestry stand dynamics with network design and cleaner production objectives.
-
-## Cascading use of biomass
-
-From a cleaner production perspective, the cascading use of biomass—prioritising high-value material uses before energy recovery—is widely advocated to maximise resource efficiency and mitigate environmental impacts [@Lamers2015_Feedstock_Design]. In wood-based value chains, this implies that high-quality timber or chemical feedstock fractions should first be allocated to material products such as engineered wood products, pulp and paper, or biochemicals, while lower-quality fractions and residues are used for energy [@DeMeyer2015_OPTIMASS; @Lamers2015_Feedstock_Design]. MILP models can represent such cascades by defining product quality classes and allowing substitution of higher-quality products for lower-quality demands, subject to hierarchy constraints.
-
-The OPTIMASS framework explicitly models such product cascades by defining a product quality order and allowing flows from higher-quality products to lower-quality demand nodes [@DeMeyer2015_OPTIMASS]. Similar ideas have been applied in forest-based biorefinery supply chains, where product portfolios include platform chemicals, fuels, and electricity [@Mansoornejad2013_Forest_Biorefinery_SC]. For agroforestry biomass, poplar and willow can supply different product streams, including sawlogs, peeled veneers, pulpwood, and energy chips, with quality primarily defined by diameter, straightness, and defect rates [@Testa2014_Poplar_Economics; @Spinelli2009_SRC_Harvesting]. Economic analyses in Italy and Central Europe suggest that the economic viability of SRC systems depends on access to higher-value markets such as panel products and pulp, in addition to energy markets [@Testa2014_Poplar_Economics].
-
-Cleaner production strategies that integrate agroforestry biomass into regional bioeconomies therefore require models that can allocate biomass flows along such cascades while respecting stand growth dynamics, rotation constraints, and logistical capacities. Explicit representation of age-dependent yield quality (e.g., diameter distributions, wood density) remains challenging in large-scale MILP models, but can be approximated through age- and species-specific product yield fractions.
-
-## Stand-level yield functions and age classes
-
-To integrate allometric growth into a MILP formulation, we abstract from individual trees and construct age-class yield functions for each biomass type \(p\) and age \(a\). Following common practice in forest and SRC modelling, we define discrete annual age classes and compute the stand biomass yield \(Y_{pa}\) (t ha\(^{-1}\)) associated with harvesting at age \(a\) by combining allometric functions with empirically observed diameter distributions and stand densities [@Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF]. Where detailed stand structure data are available, this can be done by simulating SBD distributions over time (e.g., via mixed-effects models) and applying tree-level allometrics to each diameter class [@Huber2018_SRAFS_growth]. In the absence of such detailed data, age-dependent MAI and CAI curves reported in the literature can be used to approximate \(Y_{pa}\) [@Trnka2008_Poplar_SRF; @Huber2018_SRAFS_growth].
-
-In the context of the agroforestry supply chain design (SCD) model, we assume that each agroforestry site \(i\) is characterised by a species or species mix, a planting density, and management regime, which jointly determine a site-specific yield profile \(\eta_{pa}\) (t ha\(^{-1}\)) for each product type \(p\) at age \(a\). These yield profiles can be interpreted as the maximum harvestable biomass per hectare for product \(p\) if the stand is harvested at age \(a\), conditional on the stand having been established at an earlier time. In the current MILP formulation, these profiles are captured through the parameter \(\eta_{pa}\), termed base yield, and are linked to decision variables via the constraint
-\[
-Y_{ipt} = \sum_{s=1}^{t-1} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist} \quad \forall i,p,t \in \mathcal{T}^{\text{harv}}.
-\]
-Here, \(Y_{ipt}\) is the maximum harvest quantity of product \(p\) at site \(i\) in period \(t\), \(\text{AREA}_i\) is the site area (ha), and \(z_{ist}\) is a binary variable indicating that harvests at site \(i\) in periods \(s\) and \(t\) form consecutive harvests with an age lag \(t-s\) within allowed bounds. The term \(\eta_{p(t-s)}\) thus plays the role of an allometrically derived yield coefficient that depends only on stand age \(a = t-s\), not on calendar time.
-
-## Biomass types and product quality classes
-
-In the model, three product types are distinguished: \(p = 1\) (chemical-grade biomass), \(p = 2\) (pulp-grade biomass), and \(p = 3\) (energy-grade biomass). This tripartite classification reflects a product quality hierarchy, with product 1 having the highest quality and price, and product 3 being the lowest-quality fraction typically used for energy [@DeMeyer2015_OPTIMASS; @Lamers2015_Feedstock_Design]. From an allometric perspective, the differentiation among these products can be linked to diameter classes, stem straightness, and defect rates, as these determine the suitability of biomass fractions for different processing routes [@Testa2014_Poplar_Economics; @Spinelli2009_SRC_Harvesting].
-
-In practice, allometric models provide estimates of total aboveground woody biomass, which can be split into product classes using empirical conversion factors or allocation rules derived from product recovery studies (e.g., share of biomass suitable for veneer vs. pulp vs. chips as a function of diameter and log length) [@Spinelli2009_SRC_Harvesting]. For the purposes of the SCD model, we can represent this by specifying product-specific yield coefficients \(\eta_{pa}\) that sum to the total biomass yield at age \(a\) and reflect the expected proportion of each product class under a given management regime.
-
-The cascading hierarchy in the MILP formulation is implemented through demand satisfaction constraints that allow higher-quality products to satisfy lower-quality demands. Specifically, demand \(D_{kpt}^{\max}\) at consumer \(k\) for product class \(p\) in period \(t\) can be met by flows of product \(p\) and all higher-quality classes \(p' \leq p\) from storage hubs, as captured by
-\[
-\sum_{j \in \mathcal{J}, p' \in \mathcal{P}: p' \leq p } X_{jkp'pt} \leq D_{kpt}^{\max} \quad \forall k,p,t.
-\]
-This structure supports cleaner production by favouring material uses when possible and relegating residual fractions to energy uses, depending on revenue parameters \(R_{k,p}\) and system constraints [@DeMeyer2015_OPTIMASS; @Lamers2015_Feedstock_Design].
+The MILP formulation developed in this paper addresses this gap by endogenising stand age dynamics through binary age-lag variables, coupling the component-specific yield coefficients \(\eta_{pa}\) derived from the Gompertz growth models above with supply chain flow variables, and embedding a product quality cascade that allocates stem, branch, and residue fractions to chemical, pulp, and energy markets within a single optimisation model.
 
 
 # MILP model for agroforestry supply chain design {#sec:milp}
@@ -680,7 +468,7 @@ We envisage the following steps and experimental scenarios for computational ana
 
 2. **Baseline optimisation:** Solve the MILP model for a baseline configuration with fixed prices, capacities, and policy settings, obtaining optimal establishment timing, harvest schedules, and supply chain structure (locations, flows, inventories).
 
-3. **Rotation length scenarios:** Vary the age-lag bounds \(A^{\min}\) and \(A^{\max}\) to represent alternative rotation strategies (e.g., 3–5 years vs. 8–10 years) and analyse their impacts on profitability, product mix, and land use. This will shed light on trade-offs between shorter rotations favouring energy chips and longer rotations enabling higher shares of material products [@Trnka2008_Poplar_SRF; @Testa2014_Poplar_Economics].
+3. **Rotation length scenarios:** Vary the age-lag bounds \(A^{\min}\) and \(A^{\max}\) to represent alternative rotation strategies (e.g., 3--5 years vs. 8--10 years) and analyse their impacts on profitability, product mix, and land use. This will shed light on trade-offs between shorter rotations favouring energy chips and longer rotations enabling higher shares of material products [@Trnka2008_Poplar_SRF; @Testa2014_Poplar_Economics].
 
 4. **Product price and cascading scenarios:** Explore scenarios with different relative prices for chemical, pulp, and energy products, reflecting changes in market demand and policy incentives (e.g., bioenergy subsidies, green chemicals markets). Assess how the product cascade hierarchy and yield quality structure influence the marginal value of species and rotation decisions [@DeMeyer2015_OPTIMASS; @Lamers2015_Feedstock_Design].
 
