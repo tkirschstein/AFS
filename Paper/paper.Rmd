@@ -83,10 +83,10 @@ library(ROI.plugin.glpk)
 library(gurobi)
 library(ROI.plugin.gurobi)
 
-library(dplyr)
-library(ggplot2)
 library(ggrepel)
 library(ggnewscale)
+library(rnaturalearth)
+library(rnaturalearthdata)
 
 # Modell-Hilfsfunktionen laden
 source("../Modell/!helper_func.r")
@@ -132,91 +132,140 @@ The remainder of the paper is structured as follows. Section \@ref(sec:litreview
 
 ```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Green polygons: potential KUP sites. Orange circles: pre-treatment facilities (sawmills and logistics hubs, radius proportional to processing capacity). Coloured squares: consumer sites (violet: chemical/pulp, blue: pulp/paper, red: energy/biogas).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth"}
 
-# ── Consumer-Kategorisierung ─────────────────────────────────────────────────
-consumers <- consumers %>%
+
+# ── Farben ───────────────────────────────────────────────────────────────────
+COL_SITE_F <- "#74c476"; COL_SITE_B <- "#2d6a2d"
+COL_SAW    <- "#e65c00"; COL_HUB    <- "#c05000"
+COL_P1     <- "#6a0dad"; COL_P2     <- "#08519c"; COL_P3     <- "#a50026"
+
+# ── Bundeslandgrenzen (rnaturalearth, admin-1) ────────────────────────────────
+de_states <- ne_states(country = "Germany", returnclass = "sf") %>%
+  st_transform(4326)
+
+# ── Flüsse (rnaturalearth, Skalenstufe medium) ────────────────────────────────
+rivers_eu <- ne_download(
+  scale  = 10,
+  type   = "rivers_lake_centerlines",
+  category = "physical",
+  returnclass = "sf"
+) %>%
+  st_transform(4326) %>%
+  st_crop(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8)
+
+# ── Consumer-Kategorisierung ──────────────────────────────────────────────────
+consumers_plt <- consumers %>%
   mutate(
     total_demand = demand_P1 + demand_P2 + demand_P3,
     kategorie = case_when(
       demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
       demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
       demand_P3 > 0 ~ "Energy / Biogas (P3)",
-      TRUE ~ "Other"
+      TRUE          ~ "Other"
     ),
-    size = pmin(4.5, pmax(1.5, 1.5 + log1p(total_demand) * 0.55))
+    pt_size = pmin(4.5, pmax(1.5, 1.5 + log1p(total_demand) * 0.55))
   )
 
-storages <- storages %>%
+storages_plt <- storages %>%
   mutate(
-    subtype = if_else(type == "Hub", "Logistics Hub", "Sawmill"),
-    size    = pmin(3.5, pmax(1.2, 1.2 + log1p(CAP_proc) * 0.38))
+    subtype  = if_else(type == "Hub", "Logistics Hub", "Sawmill"),
+    pt_size  = pmin(3.5, pmax(1.2, 1.2 + log1p(CAP_proc) * 0.38)),
+    col_fill = if_else(type == "Hub", COL_HUB, COL_SAW)
   )
 
-# ── Farben (konsistent mit map_workspace.R / app_v10.r) ──────────────────────
-COL_SITE_F  <- "#74c476"; COL_SITE_B  <- "#2d6a2d"
-COL_SAW     <- "#e65c00"; COL_HUB     <- "#c05000"
-COL_P1      <- "#6a0dad"; COL_P2      <- "#08519c"; COL_P3      <- "#a50026"
+# ── sf-Objekte ────────────────────────────────────────────────────────────────
+stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326)
+cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326)
 
+# ── Plot ──────────────────────────────────────────────────────────────────────
+ggplot() +
 
+  # 1. Bundeslandgrenzen
+  geom_sf(data = de_states,
+          fill = "grey96", colour = "grey55", linewidth = 0.35) +
 
-  # Zentroide als sf-Punkte
-  sites_sf_pts <- st_as_sf(sites, coords = c("lng", "lat"), crs = 4326)
-  stor_sf      <- st_as_sf(storages,  coords = c("lng", "lat"), crs = 4326)
-  cons_sf      <- st_as_sf(consumers, coords = c("lng", "lat"), crs = 4326)
+  # 2. Flüsse
+  geom_sf(data = rivers_eu,
+          colour = "#4292c6", linewidth = 0.45, alpha = 0.7) +
 
-  ggplot() +
-    # Feldblock-Polygone
-    geom_sf(data = sites_sf,
-            fill = COL_SITE_F, colour = COL_SITE_B,
-            linewidth = 0.15, alpha = 0.45) +
-    # Vorbehandlungsstandorte
-    geom_sf(data = stor_sf,
-            aes(size = size, shape = subtype),
-            fill  = COL_SAW, colour = "white",
-            stroke = 0.6, alpha = 0.9,
-            show.legend = TRUE) +
-    scale_shape_manual(
-      name   = "Pre-treatment",
-      values = c("Sawmill" = 21, "Logistics Hub" = 24)
-    ) +
-    # Consumer-Punkte
-    ggnewscale::new_scale_fill() +
-    geom_sf(data = cons_sf,
-            aes(fill = kategorie, size = size),
-            shape = 22, colour = "white", stroke = 0.5, alpha = 0.85,
-            show.legend = TRUE) +
-    scale_fill_manual(
-      name   = "Consumer type",
-      values = c(
-        "Chemical / Pulp (P1)" = COL_P1,
-        "Pulp / Paper (P2)"    = COL_P2,
-        "Energy / Biogas (P3)" = COL_P3,
-        "Other"                = "grey60"
-      )
-    ) +
-    scale_size_continuous(range = c(1.5, 5), guide = "none") +
-    # Beschriftung Storages
-  #  ggrepel::geom_label_repel(
-  #data         = stor_sf,
-  #aes(label    = name, geometry = geometry),
-  #stat         = "sf_coordinates",
-  #size         = 1.8,
-  #label.size   = 0.15,
-  #label.padding = unit(0.1, "lines"),
-  #fill         = "white", alpha = 0.75,
-  #min.segment.length = 0,
-  #show.legend  = FALSE
-  #) +
-    coord_sf(xlim = c(10.6, 13.2), ylim = c(50.9, 52.8), expand = FALSE) +
-    labs(x = "Longitude", y = "Latitude") +
-    theme_minimal(base_size = 9) +
-    theme(
-      panel.grid       = element_line(colour = "grey88", linewidth = 0.3),
-      legend.position  = "right",
-      legend.key.size  = unit(0.45, "cm"),
-      legend.text      = element_text(size = 7),
-      legend.title     = element_text(size = 8, face = "bold"),
-      axis.text        = element_text(size = 7)
+  # 3. KUP-Polygone
+  geom_sf(data = sites_sf,
+          fill = COL_SITE_F, colour = COL_SITE_B,
+          linewidth = 0.12, alpha = 0.45) +
+
+  # 4. Pre-treatment: colour + shape  (KEIN fill → keine zweite Scale nötig)
+  geom_sf(data = stor_sf,
+          aes(colour = subtype, shape = subtype, size = pt_size),
+          stroke = 1.2, alpha = 0.92, show.legend = TRUE) +
+  scale_colour_manual(
+    name   = "Pre-treatment",
+    values = c("Sawmill" = COL_SAW, "Logistics Hub" = COL_HUB)
+  ) +
+  scale_shape_manual(
+    name   = "Pre-treatment",
+    values = c("Sawmill" = 16, "Logistics Hub" = 17)
+  ) +
+
+  # 5. neue fill-Scale für Consumer
+  ggnewscale::new_scale_fill() +
+
+  # 6. Consumer-Punkte (fill-Quadrate)
+  geom_sf(data  = cons_sf,
+          aes(fill = kategorie, size = pt_size),
+          shape = 22, colour = "white", stroke = 0.45,
+          alpha = 0.88, show.legend = TRUE) +
+  scale_fill_manual(
+    name   = "Consumer type",
+    values = c(
+      "Chemical / Pulp (P1)" = COL_P1,
+      "Pulp / Paper (P2)"    = COL_P2,
+      "Energy / Biogas (P3)" = COL_P3,
+      "Other"                = "grey60"
     )
+  ) +
+
+  # 7. Beschriftungen Vorbehandlung
+  # ggrepel::geom_label_repel(
+  #   data          = stor_sf,
+  #   aes(label = name, geometry = geometry),
+  #   stat          = "sf_coordinates",
+  #   size          = 1.8, label.size = 0.15,
+  #   label.padding = unit(0.10, "lines"),
+  #   fill = "white", alpha = 0.78,
+  #   min.segment.length = 0,
+  #   show.legend   = FALSE
+  # ) +
+
+  # 8. Skalen
+  scale_size_continuous(range = c(1.5, 5), guide = "none") +
+
+  # 9. guides(): colour + shape zu einer Legende zusammenführen
+  guides(
+    colour = guide_legend(
+      order        = 1,
+      override.aes = list(size = 4, stroke = 1.5)
+    ),
+    shape  = guide_legend(
+      order        = 1,
+      override.aes = list(size = 4, stroke = 1.5)
+    ),
+    fill   = guide_legend(
+      order        = 2,
+      override.aes = list(size = 4, shape = 22, colour = "white")
+    ),
+    size   = "none"
+  ) +
+
+  coord_sf(xlim = c(10.6, 13.2), ylim = c(50.9, 52.8), expand = FALSE) +
+  labs(x = "Longitude", y = "Latitude") +
+  theme_minimal(base_size = 9) +
+  theme(
+    panel.grid      = element_line(colour = "grey88", linewidth = 0.25),
+    legend.position = "right",
+    legend.key.size = unit(0.45, "cm"),
+    legend.text     = element_text(size = 7),
+    legend.title    = element_text(size = 8, face = "bold"),
+    axis.text       = element_text(size = 7)
+  )
 ```
 
 # Literature review {#seclitreview}
