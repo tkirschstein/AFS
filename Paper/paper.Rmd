@@ -9,7 +9,7 @@ author:
   
 journal: "Journal Name"
 # elsarticle options: preprint preview style, 1p or 3p for layout
-classoption: "preprint,review,1p"
+classoption: "preprint,review,1p,authoryear"
 date: "`r Sys.Date()`"
 linenumbers: true
 numbersections: true
@@ -117,9 +117,7 @@ The present paper contributes to this literature in four ways. First, we propose
 
 The remainder of the paper is structured as follows. Section \@ref(sec:litreview) reviews the relevant literature on agroforestry biomass systems, allometric biomass modelling, and biomass supply chain optimisation. Section \@ref(sec:allometrics) introduces the allometric models adopted to represent biomass growth of different tree species and biomass types. Section \@ref(sec:milp) summarises the MILP formulation for the agroforestry supply chain with age-lag constraints. Section \@ref(sec:experiments) outlines the planned computational experiments for the case study and discusses expected insights for cleaner production strategies.
 
-```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE,
-    fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Green polygons: potential KUP sites. Orange symbols: pre-treatment facilities (circle~=~sawmill, triangle~=~logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).",
-    fig.width=6.5, fig.height=5.5, out.width="\\textwidth"}
+```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Green polygons: potential KUP sites. Orange symbols: pre-treatment facilities (circle~=~sawmill, triangle~=~logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth"}
 
 COL_SITE_F <- "#74c476"; COL_SITE_B <- "#2d6a2d"
 COL_SAW    <- "#e65c00"; COL_HUB    <- "#c05000"
@@ -295,8 +293,7 @@ To capture these dynamics analytically while keeping the model integrable into a
 For Max~3 the stem helper is parameterised with a high asymptote (\(A_\mathrm{stem} = 1.0\)) and a relatively late inflection (\(t_{0,\mathrm{stem}} = 4.0\)~yr), whereas the branch helper uses a lower asymptote (\(A_\mathrm{branch} = 0.7\)) and an earlier inflection (\(t_{0,\mathrm{branch}} = 3.0\)~yr), and the residue helper saturates earliest (\(A_\mathrm{rest} = 0.1\), \(t_{0,\mathrm{rest}} = 2.0\)~yr).
 This parameterisation reproduces the observed shift towards stem dominance with age and is consistent with the empirical component fractions compiled across poplar agroforestry and SRC systems spanning ages 6--13 years, as illustrated in Figure~\@ref(fig:max3-growth).
 
-```{r max3-growth, echo=FALSE, message=FALSE, warning=FALSE,
-    fig.cap="Modelled stand-level biomass components for poplar (Max~3) over stand age, represented as stacked Gompertz curves (shaded areas: stem green, branches orange, residues purple) and compared with empirical aboveground biomass observations from poplar agroforestry and SRC systems. Symbols denote cumulative component totals: stem (filled circles), stem+branches (triangles), total AGB (diamonds). Empirical data compiled from Jha (2018) and cited primary sources. Grey shading: typical rotation-age window (5--10 years)."}
+```{r max3-growth, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Modelled stand-level biomass components for poplar (Max~3) over stand age, represented as stacked Gompertz curves (shaded areas: stem green, branches orange, residues purple) and compared with empirical aboveground biomass observations from poplar agroforestry and SRC systems. Symbols denote cumulative component totals: stem (filled circles), stem+branches (triangles), total AGB (diamonds). Empirical data compiled from Jha (2018) and cited primary sources. Grey shading: typical rotation-age window (5--10 years).", fig.width=6.5, fig.height=5.0, out.width="\\textwidth"}
 
 library(dplyr); library(tidyr); library(ggplot2)
 
