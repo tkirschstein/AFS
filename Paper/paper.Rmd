@@ -29,6 +29,7 @@ output:
   rticles::elsevier_article:
     keep_tex: true
     latex_engine: xelatex
+    
 
 header-includes:
   # Use elsarticle's review layout and set 1.5 line spacing
