@@ -264,13 +264,14 @@ Modelling this interaction requires age-resolved biomass component trajectories,
 
 A sound stand-level biomass model for agroforestry must be traceable to measured biometric variables at the individual tree.
 Allometric functions of the power-law form
-\[
+\begin{equation}
   M_i = b_0 \cdot \mathrm{SBD}_i^{\,b_1}
-\]
+  \label{eq:allometry}
+\end{equation}
 relate the dry biomass \(M_i\) (kg) of shoot \(i\) to its stem base diameter (SBD, cm) measured 10~cm above ground, with species-specific scale parameter \(b_0\) and exponent \(b_1\) [@Huber2016_Allometric_SRAFS].
 For SRAFS species in Southern Germany, @Huber2016_Allometric_SRAFS report a common exponent \(b_1 = 2.603\) across black alder, black locust, poplar (Max~3), and willow (Inger), while \(b_0\) ranges from 0.025 to 0.041, reflecting differences in wood density and branching architecture.
 
-The allometric equation maps a single diameter measurement to biomass, but to obtain a stand-level yield function we need to know how the mean SBD of coppice shoots evolves over time.
+The allometric equation \eqref{eq:allometry} maps a single diameter measurement to biomass, but to obtain a stand-level yield function we need to know how the mean SBD of coppice shoots evolves over time.
 This intermediate step---the **age-dependent SBD growth model**---connects the static allometric relationship to the dynamic stand-level trajectory, and is introduced in the following subsection.
 
 ### Age-dependent SBD growth model
@@ -278,23 +279,26 @@ This intermediate step---the **age-dependent SBD growth model**---connects the s
 The mean stem base diameter \(\overline{\mathrm{SBD}}(t)\) of coppice shoots increases rapidly in the first growing seasons as shoots exploit stored root carbohydrates, then decelerates as intra-stand competition for light and water intensifies.
 This trajectory is well described by a sigmoidal growth function; empirical evidence from poplar SRC and SRAFS trials indicates that the SBD growth curve exhibits its inflection point at a relatively early stand age (2--4~years), consistent with the right-skewed accumulation pattern of coppice systems [@BarrioAnta2008_Poplar_Growth; @Niemczyk2021_Poplar_Rotation].
 We adopt a Gompertz model for \(\overline{\mathrm{SBD}}(t)\):
-\[
+\begin{equation}
   \overline{\mathrm{SBD}}(t) = D_{\infty} \cdot \exp\!\bigl(-\exp(-r\,(t - \tau))\bigr),
-\]
+  \label{eq:sbd-gompertz}
+\end{equation}
 where \(D_{\infty}\) (cm) is the asymptotic mean diameter, \(r\) (yr\(^{-1}\)) controls the rate of diameter increment, and \(\tau\) (yr) is the age at the inflection point of the diameter curve.
 For poplar clone Max~3 under SRAFS conditions in Central Europe, representative parameter values are \(D_{\infty} = 9.5\)~cm, \(r = 0.55\)~yr\(^{-1}\), and \(\tau = 2.5\)~yr, yielding a mean SBD of approximately 4.5~cm at age~3 and 7.8~cm at age~7---consistent with the diameter ranges reported by @Huber2018_SRAFS_growth and @BarrioAnta2008_Poplar_Growth.
 
-Given \(\overline{\mathrm{SBD}}(t)\), the mean shoot biomass follows directly from the allometric equation:
-\[
+Given \(\overline{\mathrm{SBD}}(t)\) from \eqref{eq:sbd-gompertz}, the mean shoot biomass follows directly from the allometric equation \eqref{eq:allometry}:
+\begin{equation}
   \bar{M}_\mathrm{shoot}(t) = b_0 \cdot \overline{\mathrm{SBD}}(t)^{\,b_1}.
-\]
+  \label{eq:shoot-biomass}
+\end{equation}
 Stand-level aboveground biomass \(B_\mathrm{AG}(t)\) (Mg~ha\(^{-1}\)) is then obtained by aggregating individual shoot biomasses over all shoots per tree and multiplying by stand density \(N(t)\) (trees~ha\(^{-1}\)):
-\[
+\begin{equation}
   B_\mathrm{AG}(t)
   = N(t) \cdot \bar{n}_\mathrm{shoot}(t) \cdot \bar{M}_\mathrm{shoot}(t),
-\]
+  \label{eq:stand-biomass}
+\end{equation}
 where \(\bar{n}_\mathrm{shoot}\) is the mean number of shoots per tree [@Huber2018_SRAFS_growth].
-Because both \(\overline{\mathrm{SBD}}(t)\) and \(N(t)\) are sigmoidal (SBD increasing, stand density declining through self-thinning), the product \(B_\mathrm{AG}(t)\) inherits a right-skewed sigmoidal shape with an inflection occurring at a relatively low fraction of the asymptote.
+Because both \(\overline{\mathrm{SBD}}(t)\) and \(N(t)\) are sigmoidal (SBD increasing, stand density declining through self-thinning), the product \(B_\mathrm{AG}(t)\) in \eqref{eq:stand-biomass} inherits a right-skewed sigmoidal shape with an inflection occurring at a relatively low fraction of the asymptote.
 This structural property of the bottom-up aggregation provides the biological justification for adopting a Gompertz function directly at the stand level, as discussed in the following subsection.
 In practice, where repeated diameter measurements are available, the resulting \(B_\mathrm{AG}(t)\) trajectory can be fitted by a smooth parametric function; where only a few harvest-age data points are available, a parsimonious sigmoidal function is preferred for extrapolation [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics].
 
@@ -310,19 +314,20 @@ Second, the Chapman--Richards model is point-symmetric around its inflection, im
 Empirical data from SRC and SRAFS poplar trials consistently show that the inflection of the stand biomass trajectory occurs at a **substantially earlier** fraction of the asymptote---typically around one third---reflecting rapid initial canopy closure followed by a prolonged period of decelerating growth as competition for light intensifies [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics].
 
 The Gompertz function
-\[
+\begin{equation}
   B(t) = A \cdot \exp\!\bigl(-\exp(-k\,(t-t_0))\bigr)
-\]
+  \label{eq:gompertz-stand}
+\end{equation}
 is structurally suited to this regime: its inflection point is located at \(A/e \approx 0.368\,A\), well below the midpoint of the asymptote, producing the right-skewed accumulation pattern characteristic of fast-establishing coppice stands [@Tjorve2017_Gompertz; @Zeide1993_AnalysisGrowth].
-The Gompertz model is a limiting special case of the Richards family and has been applied successfully to model intra-annual cambial growth dynamics in broadleaved trees, where cell production over the growing season follows a Gompertz-shaped trajectory [@Cuny2014_CambialActivity].
+The Gompertz model \eqref{eq:gompertz-stand} is a limiting special case of the Richards family and has been applied successfully to model intra-annual cambial growth dynamics in broadleaved trees, where cell production over the growing season follows a Gompertz-shaped trajectory [@Cuny2014_CambialActivity].
 A further practical advantage is that the Gompertz helper-function decomposition used for component shares---where each fraction \(f_p(t) = h_p(t)/\sum_{p'} h_{p'}(t)\) is derived from individual Gompertz sub-functions---guarantees that component fractions sum to unity at all ages by construction, without requiring additional constraints.
 This property simplifies both the model specification and its later integration into the MILP yield coefficient \(\eta_{pa}\).
 
-In summary, the CR model is retained at tree level because of its biological interpretability for individual-organism growth; the Gompertz model is adopted at stand level because it better captures the right-skewed biomass accumulation of coppice populations, its inflection geometry matches empirical SRC data, and its multiplicative structure supports analytically clean component partitioning.
+In summary, the CR model is retained at tree level because of its biological interpretability for individual-organism growth; the Gompertz model \eqref{eq:gompertz-stand} is adopted at stand level because it better captures the right-skewed biomass accumulation of coppice populations, its inflection geometry matches empirical SRC data, and its multiplicative structure supports analytically clean component partitioning.
 
 ### Stand-level total biomass: Gompertz parameterisation
 
-For total aboveground biomass of poplar clone Max~3 under SRAFS management, the Gompertz model is parameterised as \(A = 100\) Mg~DM~ha\(^{-1}\), \(k = 0.32\) yr\(^{-1}\), and \(t_0 = 4.0\)~yr, yielding a CAI peak at approximately age~4 and a total aboveground biomass of roughly 65~Mg~ha\(^{-1}\) at age~10---consistent with the empirical reference range of 50--135~Mg~ha\(^{-1}\) reported for comparable poplar systems in the literature [@Huber2018_SRAFS_growth; @Niemczyk2021_Poplar_Rotation].
+For total aboveground biomass of poplar clone Max~3 under SRAFS management, the Gompertz model \eqref{eq:gompertz-stand} is parameterised as \(A = 100\) Mg~DM~ha\(^{-1}\), \(k = 0.32\) yr\(^{-1}\), and \(t_0 = 4.0\)~yr, yielding a CAI peak at approximately age~4 and a total aboveground biomass of roughly 65~Mg~ha\(^{-1}\) at age~10---consistent with the empirical reference range of 50--135~Mg~ha\(^{-1}\) reported for comparable poplar systems in the literature [@Huber2018_SRAFS_growth; @Niemczyk2021_Poplar_Rotation].
 
 ### Component partitioning: stem, branches, and residues
 
@@ -331,11 +336,12 @@ Empirical studies consistently show that the stem fraction rises from roughly 55
 This age-dependence is biologically driven by the increasing dominance of secondary stem growth (radial increment) relative to primary shoot elongation and branching in later stand development stages.
 
 To capture these dynamics analytically while keeping the model integrable into a MILP formulation, each component share \(f_p(t)\) is represented as a normalised Gompertz helper function:
-\[
+\begin{equation}
   h_p(t) = A_p \cdot \exp\!\bigl(-\exp(-k_p\,(t - t_{0,p}))\bigr),
   \qquad
   f_p(t) = \frac{h_p(t)}{\sum_{p'} h_{p'}(t)}.
-\]
+  \label{eq:component-share}
+\end{equation}
 For Max~3 the stem helper is parameterised with a high asymptote (\(A_\mathrm{stem} = 1.0\)) and a relatively late inflection (\(t_{0,\mathrm{stem}} = 4.0\)~yr), whereas the branch helper uses a lower asymptote (\(A_\mathrm{branch} = 0.7\)) and an earlier inflection (\(t_{0,\mathrm{branch}} = 3.0\)~yr), and the residue helper saturates earliest (\(A_\mathrm{rest} = 0.1\), \(t_{0,\mathrm{rest}} = 2.0\)~yr).
 This parameterisation reproduces the observed shift towards stem dominance with age and is consistent with the empirical component fractions compiled across poplar agroforestry and SRC systems spanning ages 6--13 years, as illustrated in Figure~\@ref(fig:max3-growth).
 
@@ -413,7 +419,7 @@ ggplot(comp_long, aes(x = age, y = biomass)) +
   )
 ```
 
-The allometric pathway described above provides the scientific justification for both the shape of the total biomass curve and the age-dependent component shares modelled in Figure~\@ref(fig:max3-growth): the Gompertz inflection for total AGB traces back to the accelerating then decelerating SBD growth of individual shoots, and the shift in component fractions reflects the progressively larger contribution of secondary radial stem growth relative to branching as trees mature.
+The allometric pathway described above provides the scientific justification for both the shape of the total biomass curve and the age-dependent component shares modelled in Figure~\@ref(fig:max3-growth): the Gompertz inflection for total AGB traces back to the accelerating then decelerating SBD growth of individual shoots (Eq.~\eqref{eq:sbd-gompertz}), and the shift in component fractions (Eq.~\eqref{eq:component-share}) reflects the progressively larger contribution of secondary radial stem growth relative to branching as trees mature.
 These component-specific yield trajectories are the direct input to the yield coefficient \(\eta_{pa}\) in the MILP model, where \(p \in \{\text{stem, branch, residue}\}\) maps to the chemical, pulp, and energy product classes, respectively.
 
 
@@ -435,18 +441,19 @@ The MILP formulation developed in this paper addresses this gap by endogenising 
 ## Sets, indices, and time structure
 
 The model considers a set of agroforestry sites \(\mathcal{I}\), storage/processing facilities \(\mathcal{J}\), consumer sites \(\mathcal{K}\), and product types \(\mathcal{P} = \{1,2,3\}\). Time is discretised into annual periods \(t \in \mathcal{T} = \{1,\dots,T_{\max}\}\). To represent stand establishment and harvest timing, extended time sets \(\mathcal{T}^{+} = \{0,\dots,T_{\max}+1\}\) and harvest periods \(\mathcal{T}^{\text{harv}} = \{A^{\min}+1,\dots,T_{\max}\}\) are defined, where \(A^{\min}\) and \(A^{\max}\) are minimum and maximum stand ages (years) at harvest. The set \(\mathcal{S}\) comprises all ordered pairs \((s,t)\) of consecutive harvest periods (including establishment at \(s=0\)) satisfying the age-lag bounds:
-\[
+\begin{equation}
 \mathcal{S} = \{(s,t) \mid s,t \in \{0,\dots,T_{\max}+1\},\; t-s \in \{A^{\min},\dots,A^{\max}\} \}.
-\]
+\label{eq:age-lag-set}
+\end{equation}
 
 ## Decision variables
 
-Binary variables \(z_{ist}\) indicate whether, at site \(i\), periods \(s\) and \(t\) form consecutive harvests (or establishment and first harvest if \(s=0\)), with \((s,t) \in \mathcal{S}\). These variables define a path of consecutive harvest cycles at each site over the planning horizon. Continuous variables \(Y_{ipt} \ge 0\) represent the maximum harvest quantity (t) of product \(p\) at site \(i\) in harvest period \(t\). Flow variables \(X_{ijpt}\) and \(X_{jkpp't}\) represent transport of products from sites to storage and from storage to consumers, respectively, and \(S_{jpt}\) represent inventories at storage locations.
+Binary variables \(z_{ist}\) indicate whether, at site \(i\), periods \(s\) and \(t\) form consecutive harvests (or establishment and first harvest if \(s=0\)), with \((s,t) \in \mathcal{S}\) as defined in \eqref{eq:age-lag-set}. These variables define a path of consecutive harvest cycles at each site over the planning horizon. Continuous variables \(Y_{ipt} \ge 0\) represent the maximum harvest quantity (t) of product \(p\) at site \(i\) in harvest period \(t\). Flow variables \(X_{ijpt}\) and \(X_{jkpp't}\) represent transport of products from sites to storage and from storage to consumers, respectively, and \(S_{jpt}\) represent inventories at storage locations.
 
 ## Objective function
 
 The model maximises net present value over the planning horizon, expressed as total revenues minus establishment, opportunity, harvest, transport, and storage costs:
-\[
+\begin{equation}
 \begin{aligned}
 \max Z =\;&
 \sum_{k,p,t} R_{k,p} \cdot \sum_{j \in \mathcal{J},\, p' \in \mathcal{P}: p' \leq p} X_{jkp'pt} \\
@@ -457,46 +464,53 @@ The model maximises net present value over the planning horizon, expressed as to
 - c^{\text{tr-pre}} \sum_{j,k,p,t} d_{jk} \cdot X_{jkpt}
 - \sum_{j,p,t} c^{\text{stor}}_{j} \cdot S_{jpt}.
 \end{aligned}
-\]
+\label{eq:objective}
+\end{equation}
 
 Here, \(R_{k,p}\) are product- and consumer-specific revenues (€/t), \(C^{\text{est}}_{i}\) are establishment costs per hectare, \(C^{\text{opp}}_{i}\) are annual opportunity costs per hectare, and \(C^{\text{harv}}_{i}\) are harvest and refitting costs per hectare [@Testa2014_Poplar_Economics]. Transport costs are proportional to flow and distance with rates \(c^{\text{tr-raw}}\) and \(c^{\text{tr-pre}}\) for raw and pre-treated biomass, respectively, and storage incurs linear holding costs \(c^{\text{stor}}_j\) per tonne.
 
 ## Key constraints
 
 The path connectivity constraint ensures that each harvest period at a site has exactly one predecessor and one successor in the age-lag graph, effectively forming a path over \(\mathcal{T}^{+}\):
-\[
+\begin{equation}
 \sum_{s=0: (s,t)\in \mathcal{S}}^{t} z_{ist} = \sum_{u = t+1: (t,u) \in \mathcal{S}}^{T_{\max}+1} z_{itu}
 \quad \forall i \in \mathcal{I}, t \in \mathcal{T}.
-\]
+\label{eq:path-connect}
+\end{equation}
 
 Establishment is restricted to at most one time per site:
-\[
+\begin{equation}
 \sum_{t \in \mathcal{T}^{+}} z_{i0t} \le 1 \quad \forall i \in \mathcal{I}.
-\]
+\label{eq:one-establishment}
+\end{equation}
 
 Biomass yield is linked to age-lag decisions through the allometric yield coefficients:
-\[
+\begin{equation}
 Y_{ipt} = \sum_{s=1}^{t-1} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist}
 \quad \forall i \in \mathcal{I}, p \in \mathcal{P}, t \in \mathcal{T}^{\text{harv}}.
-\]
+\label{eq:yield-link}
+\end{equation}
 
 Harvest quantities bound outbound flows from each site:
-\[
+\begin{equation}
 \sum_{j \in \mathcal{J}} X_{ijpt} \le Y_{ipt}
 \quad \forall i,p,t \in \mathcal{T}^{\text{harv}}.
-\]
+\label{eq:harvest-flow}
+\end{equation}
 
 At storage hubs, inventories obey standard balance equations with initial inventory zero:
-\[
+\begin{equation}
 S_{jpt} = S_{jp,t-1} + \sum_{i} X_{ijpt} - \sum_{k, p' \ge p} X_{jkpp't}
 \quad \forall j,p,t \in \mathcal{T}^{\text{harv}}.
-\]
+\label{eq:inventory-balance}
+\end{equation}
 
 Storage and processing capacities are enforced via:
-\[
+\begin{equation}
 \sum_{p} S_{jpt} \le \text{CAP}^{\text{stor}}_j \quad \forall j,t, \qquad
 \sum_{i,p} X_{ijpt} \le \text{CAP}^{\text{proc}}_j \quad \forall j,t.
-\]
+\label{eq:capacity}
+\end{equation}
 
 Demand satisfaction with cascades is modelled as described above, where higher-quality products can satisfy lower-quality demands up to maximum demand levels \(D^{\max}_{kpt}\).
 
@@ -509,9 +523,9 @@ We envisage the following steps and experimental scenarios for computational ana
 
 1. **Parameterisation of allometric yield profiles:** Use species- and site-specific allometric models and observed growth trajectories to construct age-dependent yield coefficients \(\eta_{pa}\) for chemical, pulp, and energy product classes at representative agroforestry sites. Where necessary, scenario ranges will be defined to capture uncertainty in MAI and CAI due to climate variability and management differences [@Huber2016_Allometric_SRAFS; @Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF].
 
-2. **Baseline optimisation:** Solve the MILP model for a baseline configuration with fixed prices, capacities, and policy settings, obtaining optimal establishment timing, harvest schedules, and supply chain structure (locations, flows, inventories).
+2. **Baseline optimisation:** Solve the MILP model \eqref{eq:objective}--\eqref{eq:capacity} for a baseline configuration with fixed prices, capacities, and policy settings, obtaining optimal establishment timing, harvest schedules, and supply chain structure (locations, flows, inventories).
 
-3. **Rotation length scenarios:** Vary the age-lag bounds \(A^{\min}\) and \(A^{\max}\) to represent alternative rotation strategies (e.g., 3--5 years vs. 8--10 years) and analyse their impacts on profitability, product mix, and land use. This will shed light on trade-offs between shorter rotations favouring energy chips and longer rotations enabling higher shares of material products [@Trnka2008_Poplar_SRF; @Testa2014_Poplar_Economics].
+3. **Rotation length scenarios:** Vary the age-lag bounds \(A^{\min}\) and \(A^{\max}\) in \eqref{eq:age-lag-set} to represent alternative rotation strategies (e.g., 3--5 years vs. 8--10 years) and analyse their impacts on profitability, product mix, and land use. This will shed light on trade-offs between shorter rotations favouring energy chips and longer rotations enabling higher shares of material products [@Trnka2008_Poplar_SRF; @Testa2014_Poplar_Economics].
 
 4. **Product price and cascading scenarios:** Explore scenarios with different relative prices for chemical, pulp, and energy products, reflecting changes in market demand and policy incentives (e.g., bioenergy subsidies, green chemicals markets). Assess how the product cascade hierarchy and yield quality structure influence the marginal value of species and rotation decisions [@DeMeyer2015_OPTIMASS; @Lamers2015_Feedstock_Design].
 
@@ -524,4 +538,4 @@ We envisage the following steps and experimental scenarios for computational ana
 
 # Conclusions
 
-This paper outlines a research framework that couples allometric biomass growth models with a MILP-based agroforestry biomass supply chain design model featuring age-lag constraints and product cascading. Building on empirical evidence from temperate SRAFS and SRC systems and established biomass supply chain models, the proposed approach aims to capture key interactions between stand-level growth dynamics and network-level design decisions that are central to the cleaner production potential of agroforestry [@Huber2018_SRAFS_growth; @DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS]. Future work will implement and calibrate the model for a regional case study, conduct the computational experiments sketched above, and extend the framework towards multi-objective optimisation including environmental indicators such as greenhouse gas emissions and biodiversity proxies.
+This paper outlines a research framework that couples allometric biomass growth models \eqref{eq:allometry}--\eqref{eq:component-share} with a MILP-based agroforestry biomass supply chain design model \eqref{eq:objective}--\eqref{eq:capacity} featuring age-lag constraints and product cascading. Building on empirical evidence from temperate SRAFS and SRC systems and established biomass supply chain models, the proposed approach aims to capture key interactions between stand-level growth dynamics and network-level design decisions that are central to the cleaner production potential of agroforestry [@Huber2018_SRAFS_growth; @DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS]. Future work will implement and calibrate the model for a regional case study, conduct the computational experiments sketched above, and extend the framework towards multi-objective optimisation including environmental indicators such as greenhouse gas emissions and biodiversity proxies.
