@@ -211,25 +211,51 @@ ggplot() +
 # Literature review {#sec:litreview}
 
 Agroforestry biomass systems, stand-level growth models, and biomass supply chain optimisation have each been studied extensively, but they are rarely combined in an integrated framework that links age-dependent stand dynamics to regional product-cascading value chains [@Zahraee2020_BSC_review; @Sharma2013_BSC_review; @Espinoza2017_Biorefinery_SC_review].
-This section reviews (i) agroforestry systems with emphasis on species characteristics, stand management, and economics, including cascading use of biomass; (ii) biomass growth models at tree and stand level with explicit attention to component-wise partitioning into stem, branches, and residues; and (iii) biomass supply chain design using mathematical programming.
+This section reviews (i) agroforestry systems with emphasis on system types, economics, and the cascading use of biomass as the primary revenue driver; (ii) biomass growth models at tree and stand level with explicit attention to the allometric--diameter--stand-biomass pathway; and (iii) biomass supply chain design using mathematical programming.
 The section concludes by identifying the modelling gap addressed in this paper.
 
 
 ## Agroforestry systems {#sec:lit-afs}
 
+### System types and definitions
+
 Agroforestry deliberately integrates woody perennials with crops and/or livestock on the same management unit, with the aim of enhancing productivity, profitability, and environmental performance [@Nair1993_IntroAgroforestry; @Toensmeier2017_Carbon_Agroforestry].
-In temperate regions, short-rotation agroforestry systems (SRAFS) most commonly take the form of alley-cropping, where double or multiple tree rows alternate with crop strips, enabling simultaneous production of agricultural and woody biomass [@Huber2018_SRAFS_growth].
-Empirical trials in Southern Germany and Central Europe demonstrate that SRAFS with poplar, willow, black alder, and black locust can achieve mean annual increments (MAI) of roughly 7--10 Mg ha\(^{-1}\) yr\(^{-1}\) in aboveground woody biomass during the first rotation, with pronounced species-specific differences in growth trajectories, stand structure, and mortality [@Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF].
+In the temperate zone, three distinct system types can be distinguished based on the spatial arrangement of trees and the rotation length at which woody biomass is harvested.
 
-Economic analyses of short-rotation coppice (SRC) poplar plantations in Italy and Central Europe indicate that rotations of 5--7 years at moderate planting densities can be competitive with arable crops, but profitability is highly sensitive to yield assumptions, establishment costs, and logistics [@Testa2014_Poplar_Economics].
-Several site and management factors jointly govern biomass productivity in SRAFS and SRC systems.
-At the climatic level, temperature sums, solar radiation, and water availability during the growing season are the primary determinants of photosynthetic carbon gain, with drought stress particularly limiting for shallow-rooted coppice systems [@Trnka2008_Poplar_SRF; @Huber2018_SRAFS_growth].
-At the stand management level, planting density, pruning regime, and rotation length determine the allocation of assimilates between stem, branches, and residues, as well as the within-rotation trajectory of diameter growth, which directly conditions the proportion of merchantable stem biomass at harvest [@Spinelli2009_SRC_Harvesting; @Testa2014_Poplar_Economics].
-At the soil level, nutrient availability and texture influence both maximum attainable biomass and growth rates, so that site-specific calibration of growth models is recommended before deployment in supply chain optimisation [@Huber2016_Allometric_SRAFS; @Niemczyk2021_Poplar_Rotation].
+**Short-rotation coppice (SRC)** is defined as a monoculture plantation of fast-growing woody species---predominantly poplar, willow, or black locust---covering the entire management unit, with planting densities of 8\,000--20\,000 cuttings~ha\(^{-1}\) and rotation cycles of typically 3--7~years [@Trnka2008_Poplar_SRF; @Faasch2012_SRC_Economics].
+After each harvest the root system regenerates without replanting, enabling repeated coppice cycles over a stand lifetime of 20--25~years.
+Because the entire plot area is occupied by trees, SRC maximises woody biomass yield per unit of agricultural land but foregoes any simultaneous crop production.
 
-From a cleaner production perspective, cascading use of biomass---prioritising high-value material applications (chemical feedstocks, pulp and paper, engineered wood) before energy recovery---is widely advocated to maximise value creation and reduce environmental burdens [@Lamers2015_Feedstock_Design; @DeMeyer2015_OPTIMASS].
-For agroforestry biomass, the relative shares of stem, branch, and residue fractions depend on stand age and management, so that rotation length decisions and product portfolio choices are intrinsically linked [@Testa2014_Poplar_Economics; @Spinelli2009_SRC_Harvesting].
-MILP models can represent such cascades by defining a product quality hierarchy (e.g.\ chemical-grade \(\succ\) pulp-grade \(\succ\) energy-grade) and allowing higher-quality fractions to satisfy lower-quality demands, subject to availability and capacity constraints [@DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS].
+**Short-rotation agroforestry systems (SRAFS)**, by contrast, integrate SRC-type tree strips---typically 1--4 rows of the same fast-growing species---into an otherwise arable field in an alley-cropping arrangement, with crop production continuing in the inter-row strips [@Huber2018_SRAFS_growth; @Graves2007_Agroforestry_Economics].
+Rotation lengths in SRAFS are comparable to SRC (3--8~years), but because tree strips typically cover only 10--30\% of the total parcel area, aboveground biomass per hectare of total land is proportionally lower.
+The defining feature of SRAFS is that all trees are effectively edge trees, exposed to higher light and water availability than interior SRC trees; this boundary effect raises individual-tree biomass accumulation but also intensifies competition with adjacent crop rows [@Huber2018_SRAFS_growth].
+
+**Long-rotation agroforestry systems (LRAFS)** use the same alley-cropping spatial structure as SRAFS but with timber-quality tree species---such as walnut, cherry, oak, or high-grade poplar clones---and rotation cycles of 12--15~years or longer [@Graves2007_Agroforestry_Economics; @Nair1993_IntroAgroforestry].
+At this rotation length, individual trees develop substantial stem diameters and the proportion of high-value merchantable timber increases markedly, enabling premium material uses (veneer, sawlogs, engineered wood products) that are inaccessible in short-rotation systems.
+The present paper focuses primarily on SRAFS, but the modelling framework is designed to accommodate LRAFS rotations within the same age-lag structure.
+
+### Economic rationale of landowners
+
+The decision of a landowner to establish an AFS involves weighing substantial up-front costs and long-term opportunity costs against a diversified revenue stream.
+On the **cost side**, establishment requires site preparation, planting material, and planting labour, typically amounting to 1\,500--3\,500~€~ha\(^{-1}\) for SRC or SRAFS [@Faasch2012_SRC_Economics; @Testa2014_Poplar_Economics].
+The most economically significant cost category is the **opportunity cost** of the land converted from arable production: a landowner who plants a tree strip permanently forgoes the arable margin on that strip for the entire stand lifetime.
+In regions with fertile soils and high cereal prices, this opportunity cost can exceed 400--600~€~ha\(^{-1}\)~yr\(^{-1}\) on the tree-strip area, making it the dominant cost driver in SRAFS profitability analyses [@Faasch2012_SRC_Economics; @Graves2007_Agroforestry_Economics].
+Recurrent harvest and refitting costs (machine hire, chipping, transport to roadside) add approximately 200--400~€~ha\(^{-1}\) per rotation depending on stand density and equipment availability [@Testa2014_Poplar_Economics; @Spinelli2009_SRC_Harvesting].
+
+On the **benefit side**, the primary revenue is the sale of harvested woody biomass, whose magnitude depends critically on rotation length, species, and site productivity.
+A second, economically underappreciated benefit arises from **positive crop-yield effects** in the inter-row strips of SRAFS and LRAFS.
+Tree rows act as windbreaks, reducing soil erosion and evapotranspiration; they provide partial shading that moderates heat stress during drought years; and their root systems may improve water retention in the topsoil [@Graves2007_Agroforestry_Economics; @Grunewald2007_Robinia_AFS].
+Empirical measurements in Central European alley-cropping trials indicate that these microclimate effects can increase cereal yields in adjacent strips by 5--15\% relative to open-field controls, partially or fully compensating the loss of arable area occupied by the tree strips [@Graves2007_Agroforestry_Economics].
+Beyond direct yield effects, AFS deliver broader ecosystem services---soil organic matter accumulation, carbon sequestration, biodiversity enhancement---that increasingly attract agri-environment subsidies and carbon credits, further improving the economic case for landowners [@Toensmeier2017_Carbon_Agroforestry; @Faasch2012_SRC_Economics].
+
+### Cascading use of biomass as revenue maximiser
+
+The magnitude of woody biomass revenues depends critically on **how** the harvested material is used.
+Energy recovery---combustion for heat and power, or anaerobic digestion of residues---typically realises the lowest price per tonne of dry matter, while pulp and paper grade material commands intermediate prices, and chemical-grade stem wood or veneer-quality timber achieves the highest value added [@Lamers2015_Feedstock_Design; @DeMeyer2015_OPTIMASS].
+From a cleaner production perspective, the **cascading use principle** advocates allocating biomass first to the highest-value material application, with energy recovery reserved for residues and fractions unsuitable for material use [@Lamers2015_Feedstock_Design].
+For AFS biomass, this principle has direct operational significance: the stem fraction, which is richest in long fibres and highest in wood density, is preferentially directed to chemical, pulp, or engineered-wood markets; branch material of intermediate quality serves the paper industry; and fine residues (twigs, bark, leaves) enter the energy chain.
+Because the relative proportions of stem, branch, and residue change with stand age---the stem share rising from roughly 55\% at age~4 to over 75\% at age~10 [@Huber2018_SRAFS_growth; @Testa2014_Poplar_Economics]---the rotation length decision is inseparable from the product portfolio decision.
+Modelling this interaction requires age-resolved biomass component trajectories, which motivates the growth modelling approach developed in Section~\@ref(sec:lit-growth).
 
 
 ## Biomass growth models {#sec:lit-growth}
@@ -244,13 +270,32 @@ Allometric functions of the power-law form
 relate the dry biomass \(M_i\) (kg) of shoot \(i\) to its stem base diameter (SBD, cm) measured 10~cm above ground, with species-specific scale parameter \(b_0\) and exponent \(b_1\) [@Huber2016_Allometric_SRAFS].
 For SRAFS species in Southern Germany, @Huber2016_Allometric_SRAFS report a common exponent \(b_1 = 2.603\) across black alder, black locust, poplar (Max~3), and willow (Inger), while \(b_0\) ranges from 0.025 to 0.041, reflecting differences in wood density and branching architecture.
 
-Stand-level aboveground biomass \(B_\mathrm{AG}(t)\) (Mg ha\(^{-1}\)) at stand age \(t\) is obtained by aggregating individual shoot biomasses over all shoots per tree and multiplying by stand density \(N(t)\) (trees ha\(^{-1}\)):
+The allometric equation maps a single diameter measurement to biomass, but to obtain a stand-level yield function we need to know how the mean SBD of coppice shoots evolves over time.
+This intermediate step---the **age-dependent SBD growth model**---connects the static allometric relationship to the dynamic stand-level trajectory, and is introduced in the following subsection.
+
+### Age-dependent SBD growth model
+
+The mean stem base diameter \(\overline{\mathrm{SBD}}(t)\) of coppice shoots increases rapidly in the first growing seasons as shoots exploit stored root carbohydrates, then decelerates as intra-stand competition for light and water intensifies.
+This trajectory is well described by a sigmoidal growth function; empirical evidence from poplar SRC and SRAFS trials indicates that the SBD growth curve exhibits its inflection point at a relatively early stand age (2--4~years), consistent with the right-skewed accumulation pattern of coppice systems [@BarrioAnta2008_Poplar_Growth; @Niemczyk2021_Poplar_Rotation].
+We adopt a Gompertz model for \(\overline{\mathrm{SBD}}(t)\):
+\[
+  \overline{\mathrm{SBD}}(t) = D_{\infty} \cdot \exp\!\bigl(-\exp(-r\,(t - \tau))\bigr),
+\]
+where \(D_{\infty}\) (cm) is the asymptotic mean diameter, \(r\) (yr\(^{-1}\)) controls the rate of diameter increment, and \(\tau\) (yr) is the age at the inflection point of the diameter curve.
+For poplar clone Max~3 under SRAFS conditions in Central Europe, representative parameter values are \(D_{\infty} = 9.5\)~cm, \(r = 0.55\)~yr\(^{-1}\), and \(\tau = 2.5\)~yr, yielding a mean SBD of approximately 4.5~cm at age~3 and 7.8~cm at age~7---consistent with the diameter ranges reported by @Huber2018_SRAFS_growth and @BarrioAnta2008_Poplar_Growth.
+
+Given \(\overline{\mathrm{SBD}}(t)\), the mean shoot biomass follows directly from the allometric equation:
+\[
+  \bar{M}_\mathrm{shoot}(t) = b_0 \cdot \overline{\mathrm{SBD}}(t)^{\,b_1}.
+\]
+Stand-level aboveground biomass \(B_\mathrm{AG}(t)\) (Mg~ha\(^{-1}\)) is then obtained by aggregating individual shoot biomasses over all shoots per tree and multiplying by stand density \(N(t)\) (trees~ha\(^{-1}\)):
 \[
   B_\mathrm{AG}(t)
   = N(t) \cdot \bar{n}_\mathrm{shoot}(t) \cdot \bar{M}_\mathrm{shoot}(t),
 \]
-where \(\bar{n}_\mathrm{shoot}\) is the mean number of shoots per tree and \(\bar{M}_\mathrm{shoot}\) is the mean shoot biomass obtained by integrating the allometric function over the observed SBD distribution [@Huber2018_SRAFS_growth].
-Because SBD distributions shift and broaden over time as stands develop, this bottom-up aggregation inherently captures the age-dependence of stand biomass.
+where \(\bar{n}_\mathrm{shoot}\) is the mean number of shoots per tree [@Huber2018_SRAFS_growth].
+Because both \(\overline{\mathrm{SBD}}(t)\) and \(N(t)\) are sigmoidal (SBD increasing, stand density declining through self-thinning), the product \(B_\mathrm{AG}(t)\) inherits a right-skewed sigmoidal shape with an inflection occurring at a relatively low fraction of the asymptote.
+This structural property of the bottom-up aggregation provides the biological justification for adopting a Gompertz function directly at the stand level, as discussed in the following subsection.
 In practice, where repeated diameter measurements are available, the resulting \(B_\mathrm{AG}(t)\) trajectory can be fitted by a smooth parametric function; where only a few harvest-age data points are available, a parsimonious sigmoidal function is preferred for extrapolation [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics].
 
 ### Choice of model form: from Chapman--Richards to Gompertz
