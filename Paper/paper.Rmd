@@ -245,50 +245,100 @@ Thus, for making educated decisions on AFS establishment and harvesting, the exp
 
 ## Biomass growth models {#sec:lit-growth}
 
-Total biomass on tree level is commonly modeled using allometric functions that relate tree characteristics like stem diameter or height to total biomass weight. There are numerous allometric models in the literature, often specific to species, site conditions, and stand age. For fast-growing species used in SRAFS (like poplar and willow), allometric functions of the power-law form are used [Reference]. I.e., dry biomass \(M_i\) (kg) of a shoot \(i\) is approximated by
+```{r tab-notation-growth, echo=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(kableExtra)
+options(kableExtra.latex.load_packages = FALSE)
+options(knitr.table.format = "latex")
+
+notation <- tribble(
+  ~Symbol, ~Description,
+  # --- GROWTH MODEL PARAMETERS ---
+  "$M^{sh}$",     "Dry biomass (kg) per shoot",
+  "$M^{sh}(t)$",     "Mean shoot biomass (kg) at stand age $t$",
+  "$M^{sl}$",     "aboveground dry biomass per ha (t) ",
+  "$M^{sl}(t)$",    "aboveground dry biomass per ha (t)  at stand age $t$",
+  "$SBD$",     "Stem base diameter (cm) measured 10\\,cm above ground",
+  "$b^0$, $b^1$",     "Allometric coefficients for shoot biomass estimation",
+  "$SBD(t)$",     "Mean stem base diameter (cm) at stand age $t$",
+  "$a^{\\infty}$",             "Asymptotic stand-level biomass (t\\,dry\\,matter/ha)",
+  "$b^{\\infty}$",    "Asymptotic mean shoot biomass ($= d^{\\infty} \\cdot b^0$)",
+  "$d^{\\infty}$",             "Asymptotic mean stem base diameter (cm)",
+  "$r$",                       "Yearly diameter growth rate ",
+  "$b'^1$",     "Effective shoot-biomass growth rate ($= r \\cdot b^1$)",
+  "$\\tau$",                   "Age at inflection point of diameter growth curve (yr)",
+  "$N(t)$",                    "Stand density (trees/ha) at age $t$",
+  "$\\bar{n}_{sh}(t)$",     "Mean number of shoots per tree at age $t$",
+  "$h_p(t)$",     "Gompertz helper function for biomass component $p$",
+  "$f_p(t)$",     "Normalised share of component $p$ in total AGB at age $t$",
+  "$a^p$",                     "Asymptotic biomass of component $p$",
+  "$b^p$",                     "Growth rate of biomass component $p$",
+  "$\\tau_{p}$", "Inflection age of component $p$ (yr)"
+)
+
+tbl <- kable(notation,
+      format    = "latex",
+      booktabs  = TRUE,
+      escape    = FALSE,
+      col.names = c("Symbol", "Description"),
+      caption   = "Notation for the biomass growth models.",
+      label     = "tab-notation") |>
+  kable_styling(
+    font_size     = 8,
+    latex_options = c("hold_position", "scale_down"),
+    full_width    = FALSE
+  ) |>
+  column_spec(1, width = "3cm") |>
+  column_spec(2, width = "11.0cm")
+
+
+tbl
+```
+
+Total biomass on tree level is commonly modeled using allometric functions that relate tree characteristics like stem diameter or height to total biomass weight. There are numerous allometric models in the literature, often specific to species, site conditions, and stand age. For fast-growing species used in SRAFS (like poplar and willow), allometric functions of the power-law form are used [Reference]. I.e., dry biomass \(M^{sh}\) (kg) of a shoot is approximated by
 \begin{equation}
-  M_i = b_0 \cdot \mathrm{SBD}_i^{\,b_1}
+  M^{sh} = b^0 \cdot SBD^{b^1}
   \label{eq:allometry}
 \end{equation}
-where $SBD$ is the shoot's stem base diameter (in cm) measured 10 cm above ground. Parameters \(b_0\) and  \(b_1\) are species-specific [@Huber2016_Allometric_SRAFS]. 
-In the following it is assumed that each tree is pruned to one dominant shoot. For SRAFS species in Southern Germany, @Huber2018_SRAFS_growth reports that most trees produce not more than 2 shoots and  @Huber2016_Allometric_SRAFS report a common exponent \(b_1 = 2.603\) for black alder, black locust, poplar (Max~3), and willow (Inger), while \(b_0\) ranges from 0.025 to 0.041, reflecting differences in wood density and branching structure. 
+where $SBD$ is the shoot's stem base diameter (in cm) measured 10 cm above ground. Parameters \(b^0\) and  \(b^1\) are species-specific [@Huber2016_Allometric_SRAFS]. 
+In the following it is assumed that each tree is pruned to one dominant shoot. For SRAFS species in Southern Germany, @Huber2018_SRAFS_growth reports that most trees produce not more than 2 shoots and  @Huber2016_Allometric_SRAFS report a common exponent \(b_1 = 2.603\) for black alder, black locust, poplar (Max~3), and willow (Inger), while \(b^0\) ranges from 0.025 to 0.041, reflecting differences in wood density and branching structure. 
 
-Allometric rules like \eqref{eq:allometry} generate estimates of biomass quantities for a given shoot, i.e. they  can be used to support operational harvest decisions. For planning on a strategic level, it is necessary to estimate biomass development over time, i.e. an SBD growth model. The mean stem base diameter \(\overline{\mathrm{SBD}}(t)\) of coppice shoots increases rapidly in the first growing seasons as shoots exploit stored root carbohydrates, then decelerates as intra-stand competition for light and water intensifies.
-Such trajectories can be described by sigmoidal growth functions. Empirical evidence from poplar SRC and SRAFS trials indicates that the SBD growth curve exhibits maximal growth rate (i.e., inflection point) at a relatively early stand age (2--4 years) [@BarrioAnta2008_Poplar_Growth; @Niemczyk2021_Poplar_Rotation].Therefore, a Gompertz model for \(\overline{\mathrm{SBD}}(t)\) can be formulated as
+Allometric rules like \eqref{eq:allometry} generate estimates of biomass quantities for a given shoot, i.e. they  can be used to support operational harvest decisions. For planning on a strategic level, it is necessary to estimate biomass development over time, i.e. an SBD growth model. The mean stem base diameter \(SBD(t)\) of coppice shoots increases rapidly in the first growing seasons as shoots exploit stored root carbohydrates, then decelerates as intra-stand competition for light and water intensifies.
+Such trajectories can be described by sigmoidal growth functions. Empirical evidence from poplar SRC and SRAFS trials indicates that the SBD growth curve exhibits maximal growth rate (i.e., inflection point) at a relatively early stand age (2--4 years) [@BarrioAnta2008_Poplar_Growth; @Niemczyk2021_Poplar_Rotation].Therefore, a Gompertz model for \(\mathrm{SBD}(t)\) can be formulated as
 
 \begin{equation}
-  \overline{\mathrm{SBD}}(t) = D_{\infty} \cdot e^{-e^{-r \cdot (t - \tau)}},
+  SBD(t) = d^{\infty} \cdot e^{-e^{-r \cdot (t - \tau)}},
   \label{eq:sbd-gompertz}
 \end{equation}
-where \(D_{\infty}\) (cm) is the asymptotic mean diameter, \(r\) (yr\(^{-1}\)) controls the rate of diameter increment, and \(\tau\) (yr) is the age at the inflection point of the diameter curve. Given \(\overline{\mathrm{SBD}}(t)\) from \eqref{eq:sbd-gompertz}, the mean shoot biomass growth follows directly from the allometric equation \eqref{eq:allometry}:
+where \(d^{\infty}\) (cm) is the asymptotic mean diameter, \(r\) controls the rate of yearly diameter increment, and \(\tau\) (in years) is the age at the inflection point of the diameter curve. Given \(SBD(t)\) from \eqref{eq:sbd-gompertz}, the mean shoot biomass growth follows directly from the allometric equation \eqref{eq:allometry}:
 \begin{equation}
-  \bar{M}_\mathrm{shoot}(t) = b_0 \cdot \overline{\mathrm{SBD}}(t)^{\,b_1} = d_{\infty} \cdot b_0 \cdot e^{-e^{-r \cdot b_1 \cdot (t - \tau)}}.
+  M^{sh}(t) = b^0 \cdot \mathrm{SBD}(t)^{b^1} = d^{\infty} \cdot b^0 \cdot e^{-e^{-r \cdot b^1 \cdot (t - \tau)}}.
   \label{eq:shoot-biomass}
 \end{equation}
-Thereby, $b_\infty = d_{\infty} \cdot b_0$ denotes the asymptotic mean shoot biomass, and the effective growth rate of shoot biomass is $b'_1 = r \cdot b_1$, which is amplified relative to the biomass growth rate \(r\) by the allometric exponent \(b_1\).
+Thereby, $b^\infty = d^{\infty} \cdot b^0$ denotes the asymptotic mean shoot biomass, and the effective growth rate of shoot biomass is $b'^1 = r \cdot b^1$, which is amplified relative to the biomass growth rate \(r\) by the allometric exponent \(b^1\).
 
-Total aboveground biomass quantities on stand level \(M_\mathrm{AG}(t)\) (in t per ha) is then obtained by aggregating individual shoot biomasses over all trees and multiplying by stand density \(N(t)\) (in trees per ha):
+Total aboveground biomass quantities on stand level \(M^{sl}(t)\) (in t per ha) is then obtained by aggregating individual shoot biomasses over all trees and multiplying by stand density \(N(t)\) (in trees per ha):
 \begin{equation}
-  M_\mathrm{AG}(t)
-  = N(t) \cdot \bar{n}_\mathrm{shoot}(t) \cdot \bar{M}_\mathrm{shoot}(t),
+  M^{sl}(t)
+  = N(t) \cdot \bar{n}^{sh}(t) \cdot M^{sh}(t),
   \label{eq:stand-biomass}
 \end{equation}
-where \(\bar{n}_\mathrm{shoot}\) is the mean number of shoots per tree [@Huber2018_SRAFS_growth]. Both \(\bar{n}_\mathrm{shoot}(t)\) and \(N(t)\) may change over time. The number of shoots is often controlled in tree care processes and reduced to 1 or 2 shoots per tree [@Huber2018_SRAFS_growth]. Stand level density $N(t)$ is initially defined when the AFS is established and often declines somewhat over time, but usually saturates quickly [REFERENCE]. For the product \(M_\mathrm{AG}(t)\) in \eqref{eq:stand-biomass} a right-skewed sigmoidal shape with an inflection occurring at a relatively low fraction of the asymptote can be assumed which can be captured in a Gompertz model as well [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics]. Assuming constant tree density  and an average shoot number of 1, \(M_\mathrm{AG}(t)\) can be simplified as 
+where \(\bar{n}^{shoot}\) is the mean number of shoots per tree [@Huber2018_SRAFS_growth]. Both \(\bar{n}^{sh}(t)\) and \(N(t)\) may change over time. The number of shoots is often controlled in tree care processes and reduced to 1 or 2 shoots per tree [@Huber2018_SRAFS_growth]. Stand level density $N(t)$ is initially defined when the AFS is established and often declines somewhat over time, but usually saturates quickly [REFERENCE]. For the product \(M^{sl}(t)\) in \eqref{eq:stand-biomass} a right-skewed sigmoidal shape with an inflection occurring at a relatively low fraction of the asymptote can be assumed which can be captured in a Gompertz model as well [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics]. Assuming constant tree density  and an average shoot number of 1, \(M^{sl}(t)\) can be simplified as 
 \begin{equation}
-  \bar{M}_\mathrm{AG}(t) = a_{\infty} \cdot e^{-e^{-b'_1 \cdot (t - \tau)}}.
+  M^{sl}(t) = a^{\infty} \cdot e^{-e^{-b'^1 \cdot (t - \tau)}}.
   \label{eq:total-stand-biomass}
 \end{equation}
-where $a_\infty = N \cdot \bar{n}_{shoot} \cdot d_{\infty} \cdot b_0$ is the asymptotic stand-level biomass. For poplar clone Max~3 under SRAFS conditions in Central Europe, representative parameter values are \(D_{\infty} = 9.5\) cm, \(r = 0.55\), and \(\tau = 2.5\) years, yielding a mean SBD of approximately 4--5 cm at age 3 and 7--9 cm at age 7 which is consistent with the diameter ranges reported by @Huber2018_SRAFS_growth and @BarrioAnta2008_Poplar_Growth. For total aboveground biomass of poplar clone Max 3 under SRAFS management, the Gompertz model \eqref{eq:total-stand-biomass} is parameterised as \(a_{\infty} = 100\) t of dry biomass per ha, \(b'_1 = 0.32\) per year, and \(\tau = 4.0\) years, yielding a growth peak at approximately age 4 and a total aboveground biomass of roughly 65 t of dry biomass per ha at age 10 which is consistent with the empirical reference range of 50--135 t per ha reported for comparable poplar systems in the literature [@Huber2018_SRAFS_growth; @Niemczyk2021_Poplar_Rotation].
+where $a^\infty = N \cdot \bar{n}^{sh} \cdot d^{\infty} \cdot b^0$ is the asymptotic stand-level biomass. For poplar clone Max~3 under SRAFS conditions in Central Europe, representative parameter values are \(d^{\infty} = 9.5\) cm, \(r = 0.55\), and \(\tau = 2.5\) years, yielding a mean SBD of approximately 4--5 cm at age 3 and 7--9 cm at age 7 which is consistent with the diameter ranges reported by @Huber2018_SRAFS_growth and @BarrioAnta2008_Poplar_Growth. For total aboveground biomass of poplar clone Max 3 under SRAFS management, the Gompertz model \eqref{eq:total-stand-biomass} is parameterised as \(a^{\infty} = 100\) t of dry biomass per ha, \(b'^1 = 0.32\) per year, and \(\tau = 4.0\) years, yielding a growth peak at approximately age 4 and a total aboveground biomass of roughly 65 t of dry biomass per ha at age 10 which is consistent with the empirical reference range of 50--135 t per ha reported for comparable poplar systems in the literature [@Huber2018_SRAFS_growth; @Niemczyk2021_Poplar_Rotation].
 
 Yet, for the purpose of modelling AFS supply chains, the three biomass components merchantable stem, structural branches, and fine residues need to be distinguished. Thus, the total biomass growth model \eqref{eq:total-stand-biomass} needs to be adjusted those types. Thereby, growth characteristics are different each type and, thus, require paramterization. Thereby, the differentiation between the merchantable stem and branch depends on the requirements defined by downstream processes. E.g. for chemical production, the merchantable stem is defined as the portion of the tree with a certain minimum diameter (e.g. 10 cm), while branches and residues are defined as the portion of the tree that cannot be chipped into such large chips and thus require different processing or are used for lower-value applications. The share of these components in total aboveground biomass changes with stand age, which has important implications for product cascading decisions in AFS-based supply chains.
 
 Empirical studies show that the stem fraction rises from roughly 55\% of AGB at age~4 to over 75\% at age~10, while branch and residue shares decline as stands mature [@Huber2018_SRAFS_growth; @Testa2014_Poplar_Economics,@Jha2018_Poplar_AFS_Biomass]. This age-dependence is biologically driven by the increasing dominance of secondary stem growth (radial increment) relative to primary shoot elongation and branching in later stand development stages. To capture these dynamics analytically, each component share \(f_p(t)\) is represented as a normalised Gompertz function:
 \begin{align}
-  h_p(t) = & a_p \cdot e^{-e^{-b_p \cdot (t - \tau_{0,p})}}  \label{eq:biomass-partial}\\
+  h_p(t) = & a_p \cdot e^{-e^{-b_p \cdot (t - \tau_{p})}}  \label{eq:biomass-partial}\\
   f_p(t) =& \frac{h_p(t)}{\sum_{p'} h_{p'}(t)}.
   \label{eq:component-share}
 \end{align}
-For Max~3 the stem helper is parameterised with a high asymptote (\(a_\mathrm{stem} = 1.0\)) and a relatively late inflection (\(\tau_{0,\mathrm{stem}} = 4.0\) years), whereas the branch uses a lower asymptote (\(a_\mathrm{branch} = 0.7\)) and an earlier inflection (\(\tau_{0,\mathrm{branch}} = 3.0\) years), and the residue helper saturates earliest (\(a_\mathrm{rest} = 0.1\), \(\tau_{0,\mathrm{rest}} = 2.0\) years). This parameterisation reproduces the observed shift towards stem dominance with age and is consistent with the empirical component fractions compiled across poplar agroforestry and SRC systems spanning ages 6--13 years, as illustrated in Figure \@ref(fig:max3-growth).
+For Max~3 the stem helper is parameterised with a high asymptote (\(a_\mathrm{stem} = 1.0\)) and a relatively late inflection (\(\tau_{\mathrm{stem}} = 4.0\) years), whereas the branch uses a lower asymptote (\(a_\mathrm{branch} = 0.7\)) and an earlier inflection (\(\tau_{\mathrm{branch}} = 3.0\) years), and the residue helper saturates earliest (\(a_\mathrm{rest} = 0.1\), \(\tau_{\mathrm{rest}} = 2.0\) years). This parameterisation reproduces the observed shift towards stem dominance with age and is consistent with the empirical component fractions compiled across poplar agroforestry and SRC systems spanning ages 6--13 years, as illustrated in Figure \@ref(fig:max3-growth).
 
 ```{r max3-growth, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Modelled stand-level biomass components for poplar (Max~3) over stand age, represented as stacked Gompertz curves (shaded areas: stem green, branches orange, residues purple) and compared with empirical aboveground biomass observations from poplar agroforestry and SRC systems. Symbols denote cumulative component totals: stem (filled circles), stem+branches (triangles), total AGB (diamonds). Empirical data compiled from Jha (2018) and cited primary sources. Grey shading: typical rotation-age window (5--10 years).", fig.width=6.5, fig.height=5.0, out.width="\\textwidth"}
 
@@ -499,6 +549,85 @@ The model considers a set of agroforestry sites \(\mathcal{I}\), storage/process
 \label{eq:age-lag-set}
 \end{equation}
 
+
+```{r tab-notation-milp, echo=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(kableExtra)
+options(kableExtra.latex.load_packages = FALSE)
+options(knitr.table.format = "latex")
+
+notation <- tribble(
+  ~Symbol, ~Description,
+
+  # --- SETS & INDICES ---
+  "$i \\in \\mathcal{I}$",            "Agroforestry sites",
+  "$j \\in \\mathcal{J}$",            "Storage / pre-treatment facilities",
+  "$k \\in \\mathcal{K}$",            "Consumer sites",
+  "$p \\in \\mathcal{P}$","Product types (stem, branches, residues)",
+  "$\\mathcal{T}=\\{1,\\dots,T_{\\max}\\}$",    "Planning periods (years)",
+  "$\\mathcal{T}^{+}=\\{0,\\dots,T_{\\max}+1\\}$",    "Extended time set incl.\\ dummy nodes",
+  "$\\mathcal{T}^{\\text{harv}}=\\{A^{\\min}+1,\\dots,T_{\\max}\\}$",    "Feasible harvest periods",
+ #
+  "$\\mathcal{S}^{\\text{est}}=\\{(0,t)\\mid t\\in\\{1,\\dots,T_{\\max}-A^{\\min}\\}\\}$",    "Establishment arcs: dummy source to establishment period $t$",
+  "$\\mathcal{S}^{\\text{harv}}=\\{(s,t)\\mid s,t\\in \\mathcal{T} \\, \\wedge \\, t-s\\in\\{A^{\\min},\\dots,A^{\\max}\\}\\}$", "Possible harvest cycles within age-lag bounds",
+  "$\\mathcal{S}^{\\text{term}}=\\{(s,T_{\\max}+1)\\mid s\\in\\{A^{\\min}+1,\\dots,T_{\\max}\\}\\}$",
+    "Termination arcs: last harvest to dummy sink $T_{\\max}+1$",
+   "$\\mathcal{S} = \\mathcal{S}^{\\text{est}} \\cup \\mathcal{S}^{\\text{harv}} \\cup \\mathcal{S}^{\\text{term}}$",    "Age-lag arc set (establishment $\\cup$ harvest $\\cup$ termination)",
+
+  # --- DECISION VARIABLES ---
+  "$z_{ist}\\in\\{0,1\\}$",
+    "1 if periods $s$ and $t$ are consecutive harvest cycles at site $i$",
+  "$Y_{ipt}\\ge 0$",
+    "Harvest quantity (t) of product $p$ at site $i$ in period $t$",
+  "$X_{ijpt}\\ge 0$",
+    "Transport flow (t) of product $p$ from site $i$ to facility $j$ in period $t$",
+  "$X_{jkpp't}\\ge 0$",
+    "Transport flow of $p$ from facility $j$ to consumer $k$ satisfying demand $p'$ in $t$",
+  "$S_{jpt}\\ge 0$",
+    "Inventory (t) of product $p$ at facility $j$ at end of period $t$",
+
+  # --- MODEL PARAMETERS ---
+  "$T_{\\max}$",               "Length of planning horizon (years)",
+  "$A^{\\min}$, $A^{\\max}$",  "Minimum / maximum stand age at harvest (years)",
+  "$\\text{AREA}_i$",          "Area of site $i$ (ha)",
+  "$\\eta_{pa}$",              "Allometric yield coefficient (t/ha) of product $p$ at stand age $a$",
+  "$R_{kp}$",                  "Revenue (\\euro/t) for product $p$ at consumer $k$",
+  "$C^{\\text{est}}_i$",       "Establishment cost (\\euro/ha) at site $i$",
+  "$C^{\\text{opp}}_i$",       "Annual opportunity cost (\\euro/ha) at site $i$",
+  "$C^{\\text{harv}}_i$",      "Harvest \\& refitting cost (\\euro/ha) at site $i$",
+  "$c^{\\text{tr-raw}}$",      "Transport cost rate (\\euro/t\\,km) for raw biomass",
+  "$c^{\\text{tr-pre}}$",      "Transport cost rate (\\euro/t\\,km) for pre-treated biomass",
+  "$c^{\\text{stor}}_j$",      "Storage holding cost (\\euro/t) at facility $j$",
+  "$d_{ij}$, $d_{jk}$",        "Distance (km) between nodes",
+  "$\\text{CAP}^{\\text{stor}}_j$", "Storage capacity (t) at facility $j$",
+  "$\\text{CAP}^{\\text{proc}}_j$", "Processing capacity (t/period) at facility $j$",
+  "$D^{\\max}_{kpt}$",         "Maximum demand (t) of product $p$ at consumer $k$ in period $t$",
+)
+
+
+tbl <- kable(notation,
+      format    = "latex",
+      booktabs  = TRUE,
+      escape    = FALSE,
+#      col.names = c("Symbol", "Description"),
+      caption   = "Notation for the MILP model and biomass growth models.",
+      label     = "tab-notation") |>
+  kable_styling(
+    font_size     = 8,
+    latex_options = c("hold_position", "scale_down"),
+    full_width    = FALSE
+  ) |>
+  column_spec(1, width = "6.8cm") |>
+  column_spec(2, width = "8.0cm")
+
+tbl <- tbl |>
+  pack_rows("Sets & Indices",       1, 11, bold = TRUE, italic = FALSE, hline_before = TRUE) |>
+  pack_rows("Decision Variables",  12, 16, bold = TRUE, italic = FALSE, hline_before = TRUE) |>
+  pack_rows("Parameters",    17, 31, bold = TRUE, italic = FALSE, hline_before = TRUE) 
+tbl
+```
+
+
 ```{tikz fig-set-S-tikz, echo=FALSE,     fig.cap="Network structure of set $\\mathcal{S}$ for $T=8$, $A_{\\min}=3$,    $A_{\\max}=5$. Dashed blue arcs: establishment arcs $(0,t)$,     $t\\in\\{1,\\ldots,T-1\\}$. Solid green arcs above: harvest arcs $(s,t)$     with odd $s$; below: harvest arcs with even $s$. Solid red arcs:     termination arcs $(s,T+1)$, $s\\in\\{A_{\\min}+1,\\ldots,T\\}$.",    fig.align="center", out.width="\\textwidth",     engine.opts=list(extra.preamble=c(      "\\usetikzlibrary{arrows.meta,bending,positioning}"    ))}
 
 \begin{tikzpicture}[
@@ -670,14 +799,14 @@ Here, \(R_{k,p}\) are product- and consumer-specific revenues (€/t), \(C^{\tex
 
 The path connectivity constraint ensures that each harvest period at a site has exactly one predecessor and one successor in the age-lag graph, effectively forming a path over \(\mathcal{T}^{+}\):
 \begin{equation}
-\sum_{s=0: (s,t)\in \mathcal{S}}^{t} z_{ist} = \sum_{u = t+1: (t,u) \in \mathcal{S}}^{T_{\max}+1} z_{itu}
+\sum_{(s,t)\in \mathcal{S}} z_{ist} = \sum_{(t,u) \in \mathcal{S}} z_{itu}
 \quad \forall i \in \mathcal{I}, t \in \mathcal{T}.
 \label{eq:path-connect}
 \end{equation}
 
 Establishment is restricted to at most one time per site:
 \begin{equation}
-\sum_{t \in \mathcal{T}^{+}} z_{i0t} \le 1 \quad \forall i \in \mathcal{I}.
+\sum_{(0,t) \in \mathcal{S}^{est}} z_{i0t} \le 1 \quad \forall i \in \mathcal{I}.
 \label{eq:one-establishment}
 \end{equation}
 
