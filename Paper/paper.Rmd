@@ -34,12 +34,15 @@ output:
     
 
 header-includes:
-  # Use elsarticle's review layout and set 1.5 line spacing
-#  - \usepackage{setspace}
-#  - \onehalfspacing        % or \doublespacing for 1.5 lines
-    # Line numbers
-#  - \usepackage[left]{lineno}
-#  - \linenumbers
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{float}
+  - \usepackage{xcolor}
 
 bibliography: references.bib
 csl: elsevier-harvard.csl
@@ -118,7 +121,7 @@ In the last two decades, a large body of research has analysed biomass supply ch
 
 The present paper contributes to this literature in four ways. First, we propose a novel MILP formulation for AFS-based biomass supply chain design that explicitly links establishment decisions and consecutive harvest decisions, ensuring that harvesting decisions at each site are consistent with minimum and maximum rotation ages. Second, we embed allometric yield functions for different biomass types generating age-specific yields for different woody biomass types (like stems, branches, or leaves and twigs). Third, these different woody biomass types can be processed in specific downstream industries, like chemical or paper industry as well as energy sector. The model aims to provide strategic decision support for establishing regional AFS-based bioeconomy ecosystems connecting multiple industries and product markets.
 
-The remainder of the paper is structured as follows. Section \@ref(sec:litreview) reviews the relevant literature on agroforestry biomass systems, allometric biomass modelling, and biomass supply chain optimisation. Section \@ref(sec:allometrics) introduces the allometric models adopted to represent biomass growth of different tree species and biomass types. Section \@ref(sec:milp) summarises the MILP formulation for the agroforestry supply chain with age-lag constraints. Section \@ref(sec:experiments) outlines the planned computational experiments for the case study and discusses expected insights for cleaner production strategies.
+The remainder of the paper is structured as follows. Section \@ref(sec:litreview) reviews the relevant literature on agroforestry biomass systems, allometric biomass modelling, and biomass supply chain optimisation. Section \@ref(sec:milp) summarises the MILP formulation for the agroforestry supply chain with age-lag constraints. Section \@ref(sec:experiments) outlines the planned computational experiments for the case study and discusses expected insights for cleaner production strategies.
 
 ```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Green polygons: potential KUP sites. Orange symbols: pre-treatment facilities (circle~=~sawmill, triangle~=~logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth"}
 
@@ -279,7 +282,7 @@ where $a_\infty = N \cdot \bar{n}_{shoot} \cdot d_{\infty} \cdot b_0$ is the asy
 
 Yet, for the purpose of modelling AFS supply chains, the three biomass components merchantable stem, structural branches, and fine residues need to be distinguished. Thus, the total biomass growth model \eqref{eq:total-stand-biomass} needs to be adjusted those types. Thereby, growth characteristics are different each type and, thus, require paramterization. Thereby, the differentiation between the merchantable stem and branch depends on the requirements defined by downstream processes. E.g. for chemical production, the merchantable stem is defined as the portion of the tree with a certain minimum diameter (e.g. 10 cm), while branches and residues are defined as the portion of the tree that cannot be chipped into such large chips and thus require different processing or are used for lower-value applications. The share of these components in total aboveground biomass changes with stand age, which has important implications for product cascading decisions in AFS-based supply chains.
 
-Empirical studies show that the stem fraction rises from roughly 55\% of AGB at age~4 to over 75\% at age~10, while branch and residue shares decline as stands mature [@Huber2018_SRAFS_growth; @Testa2014_Poplar_Economics,@Jha]. This age-dependence is biologically driven by the increasing dominance of secondary stem growth (radial increment) relative to primary shoot elongation and branching in later stand development stages. To capture these dynamics analytically, each component share \(f_p(t)\) is represented as a normalised Gompertz function:
+Empirical studies show that the stem fraction rises from roughly 55\% of AGB at age~4 to over 75\% at age~10, while branch and residue shares decline as stands mature [@Huber2018_SRAFS_growth; @Testa2014_Poplar_Economics,@Jha2018_Poplar_AFS_Biomass]. This age-dependence is biologically driven by the increasing dominance of secondary stem growth (radial increment) relative to primary shoot elongation and branching in later stand development stages. To capture these dynamics analytically, each component share \(f_p(t)\) is represented as a normalised Gompertz function:
 \begin{align}
   h_p(t) = & a_p \cdot e^{-e^{-b_p \cdot (t - \tau_{0,p})}}  \label{eq:biomass-partial}\\
   f_p(t) =& \frac{h_p(t)}{\sum_{p'} h_{p'}(t)}.
@@ -290,7 +293,6 @@ For Max~3 the stem helper is parameterised with a high asymptote (\(a_\mathrm{st
 ```{r max3-growth, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Modelled stand-level biomass components for poplar (Max~3) over stand age, represented as stacked Gompertz curves (shaded areas: stem green, branches orange, residues purple) and compared with empirical aboveground biomass observations from poplar agroforestry and SRC systems. Symbols denote cumulative component totals: stem (filled circles), stem+branches (triangles), total AGB (diamonds). Empirical data compiled from Jha (2018) and cited primary sources. Grey shading: typical rotation-age window (5--10 years).", fig.width=6.5, fig.height=5.0, out.width="\\textwidth"}
 
 library(dplyr); library(tidyr); library(ggplot2)
-
 # Component Gompertz functions (parameters as defined above)
 B_AG_max3     <- function(t) gomp(t, A = 100, k = 0.32, t0 = 4.0)
 h_stem_f      <- function(t) gomp(t, A = 1.0,  k = 0.40, t0 = 4.0)
@@ -328,23 +330,59 @@ jha_points <- tribble(
     total      = AGB
   )
 
+# Reshape to long format → enables unified ggplot2 legend
+jha_long <- bind_rows(
+  jha_points |> transmute(age, biomass = stem_cum,   emp_series = "Empirical: stem"),
+  jha_points |> transmute(age, biomass = branch_cum, emp_series = "Empirical: stem+branches"),
+  jha_points |> transmute(age, biomass = total,      emp_series = "Empirical: total AGB")
+) |>
+  mutate(emp_series = factor(emp_series,
+    levels = c("Empirical: stem", "Empirical: stem+branches", "Empirical: total AGB")))
+
+emp_colours <- c(
+  "Empirical: stem"          = "darkgreen",
+  "Empirical: stem+branches" = "darkorange",
+  "Empirical: total AGB"     = "navy"
+)
+emp_shapes <- c(
+  "Empirical: stem"          = 21L,
+  "Empirical: stem+branches" = 24L,
+  "Empirical: total AGB"     = 23L
+)
+
 ggplot(comp_long, aes(x = age, y = biomass)) +
   annotate("rect", xmin = 5, xmax = 10, ymin = 0, ymax = Inf,
            fill = "grey80", alpha = 0.3) +
   geom_area(aes(fill = component), position = "stack",
             alpha = 0.75, colour = NA) +
-  geom_point(data = jha_points, aes(x = age, y = stem_cum),
-             colour = "darkgreen", shape = 21, size = 2.5, fill = "darkgreen",
-             alpha = 0.85, inherit.aes = FALSE) +
-  geom_point(data = jha_points, aes(x = age, y = branch_cum),
-             colour = "darkorange", shape = 24, size = 2.5, fill = "darkorange",
-             alpha = 0.85, inherit.aes = FALSE) +
-  geom_point(data = jha_points, aes(x = age, y = total),
-             colour = "navy", shape = 23, size = 2.5, fill = "navy",
-             alpha = 0.85, inherit.aes = FALSE) +
+  geom_point(data = jha_long,
+             aes(x = age, y = biomass,
+                 colour = emp_series, shape = emp_series, fill = emp_series),
+             size = 2.5, alpha = 0.85, inherit.aes = FALSE) +
   scale_fill_manual(
     name   = "Component (model)",
-    values = c("Stem" = "#1b9e77", "Branches" = "#d95f02", "Residues" = "#7570b3")
+    values = c("Stem" = "#1b9e77", "Branches" = "#d95f02", "Residues" = "#7570b3",
+               emp_colours),
+    breaks = c("Stem", "Branches", "Residues")
+  ) +
+  scale_colour_manual(
+    name   = "Empirical data\n(Jha 2018)",
+    values = emp_colours
+  ) +
+  scale_shape_manual(
+    name   = "Empirical data\n(Jha 2018)",
+    values = emp_shapes
+  ) +
+  guides(
+    fill   = guide_legend(order = 1,
+                          override.aes = list(shape = NA, colour = NA)),
+    colour = guide_legend(order = 2,
+                          override.aes = list(
+                            shape = emp_shapes[levels(jha_long$emp_series)],
+                            size  = 2.5,
+                            fill  = emp_colours[levels(jha_long$emp_series)]
+                          )),
+    shape  = "none"
   ) +
   scale_x_continuous(breaks = 0:13) +
   labs(
@@ -364,8 +402,7 @@ ggplot(comp_long, aes(x = age, y = biomass)) +
 
 ## Biomass supply chain design {#sec:lit-sc}
 
-Biomass supply chain design has been extensively studied using MILP at strategic, tactical, and operational levels [@Zahraee2020_BSC_review; @Sharma2013_BSC_review; @Espinoza2017_Biorefinery_SC_review].
-Typical models jointly optimise facility locations and capacities, biomass sourcing patterns, multimodal transport flows, and inventory policies under cost or profit objectives, sometimes augmented by greenhouse gas emission indicators [@Eksioglu2009_Biorefinery_SC; @Arabi2019_Microalgae_Biobutanol_SC].
+Biomass supply chain design problems have been extensively studied in literature [@Zahraee2020_BSC_review; @Sharma2013_BSC_review; @Espinoza2017_Biorefinery_SC_review]. Most models jointly optimise facility locations and capacities, biomass sourcing patterns, multimodal transport flows, and inventory policies under cost or profit objectives, sometimes augmented by greenhouse gas emission indicators [@Eksioglu2009_Biorefinery_SC; @Arabi2019_Microalgae_Biobutanol_SC].
 A key methodological feature of the more advanced formulations is the integration of long-term network design with multi-period logistics, enabling simultaneous optimisation of infrastructure and operational decisions across seasonal or annual time steps [@Eksioglu2009_Biorefinery_SC; @Zahraee2020_BSC_review].
 
 Among generic multi-product frameworks, OPTIMASS explicitly models product quality cascades by defining a hierarchy of biomass classes and allowing higher-quality products to satisfy lower-quality demands, while the t-OPTIMASS extension incorporates biomass growth and regeneration over multiple periods [@DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS].
@@ -374,6 +411,83 @@ This gap is particularly pronounced for agroforestry systems with repeated coppi
 
 The MILP formulation developed in this paper addresses this gap by endogenising stand age dynamics through binary age-lag variables, coupling the component-specific yield coefficients \(\eta_{pa}\) derived from the Gompertz growth models above with supply chain flow variables, and embedding a product quality cascade that allocates stem, branch, and residue fractions to chemical, pulp, and energy markets within a single optimisation model.
 
+## Biomass supply chain design 
+
+The design and planning of biomass supply chains has attracted substantial research attention over the past two decades, driven by the need to ensure cost-efficient and sustainable feedstock provision for bioenergy and
+biorefinery applications. Several systematic reviews provide comprehensive overviews of this literature.
+@Cambero2014_ForestBSC_Review survey economic, social, and environmental assessment and optimisation studies for forest biomass supply chains, identifying MILP as the dominant modelling approach and noting a growing
+trend towards multi-objective formulations integrating life cycle assessment.
+
+@Yue2014_BSC_Optimization_Overview review biomass-to-bioenergy and biofuel supply chain models with a focus on multi-scale modelling, uncertainty treatment, and sustainability metrics, and conclude that the coupling of
+upstream feedstock dynamics with downstream network design remains an underexplored area.
+@Malladi2018_BSC_Logistics survey logistics-specific features of biomass supply chain models—seasonal availability, moisture content degradation, preprocessing steps—and highlight that most models treat biomass as a
+homogeneous commodity, neglecting quality differentiation. @Zahraee2020_BSC_review provide a recent meta-review of 140+ studies, confirming that cost minimisation is still the dominant objective, and that
+multi-product cascading formulations are rare.
+
+The structure of biomass supply chain models typically encompasses three decision layers: (i) strategic network design (facility location, capacity sizing, technology selection), (ii) tactical planning (harvest scheduling,
+seasonal flows, inventory), and (iii) operational routing. The following paragraphs discuss key individual contributions and their specific methodological advances.
+
+**Strategic multi-product network design.**
+@Eksioglu2009_Biorefinery_SC develop one of the earliest large-scale MILP models for biomass-to-biorefinery supply chain design, integrating facility location, capacity sizing, and multimodal transport for lignocellulosic
+feedstocks. Their model minimises total system cost and introduces binary facility-opening variables that have since become standard in the field. A key limitation, however, is that biomass supply is treated as an exogenous input, so feedstock availability is not endogenised as a function of land-use or growth decisions. @Mansoornejad2013_Forest_Biorefinery_SC extend the strategic design perspective to forest biorefineries by integrating product portfolio design with supply chain configuration in a single MILP. Their model explicitly accounts for product conversion efficiencies along different processing pathways, enabling joint optimisation of process technology selection and logistics.
+
+**Multi-period and tactical formulations.**
+@DeMeyer2015_OPTIMASS introduce the OPTIMASS framework, a generic MILP for biomass-based supply chain optimisation that explicitly models product quality cascades: higher-quality biomass classes can substitute for lower-quality demands downstream, whereas the reverse is infeasible. This cascade hierarchy, formalised through ordered product sets, is particularly relevant for woody biomass where stem, branch, and residue fractions command different market prices. The companion t-OPTIMASS extension [@DeMeyer2016_tOPTIMASS] incorporates temporal dynamics by explicitly representing biomass growth and regeneration over multiple periods, enabling simultaneous optimisation of harvest timing and network flows. However, in both OPTIMASS formulations the growth dynamics are represented as exogenous time-series rather than as age-structured stand models, so rotation-length decisions and age-dependent biomass quality are not endogenised. @Arabi2019_Microalgae_Biobutanol_SC demonstrate multi-period MILP extensions for bio-based supply chains with production dynamics, but focus on microalgae rather than woody biomass and do not address product quality cascades.
+
+**Uncertainty and stochastic formulations.**
+@Sharma2013_BSC_review identify supply-side uncertainty (yield variability, seasonal availability, moisture content) as the most critical source of risk in biomass supply chains. In response, a strand of literature has developed stochastic and robust optimisation extensions. @Zahraee2020_BSC_review document that two-stage stochastic MILP and robust optimisation approaches now account for roughly 30\% of the modelling literature, with biomass yield uncertainty and price volatility as the dominant stochastic parameters.
+
+**Agroforestry and short-rotation coppice logistics.**
+Biomass supply chain research focusing specifically on agroforestry or SRC contexts is comparatively sparse.
+@Espinoza2017_Biorefinery_SC_review note that most supply chain models aassume continuous feedstock availability and do not represent the periodic harvest cycles characteristic of coppice systems. @Lamers2015_Feedstock_Design analyse feedstock design principles for lignocellulosic supply chains and argue that the allocation of different biomass fractions to valorisation pathways—product cascading—is a key lever for economic viability, yet is rarely optimised jointly with network design decisions. The model developed in Section~\@ref(sec:milp) of this paper directly
+addresses this gap by endogenising stand age dynamics through binary age-lag variables and coupling component-specific yield coefficients with a product quality cascade.
+
+**Modelling features overview.**
+Table~\@ref(tab:lit-sc-features) summarises the key modelling features of
+the reviewed contributions.
+
+```{r lit-sc-features, echo=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(kableExtra)
+options(kableExtra.latex.load_packages = FALSE)
+options(knitr.table.format = "latex")
+knitr::opts_chunk$set(dev = "pdf")
+
+lit_tab <- tribble(
+  ~Study,                            ~Objective,          ~`Multi-product`,  ~`Quality cascade`, ~`Age dynamics`,    ~`Uncertainty`,    ~`Level`,
+  "Eksioglu et al. (2009)",          "Cost min.",         "No",              "No",               "No",               "No",              "Strategic",
+  "Sharma \\& Taaffe (2013)",        "Cost min.",         "Partial",         "No",               "No",               "No",              "Strategic/Tactical",
+  "Mansoornejad et al. (2013)",      "Profit max.",       "Yes",             "No",               "No",               "No",              "Strategic",
+  "Cambero \\& Sowlati (2014)",      "Cost/GHG/jobs",     "No",              "No",               "No",               "Stochastic",      "Strategic",
+  "Yue et al. (2014)",               "Cost/GHG",          "Yes",             "No",               "No",               "No",              "Multi-scale",
+  "De Meyer et al. (2015)",          "Cost min.",         "Yes",             "Yes",              "Exogenous",        "No",              "Strategic/Tactical",
+  "De Meyer et al. (2016)",          "Cost min.",         "Yes",             "Yes",              "Exogenous TS",     "No",              "Multi-period",
+  "Lamers et al. (2015)",            "Cost/quality",      "Yes",             "Partial",          "No",               "Scenario",        "Strategic",
+  "Espinoza et al. (2017)",          "Sustainability",    "Yes",             "No",               "No",               "Scenario",        "Strategic",
+  "Malladi \\& Sowlati (2018)",      "Cost min.",         "Partial",         "No",               "No",               "No",              "Tactical/Oper.",
+  "Arabi et al. (2019)",             "Profit max.",       "Yes",             "No",               "Exogenous",        "No",              "Multi-period",
+  "Zahraee et al. (2020)",           "Multi-obj.",        "Yes",             "No",               "No",               "Stochastic",      "Strategic/Tactical",
+  "\\textbf{This paper}",            "NPV max.",          "Yes",             "Yes",              "\\textbf{Endogenous}", "Scenario",   "Strategic/Multi-period"
+) |>
+  mutate(across(everything(), ~ gsub("Yes", "\\\\checkmark", .))) |>
+  mutate(across(everything(), ~ gsub("No",  "---",            .)))
+
+kable(lit_tab,
+      format    = "latex",
+      booktabs  = TRUE,
+      escape    = FALSE,
+      caption   = "Key modelling features of selected biomass supply chain design studies.",
+      label     = "lit-sc-features") |>
+  kable_styling(
+  font_size     = 7,
+  latex_options = c("hold_position", "scale_down"),
+  full_width    = FALSE
+) |>
+  row_spec(nrow(lit_tab), bold = TRUE) |>
+  column_spec(1, width = "3.2cm") |>
+  column_spec(2, width = "1.6cm") |>
+  column_spec(3:7, width = "1.4cm")
+```
 
 # MILP model for agroforestry supply chain design {#sec:milp}
 
@@ -384,6 +498,150 @@ The model considers a set of agroforestry sites \(\mathcal{I}\), storage/process
 \mathcal{S} = \{(s,t) \mid s,t \in \{0,\dots,T_{\max}+1\},\; t-s \in \{A^{\min},\dots,A^{\max}\} \}.
 \label{eq:age-lag-set}
 \end{equation}
+
+```{tikz fig-set-S-tikz, echo=FALSE,     fig.cap="Network structure of set $\\mathcal{S}$ for $T=8$, $A_{\\min}=3$,    $A_{\\max}=5$. Dashed blue arcs: establishment arcs $(0,t)$,     $t\\in\\{1,\\ldots,T-1\\}$. Solid green arcs above: harvest arcs $(s,t)$     with odd $s$; below: harvest arcs with even $s$. Solid red arcs:     termination arcs $(s,T+1)$, $s\\in\\{A_{\\min}+1,\\ldots,T\\}$.",    fig.align="center", out.width="\\textwidth",     engine.opts=list(extra.preamble=c(      "\\usetikzlibrary{arrows.meta,bending,positioning}"    ))}
+
+\begin{tikzpicture}[
+  x=1.55cm, y=1cm,
+  node/.style={circle, draw, fill=#1, text=white,
+               font=\small\bfseries, inner sep=2pt, minimum size=18pt},
+  est/.style  ={-{Stealth[length=4pt]}, blue!70!black,  dashed, semithick},
+  harva/.style={-{Stealth[length=4pt]}, green!40!black, semithick},
+  harvb/.style={-{Stealth[length=4pt]}, green!40!black, semithick},
+  term/.style ={-{Stealth[length=4pt]}, red!70!black,   semithick},
+]
+
+%% ---- Nodes ----
+\node[node=blue!70!black]  (n0) at (0,0) {$0$};
+\foreach \i in {1,...,8} {
+  \node[node=gray!50!black] (n\i) at (\i,0) {$\i$};
+}
+\node[node=red!70!black]   (n9) at (9,0) {$T\!+\!1$};
+
+%\node[below=10pt of n0, font=\scriptsize\itshape, text=blue!70!black]
+%  {Estab.\,(dummy)};
+%\node[below=10pt of n9, font=\scriptsize\itshape, text=red!70!black]
+%  {Term.\,(dummy)};
+
+%% ---- Establishment arcs ----
+%% (0,1) straight
+\draw[est] (n0) -- (n1);
+\foreach \t/\l in {2/1.3, 3/1.0, 4/0.80, 5/0.65, 6/0.55, 7/0.48}{
+  \draw[est] (n0) to[out=55, in=125, looseness=\l] (n\t);
+}
+
+%% ---- Harvest arcs (odd s above, even s below) ----
+% span 3
+\draw[harva] (n1) to[out=55,  in=125,  looseness=0.55] (n4);
+\draw[harvb] (n2) to[out=-55, in=-125, looseness=0.55] (n5);
+\draw[harva] (n3) to[out=55,  in=125,  looseness=0.55] (n6);
+\draw[harvb] (n4) to[out=-55, in=-125, looseness=0.55] (n7);
+\draw[harva] (n5) to[out=55,  in=125,  looseness=0.55] (n8);
+% span 4
+\draw[harva] (n1) to[out=60,  in=120,  looseness=0.42] (n5);
+\draw[harvb] (n2) to[out=-60, in=-120, looseness=0.42] (n6);
+\draw[harva] (n3) to[out=60,  in=120,  looseness=0.42] (n7);
+\draw[harvb] (n4) to[out=-60, in=-120, looseness=0.42] (n8);
+% span 5
+\draw[harva] (n1) to[out=65,  in=115,  looseness=0.35] (n6);
+\draw[harvb] (n2) to[out=-65, in=-115, looseness=0.35] (n7);
+\draw[harva] (n3) to[out=65,  in=115,  looseness=0.35] (n8);
+
+%% ---- Termination arcs ----
+%% (8,T+1) straight
+\foreach \s/\l in {4/0.80, 5/0.65, 6/0.55, 7/0.48}{
+  \draw[term] (n\s) to[out=55, in=125, looseness=\l] (n9);
+}
+\draw[term] (n8) -- (n9);
+
+%% ---- Legend (no frame, side by side) ----
+\node[anchor=north west] at (0.0,-0.85) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[est]   (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Establishment arc $(0,t)$};
+  \end{tikzpicture}};
+\node[anchor=north west] at (4.2,-0.85) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[harva] (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Harvest arc $(s,t)$};
+  \end{tikzpicture}};
+\node[anchor=north west] at (7.6,-0.85) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[term]  (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Termination arc $(s,T{+}1)$};
+  \end{tikzpicture}};
+
+\end{tikzpicture}
+```
+
+
+```{tikz fig-set-S-path, echo=FALSE,     fig.cap="Example of a feasible path through the network for $T=8$,     $A_{\\min}=3$, $A_{\\max}=5$: establishment in period~1, harvests in periods~5 and~8, termination at $T+1$.",     fig.align="center", out.width="\\textwidth",     engine.opts=list(extra.preamble=c(      "\\usetikzlibrary{arrows.meta,bending,positioning}"    ))}
+
+\begin{tikzpicture}[
+  x=1.55cm, y=1cm,
+  node/.style    ={circle, draw, fill=#1, text=white,
+                   font=\small\bfseries, inner sep=2pt, minimum size=18pt},
+  inactive/.style={node=gray!25, text=gray!50},
+  pathnode/.style={node=green!40!black},
+  n0style/.style ={node=blue!70!black},
+  n9style/.style ={node=red!70!black},
+  patharc/.style ={-{Stealth[length=5pt]}, green!40!black, very thick},
+  est/.style     ={patharc, blue!70!black, dashed},
+  term/.style    ={patharc, red!70!black},
+]
+
+%% ---- Nodes ----
+\node[n0style]   (n0) at (0,0) {$0$};
+\foreach \i in {2,3,4,6,7} {
+  \node[inactive] (n\i) at (\i,0) {$\i$};
+}
+\foreach \i in {1,5,8} {
+  \node[pathnode]  (n\i) at (\i,0) {$\i$};
+}
+\node[n9style]   (n9) at (9,0) {$T\!+\!1$};
+
+%\node[below=10pt of n0, font=\scriptsize\itshape, text=blue!70!black]
+%  {Estab.\,(dummy)};
+%\node[below=10pt of n9, font=\scriptsize\itshape, text=red!70!black]
+%  {Term.\,(dummy)};
+
+%% ---- Path arcs ----
+\draw[est]     (n0) -- (n1);
+\draw[patharc] (n1) to[out=60, in=120, looseness=0.42] (n5);
+\draw[patharc] (n5) to[out=55, in=125, looseness=0.55] (n8);
+\draw[term]    (n8) -- (n9);
+
+%% ---- Arc labels ----
+\node[font=\footnotesize, text=blue!70!black]   at (0.5, 0.28) {est.};
+\node[font=\footnotesize, text=green!40!black]  at (3.0, 0.6) {$t-s=4$};
+\node[font=\footnotesize, text=green!40!black]  at (6.5, 0.55) {$t-s=3$};
+\node[font=\footnotesize, text=red!70!black]    at (8.5, 0.28) {term.};
+
+%% ---- Legend (no frame, side by side) ----
+\node[anchor=north west] at (0.0,-0.78) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[est]     (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Establishment arc $(0,t)$};
+  \end{tikzpicture}};
+\node[anchor=north west] at (4.2,-0.78) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[patharc] (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Harvest arc $(s,t)$};
+  \end{tikzpicture}};
+\node[anchor=north west] at (7.6,-0.78) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[term]    (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Termination arc $(s,T{+}1)$};
+  \end{tikzpicture}};
+
+\end{tikzpicture}
+```
 
 ## Decision variables
 
