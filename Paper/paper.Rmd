@@ -301,7 +301,7 @@ Total biomass on tree level is commonly modeled using allometric functions that 
   \label{eq:allometry}
 \end{equation}
 where $SBD$ is the shoot's stem base diameter (in cm) measured 10 cm above ground. Parameters \(b^0\) and  \(b^1\) are species-specific [@Huber2016_Allometric_SRAFS]. 
-In the following it is assumed that each tree is pruned to one dominant shoot. For SRAFS species in Southern Germany, @Huber2018_SRAFS_growth reports that most trees produce not more than 2 shoots and  @Huber2016_Allometric_SRAFS report a common exponent \(b_1 = 2.603\) for black alder, black locust, poplar (Max~3), and willow (Inger), while \(b^0\) ranges from 0.025 to 0.041, reflecting differences in wood density and branching structure. 
+In the following it is assumed that each tree is pruned to one dominant shoot. For SRAFS species in Southern Germany, @Huber2018_SRAFS_growth reports that most trees produce not more than 2 shoots and @Huber2016_Allometric_SRAFS report a common exponent \(b_1 = 2.603\) for black alder, black locust, poplar (Max~3), and willow (Inger), while \(b^0\) ranges from 0.025 to 0.041, reflecting differences in wood density and branching structure. 
 
 Allometric rules like \eqref{eq:allometry} generate estimates of biomass quantities for a given shoot, i.e. they  can be used to support operational harvest decisions. For planning on a strategic level, it is necessary to estimate biomass development over time, i.e. an SBD growth model. The mean stem base diameter \(SBD(t)\) of coppice shoots increases rapidly in the first growing seasons as shoots exploit stored root carbohydrates, then decelerates as intra-stand competition for light and water intensifies.
 Such trajectories can be described by sigmoidal growth functions. Empirical evidence from poplar SRC and SRAFS trials indicates that the SBD growth curve exhibits maximal growth rate (i.e., inflection point) at a relatively early stand age (2--4 years) [@BarrioAnta2008_Poplar_Growth; @Niemczyk2021_Poplar_Rotation].Therefore, a Gompertz model for \(\mathrm{SBD}(t)\) can be formulated as
@@ -342,7 +342,7 @@ For Max~3 the stem helper is parameterised with a high asymptote (\(a_\mathrm{st
 
 ```{r max3-growth, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Modelled stand-level biomass components for poplar (Max~3) over stand age, represented as stacked Gompertz curves (shaded areas: stem green, branches orange, residues purple) and compared with empirical aboveground biomass observations from poplar agroforestry and SRC systems. Symbols denote cumulative component totals: stem (filled circles), stem+branches (triangles), total AGB (diamonds). Empirical data compiled from Jha (2018) and cited primary sources. Grey shading: typical rotation-age window (5--10 years).", fig.width=6.5, fig.height=5.0, out.width="\\textwidth"}
 
-library(dplyr); library(tidyr); library(ggplot2)
+
 # Component Gompertz functions (parameters as defined above)
 B_AG_max3     <- function(t) gomp(t, A = 100, k = 0.32, t0 = 4.0)
 h_stem_f      <- function(t) gomp(t, A = 1.0,  k = 0.40, t0 = 4.0)
@@ -556,74 +556,99 @@ library(kableExtra)
 options(kableExtra.latex.load_packages = FALSE)
 options(knitr.table.format = "latex")
 
+# Hilfsfunktion: bricht einen langen Math-Ausdruck an einer definierten
+# Stelle um — teilt bei | in zwei Zeilen mit \shortstack
+math_break <- function(line1, line2) {
+  paste0("\\shortstack[l]{$", line1, "$\\\\$", line2, "$}")
+}
+
 notation <- tribble(
   ~Symbol, ~Description,
 
   # --- SETS & INDICES ---
-  "$i \\in \\mathcal{I}$",            "Agroforestry sites",
-  "$j \\in \\mathcal{J}$",            "Storage / pre-treatment facilities",
-  "$k \\in \\mathcal{K}$",            "Consumer sites",
-  "$p \\in \\mathcal{P}$","Product types (stem, branches, residues)",
-  "$\\mathcal{T}=\\{1,\\dots,T_{\\max}\\}$",    "Planning periods (years)",
-  "$\\mathcal{T}^{+}=\\{0,\\dots,T_{\\max}+1\\}$",    "Extended time set incl.\\ dummy nodes",
-  "$\\mathcal{T}^{\\text{harv}}=\\{A^{\\min}+1,\\dots,T_{\\max}\\}$",    "Feasible harvest periods",
- #
-  "$\\mathcal{S}^{\\text{est}}=\\{(0,t)\\mid t\\in\\{1,\\dots,T_{\\max}-A^{\\min}\\}\\}$",    "Establishment arcs: dummy source to establishment period $t$",
-  "$\\mathcal{S}^{\\text{harv}}=\\{(s,t)\\mid s,t\\in \\mathcal{T} \\, \\wedge \\, t-s\\in\\{A^{\\min},\\dots,A^{\\max}\\}\\}$", "Possible harvest cycles within age-lag bounds",
-  "$\\mathcal{S}^{\\text{term}}=\\{(s,T_{\\max}+1)\\mid s\\in\\{A^{\\min}+1,\\dots,T_{\\max}\\}\\}$",
-    "Termination arcs: last harvest to dummy sink $T_{\\max}+1$",
-   "$\\mathcal{S} = \\mathcal{S}^{\\text{est}} \\cup \\mathcal{S}^{\\text{harv}} \\cup \\mathcal{S}^{\\text{term}}$",    "Age-lag arc set (establishment $\\cup$ harvest $\\cup$ termination)",
+  "$i \\in \\mathcal{I}$",   "Agroforestry sites",
+  "$j \\in \\mathcal{J}$",   "Storage / pre-treatment facilities",
+  "$k \\in \\mathcal{K}$",   "Consumer sites",
+  "$p \\in \\mathcal{P}$",   "Product types (stem, branches, residues)",
+  "$(p,p') \\in \\mathcal{Q}$",   "Product usage (e.g. $p=stem$, it holds $p' \in \\{stem, branches, residues \\}$) ",
+  "$\\mathcal{T}=\\{1,\\dots,T_{\\max}\\}$",
+    "Planning periods (years)",
+  "$\\mathcal{T}^{+}=\\{0,\\dots,T_{\\max}+1\\}$",
+    "Extended time set incl.\\ dummy nodes",
+    "$\\mathcal{T}^{\\text{harv}}=\\{A^{\\min}+1,\\dots,T_{\\max}\\}$",
+    "Feasible harvest periods",
+    "$\\mathcal{S}^{\\text{est}}=\\{(0,t)\\mid t\\in\\{1,\\dots,T_{\\max}-A^{\\min}\\}\\}$",
+    "Establishment arcs: dummy source to period $t$",
+  math_break(
+    "\\mathcal{S}^{\\text{harv}}=\\{(s,t)\\mid s,t\\in \\mathcal{T},",
+    "t-s\\in\\{A^{\\min},\\dots,A^{\\max}\\}\\}"),
+    "Harvest cycles within age-lag bounds",
+  math_break(
+    "\\mathcal{S}^{\\text{term}}=\\{(s,T_{\\max}+1)\\mid",
+    "s\\in\\{A^{\\min}+1,\\dots,T_{\\max}\\}\\}"),
+    "Termination arcs to dummy sink $T_{\\max}+1$",
+  
+    "$\\mathcal{S} = \\mathcal{S}^{\\text{est}} \\cup \\mathcal{S}^{\\text{harv}} \\cup\\; \\mathcal{S}^{\\text{term}}$",
+    "Age-lag arc set (establishment $\\cup$ harvest $\\cup$ termination)",
 
   # --- DECISION VARIABLES ---
   "$z_{ist}\\in\\{0,1\\}$",
-    "1 if periods $s$ and $t$ are consecutive harvest cycles at site $i$",
+    "1 if $s$ and $t$ are consecutive harvest cycles at site $i$",
   "$Y_{ipt}\\ge 0$",
     "Harvest quantity (t) of product $p$ at site $i$ in period $t$",
   "$X_{ijpt}\\ge 0$",
-    "Transport flow (t) of product $p$ from site $i$ to facility $j$ in period $t$",
+    "Transport flow (t) of $p$ from site $i$ to facility $j$ in $t$",
   "$X_{jkpp't}\\ge 0$",
-    "Transport flow of $p$ from facility $j$ to consumer $k$ satisfying demand $p'$ in $t$",
+    "Flow of $p$ from facility $j$ to consumer $k$ satisfying $p'$ in $t$",
   "$S_{jpt}\\ge 0$",
-    "Inventory (t) of product $p$ at facility $j$ at end of period $t$",
+    "Inventory (t) of product $p$ at facility $j$ end of period $t$",
 
-  # --- MODEL PARAMETERS ---
-  "$T_{\\max}$",               "Length of planning horizon (years)",
-  "$A^{\\min}$, $A^{\\max}$",  "Minimum / maximum stand age at harvest (years)",
-  "$\\text{AREA}_i$",          "Area of site $i$ (ha)",
-  "$\\eta_{pa}$",              "Allometric yield coefficient (t/ha) of product $p$ at stand age $a$",
-  "$R_{kp}$",                  "Revenue (\\euro/t) for product $p$ at consumer $k$",
-  "$C^{\\text{est}}_i$",       "Establishment cost (\\euro/ha) at site $i$",
-  "$C^{\\text{opp}}_i$",       "Annual opportunity cost (\\euro/ha) at site $i$",
-  "$C^{\\text{harv}}_i$",      "Harvest \\& refitting cost (\\euro/ha) at site $i$",
-  "$c^{\\text{tr-raw}}$",      "Transport cost rate (\\euro/t\\,km) for raw biomass",
-  "$c^{\\text{tr-pre}}$",      "Transport cost rate (\\euro/t\\,km) for pre-treated biomass",
-  "$c^{\\text{stor}}_j$",      "Storage holding cost (\\euro/t) at facility $j$",
-  "$d_{ij}$, $d_{jk}$",        "Distance (km) between nodes",
+  # --- PARAMETERS ---
+  "$T_{\\max}$",              "Length of planning horizon (years)",
+  "$A^{\\min}$, $A^{\\max}$", "Minimum / maximum stand age at harvest (years)",
+  "$\\text{AREA}_i$",         "Area of site $i$ (ha)",
+  "$\\eta_{pa}$",             "Yield coefficient (t/ha) of product $p$ at age $a$",
+  "$R_{kp}$",                 "Revenue (\\euro/t) for product $p$ at consumer $k$",
+  "$C^{\\text{est}}_i$",      "Establishment cost (\\euro/ha) at site $i$",
+  "$C^{\\text{opp}}_i$",      "Annual opportunity cost (\\euro/ha) at site $i$",
+  "$C^{\\text{harv}}_i$",     "Harvest \\& refitting cost (\\euro/ha) at site $i$",
+  "$c^{\\text{tr-raw}}$",     "Transport cost rate (\\euro/t\\,km) for raw biomass",
+  "$c^{\\text{tr-pre}}$",     "Transport cost rate (\\euro/t\\,km) pre-treated biomass",
+  "$c^{\\text{stor}}_j$",     "Storage holding cost (\\euro/t) at facility $j$",
+  "$d_{ij}$, $d_{jk}$",       "Distance (km) between nodes",
   "$\\text{CAP}^{\\text{stor}}_j$", "Storage capacity (t) at facility $j$",
   "$\\text{CAP}^{\\text{proc}}_j$", "Processing capacity (t/period) at facility $j$",
-  "$D^{\\max}_{kpt}$",         "Maximum demand (t) of product $p$ at consumer $k$ in period $t$",
+  "$D^{\\max}_{kpt}$",        "Maximum demand (t) of $p$ at consumer $k$ in period $t$"
 )
-
 
 tbl <- kable(notation,
       format    = "latex",
       booktabs  = TRUE,
       escape    = FALSE,
-#      col.names = c("Symbol", "Description"),
-      caption   = "Notation for the MILP model and biomass growth models.",
-      label     = "tab-notation") |>
+      col.names = NULL,
+      caption   = "Notation for the MILP model.",
+      label     = "tab-notation-milp") |>
   kable_styling(
     font_size     = 8,
-    latex_options = c("hold_position", "scale_down"),
+    latex_options = c("hold_position", "scale_down","striped"),
     full_width    = FALSE
   ) |>
-  column_spec(1, width = "6.8cm") |>
-  column_spec(2, width = "8.0cm")
+  column_spec(1, width = "5cm") |>
+  column_spec(2, width = "9cm") |>
+  pack_rows("Sets \\& Indices",    1,  11,
+            bold = TRUE, italic = FALSE, hline_before = TRUE, escape = FALSE) |>
+  pack_rows("Decision Variables", 12,  16,
+            bold = TRUE, italic = FALSE, hline_before = TRUE) |>
+  pack_rows("Parameters",         17,  31,
+            bold = TRUE, italic = FALSE, hline_before = TRUE)
 
-tbl <- tbl |>
-  pack_rows("Sets & Indices",       1, 11, bold = TRUE, italic = FALSE, hline_before = TRUE) |>
-  pack_rows("Decision Variables",  12, 16, bold = TRUE, italic = FALSE, hline_before = TRUE) |>
-  pack_rows("Parameters",    17, 31, bold = TRUE, italic = FALSE, hline_before = TRUE) 
+# Spaltentyp p{} → >{\raggedright\arraybackslash}p{} direkt im LaTeX-String ersetzen
+tbl <- gsub(
+  "p\\{(5\\.8cm|8\\.5cm)\\}",
+  ">\\{\\\\raggedright\\\\arraybackslash\\}p\\{\\1\\}",
+  tbl
+)
+
 tbl
 ```
 
