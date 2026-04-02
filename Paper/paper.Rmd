@@ -570,7 +570,7 @@ notation <- tribble(
   "$j \\in \\mathcal{J}$",   "Storage / pre-treatment facilities",
   "$k \\in \\mathcal{K}$",   "Consumer sites",
   "$p \\in \\mathcal{P}$",   "Product types (stem, branches, residues)",
-  "$(p,p') \\in \\mathcal{Q}$",   "Product usage (e.g. $p=stem$, it holds $p' \in \\{stem, branches, residues \\}$) ",
+  "$(p,p') \\in \\mathcal{Q}$",   "Product usage",
   "$\\mathcal{T}=\\{1,\\dots,T_{\\max}\\}$",
     "Planning periods (years)",
   "$\\mathcal{T}^{+}=\\{0,\\dots,T_{\\max}+1\\}$",
@@ -635,11 +635,11 @@ tbl <- kable(notation,
   ) |>
   column_spec(1, width = "5cm") |>
   column_spec(2, width = "9cm") |>
-  pack_rows("Sets \\& Indices",    1,  11,
+  pack_rows("Sets \\& Indices",    1,  12,
             bold = TRUE, italic = FALSE, hline_before = TRUE, escape = FALSE) |>
-  pack_rows("Decision Variables", 12,  16,
+  pack_rows("Decision Variables", 13,  17,
             bold = TRUE, italic = FALSE, hline_before = TRUE) |>
-  pack_rows("Parameters",         17,  31,
+  pack_rows("Parameters",         18,  32,
             bold = TRUE, italic = FALSE, hline_before = TRUE)
 
 # Spaltentyp p{} → >{\raggedright\arraybackslash}p{} direkt im LaTeX-String ersetzen
@@ -800,68 +800,93 @@ tbl
 ## Decision variables
 
 Binary variables \(z_{ist}\) indicate whether, at site \(i\), periods \(s\) and \(t\) form consecutive harvests (or establishment and first harvest if \(s=0\)), with \((s,t) \in \mathcal{S}\) as defined in \eqref{eq:age-lag-set}. These variables define a path of consecutive harvest cycles at each site over the planning horizon. Continuous variables \(Y_{ipt} \ge 0\) represent the maximum harvest quantity (t) of product \(p\) at site \(i\) in harvest period \(t\). Flow variables \(X_{ijpt}\) and \(X_{jkpp't}\) represent transport of products from sites to storage and from storage to consumers, respectively, and \(S_{jpt}\) represent inventories at storage locations.
-
+E}OL.?2(vkfy
 ## Objective function
 
 The model maximises net present value over the planning horizon, expressed as total revenues minus establishment, opportunity, harvest, transport, and storage costs:
-\begin{equation}
-\begin{aligned}
-\max Z =\;&
-\sum_{k,p,t} R_{k,p} \cdot \sum_{j \in \mathcal{J},\, p' \in \mathcal{P}: p' \leq p} X_{jkp'pt} \\
-& - \sum_{i} C^{\text{est}}_{i} \cdot \text{AREA}_i \cdot \sum_{t \in \mathcal{T}} z_{i0t} \\
-& - \sum_{i} C^{\text{opp}}_{i} \cdot \text{AREA}_i \cdot \sum_{t \in \mathcal{T}} (T_{\max}-t) \cdot z_{i0t} \\
-& - \sum_{i,(s,t)\in \mathcal{S}: s>0} C^{\text{harv}}_{i} \cdot \text{AREA}_i \cdot z_{ist} \\
-& - c^{\text{tr-raw}} \sum_{i,j,p,t} d_{ij} \cdot X_{ijpt}
-- c^{\text{tr-pre}} \sum_{j,k,p,t} d_{jk} \cdot X_{jkpt}
-- \sum_{j,p,t} c^{\text{stor}}_{j} \cdot S_{jpt}.
-\end{aligned}
-\label{eq:objective}
-\end{equation}
+\begin{align}
+\max\; Z \;=\;&
+  \sum_{k \in \mathcal{K},\, p \in \mathcal{P},\, t \in \mathcal{T}}
+    R_{kp}
+    \sum_{j \in \mathcal{J},\, (p,p') \in \mathcal{Q} }
+      X_{jkp'pt}
+  \label{eq:obj-revenue} \\
+&- \sum_{i \in \mathcal{I}}
+     C^{\text{est}}_i \cdot \text{AREA}_i
+     \sum_{(0,t) \in \mathcal{S}^{\text{est}}} z_{i0t} \notag  \\ 
+&- \sum_{i \in \mathcal{I}}
+     C^{\text{opp}}_i \cdot \text{AREA}_i
+     \sum_{(0,t) \in \mathcal{S}^{\text{est}}} (T_{\max} - t)\, z_{i0t} \notag \\
+&- \sum_{i \in \mathcal{I}}
+     C^{\text{harv}}_i \cdot \text{AREA}_i
+     \sum_{(s,t) \in \mathcal{S}^{\text{harv}}} z_{ist} \notag \\
+&- c^{\text{tr-raw}}
+     \sum_{i \in \mathcal{I},\, j \in \mathcal{J},\, p \in \mathcal{P},\, t \in \mathcal{T}}
+       d_{ij}\, X_{ijpt} \notag \\
+&- c^{\text{tr-pre}}
+     \sum_{j \in \mathcal{J},\, k \in \mathcal{K},\, (p,p') \in \mathcal{Q},\, t \in \mathcal{T}}
+       d_{jk}\, X_{jkpp't}
+  \notag \\
+&- \sum_{j \in \mathcal{J},\, p \in \mathcal{P},\, t \in \mathcal{T}}
+     c^{\text{stor}}_j\, S_{jpt}  \notag
+\end{align}
 
 Here, \(R_{k,p}\) are product- and consumer-specific revenues (€/t), \(C^{\text{est}}_{i}\) are establishment costs per hectare, \(C^{\text{opp}}_{i}\) are annual opportunity costs per hectare, and \(C^{\text{harv}}_{i}\) are harvest and refitting costs per hectare [@Testa2014_Poplar_Economics]. Transport costs are proportional to flow and distance with rates \(c^{\text{tr-raw}}\) and \(c^{\text{tr-pre}}\) for raw and pre-treated biomass, respectively, and storage incurs linear holding costs \(c^{\text{stor}}_j\) per tonne.
 
-## Key constraints
+## Constraints
 
-The path connectivity constraint ensures that each harvest period at a site has exactly one predecessor and one successor in the age-lag graph, effectively forming a path over \(\mathcal{T}^{+}\):
-\begin{equation}
-\sum_{(s,t)\in \mathcal{S}} z_{ist} = \sum_{(t,u) \in \mathcal{S}} z_{itu}
-\quad \forall i \in \mathcal{I}, t \in \mathcal{T}.
-\label{eq:path-connect}
-\end{equation}
-
-Establishment is restricted to at most one time per site:
-\begin{equation}
-\sum_{(0,t) \in \mathcal{S}^{est}} z_{i0t} \le 1 \quad \forall i \in \mathcal{I}.
-\label{eq:one-establishment}
-\end{equation}
-
-Biomass yield is linked to age-lag decisions through the allometric yield coefficients:
-\begin{equation}
-Y_{ipt} = \sum_{s=1}^{t-1} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist}
-\quad \forall i \in \mathcal{I}, p \in \mathcal{P}, t \in \mathcal{T}^{\text{harv}}.
-\label{eq:yield-link}
-\end{equation}
-
-Harvest quantities bound outbound flows from each site:
-\begin{equation}
-\sum_{j \in \mathcal{J}} X_{ijpt} \le Y_{ipt}
-\quad \forall i,p,t \in \mathcal{T}^{\text{harv}}.
-\label{eq:harvest-flow}
-\end{equation}
-
-At storage hubs, inventories obey standard balance equations with initial inventory zero:
-\begin{equation}
-S_{jpt} = S_{jp,t-1} + \sum_{i} X_{ijpt} - \sum_{k, p' \ge p} X_{jkpp't}
-\quad \forall j,p,t \in \mathcal{T}^{\text{harv}}.
-\label{eq:inventory-balance}
-\end{equation}
-
-Storage and processing capacities are enforced via:
-\begin{equation}
-\sum_{p} S_{jpt} \le \text{CAP}^{\text{stor}}_j \quad \forall j,t, \qquad
-\sum_{i,p} X_{ijpt} \le \text{CAP}^{\text{proc}}_j \quad \forall j,t.
-\label{eq:capacity}
-\end{equation}
+\begin{align}
+  % --- C1: Establishment ---
+\sum_{(0,t)\,\in\,\mathcal{S}^{\text{est}}} z_{i0t}
+  &\leq 1
+  && \forall\; i \in \mathcal{I}
+  \label{eq:C1} \\[6pt]
+% --- C2: Path connectivity ---
+\sum_{(s,t)\,\in\,\mathcal{S} } z_{ist}
+  &= \sum_{(t,u)\,\in\,\mathcal{S} } z_{itu}
+  && \forall\; i \in \mathcal{I},\; t \in \mathcal{T}
+  \label{eq:C2} \\[6pt]
+% --- C3: Biomass yield ---
+Y_{ipt}
+  &= \sum_{(s,t)\,\in\,\mathcal{S}^{\text{harv}}}
+       \eta_{p,\,(t-s)} \cdot \text{AREA}_i \cdot z_{ist}
+  && \forall\; i \in \mathcal{I},\; p \in \mathcal{P},\; t \in \mathcal{T}^{\text{harv}}
+  \label{eq:C3} \\[6pt]
+% --- C4: Shipping linkage ---
+\sum_{j \in \mathcal{J}} X_{ijpt}
+  &\leq Y_{ipt}
+  && \forall\; i \in \mathcal{I},\; p \in \mathcal{P},\; t \in \mathcal{T}^{\text{harv}}
+  \label{eq:C4} \\[6pt]
+  % --- C5: Inventory balance ---
+  S_{jpt} = S_{jp,t-1} + &\sum_{i \in \mathcal{I}} X_{ijpt} - \sum_{k \in \mathcal{K},\, (p,p') \in \mathcal{Q} } X_{jkpp't}
+  && \forall\; j \in \mathcal{J},\; p \in \mathcal{P},\; t \in \mathcal{T}
+  \label{eq:C5} \\[6pt]
+% --- C6: Storage capacity ---
+\sum_{p \in \mathcal{P}} S_{jpt}
+  &\leq \text{CAP}^{\text{stor}}_j
+  && \forall\; j \in \mathcal{J},\; t \in \mathcal{T}
+  \label{eq:C6} \\[6pt]
+% --- C7: Processing capacity ---
+\sum_{i \in \mathcal{I},\, p \in \mathcal{P}} X_{ijpt}
+  &\leq \text{CAP}^{\text{proc}}_j
+  && \forall\; j \in \mathcal{J},\; t \in \mathcal{T}
+  \label{eq:C7} \\[6pt]
+% --- C8: Demand / product cascade ---
+\sum_{j \in \mathcal{J},\, (p,p') \in \mathcal{Q} }
+  X_{jkp'pt}
+  &\leq D^{\max}_{kpt}
+  && \forall\; k \in \mathcal{K},\; p \in \mathcal{P},\; t \in \mathcal{T}
+  \label{eq:C8} \\[6pt]
+% --- Domain: binary ---
+z_{ist}
+  &\in \{0,1\}
+  && \forall\; i \in \mathcal{I},\; (s,t) \in \mathcal{S}
+  \label{eq:D1} \\
+% --- Domain: continuous ---
+Y_{ipt},\; & X_{ijpt},\; X_{jkpp't},\; S_{jpt}  \geq 0
+  && \forall\; 
+  \label{eq:D2}
+\end{align}
 
 Demand satisfaction with cascades is modelled as described above, where higher-quality products can satisfy lower-quality demands up to maximum demand levels \(D^{\max}_{kpt}\).
 
