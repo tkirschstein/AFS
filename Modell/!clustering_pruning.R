@@ -342,15 +342,15 @@ cluster_map <- leaflet(options = leafletOptions(preferCanvas = TRUE)) %>%
   ) %>%
   hideGroup("Originalstandorte (alle)") %>%   # hidden by default (performance)
   hideGroup("Stage 1: DBSCAN-Outlier (entfernt)")
-
-# Export as self-contained HTML
-htmlwidgets::saveWidget(
-  widget   = cluster_map,
-  file     = "plot_clustering_map.html",
-  selfcontained = TRUE
-)
-cat("✓ Saved: plot_clustering_map.html\n")
-cat("  → Open in browser or htmltools::browsable(cluster_map) in RStudio\n")
+# 
+# # Export as self-contained HTML
+# htmlwidgets::saveWidget(
+#   widget   = cluster_map,
+#   file     = "plot_clustering_map.html",
+#   selfcontained = TRUE
+# )
+# cat("✓ Saved: plot_clustering_map.html\n")
+# cat("  → Open in browser or htmltools::browsable(cluster_map) in RStudio\n")
 
 # Print in RStudio viewer
 cluster_map
