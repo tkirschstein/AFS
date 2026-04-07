@@ -25,16 +25,27 @@ suppressPackageStartupMessages({
 })
 
 # ── Parameters (adjust to study region) ──────────────────────────────────────
-DBSCAN_EPS_KM    <- 15    # neighbourhood radius for DBSCAN (km); sites beyond
+DBSCAN_EPS_KM    <- 5    # neighbourhood radius for DBSCAN (km); sites beyond
 # this distance from any neighbour = outlier
 DBSCAN_MIN_PTS   <- 3     # minimum cluster size in Stage 1
-HAC_MAX_RADIUS   <- 5    # maximum within-cluster geodesic radius (km) for
+HAC_MAX_RADIUS   <- 10   # maximum within-cluster geodesic radius (km) for
 # Stage 2 cut; all members ≤ this distance to medoid
 # ─────────────────────────────────────────────────────────────────────────────
 
 load("../Modell/afs_workspace.RData")
 
-sites <- afs_workspace$sites   # columns: site_id, lat, lng, area_ha
+sites_fb <- afs_workspace$sites_sf   # columns: site_id, lat, lng, area_ha
+
+sites <- st_centroid(sites_fb)
+
+centroids_coords <- st_coordinates(sites)
+sites$lng <- centroids_coords[, "X"]
+sites$lat <- centroids_coords[, "Y"]
+
+sites <- sites %>%
+  st_drop_geometry() %>%
+  mutate(site_id = seq_len(nrow(sites))) %>%
+  select(site_id, lat, lng, area)
 
 cat("Sites before clustering:", nrow(sites), "\n")
 
@@ -80,7 +91,7 @@ cat(sprintf("  Core sites retained  : %d\n", n_core))
 # Retain only non-outlier sites
 sites_core <- sites_xy %>%
   filter(dbscan_cluster > 0) %>%
-  select(site_id, lat, lng, area_ha, x_km, y_km)
+  select(site_id, lat, lng, area, x_km, y_km)
 
 
 # ==============================================================================
@@ -119,7 +130,7 @@ cat(sprintf("  HAC cut: K = %d super-sites (max radius ≤ %.0f km)\n",
 
 sites_core$hac_cluster <- cutree(hc, k = K_opt)
 
-
+n_clusters <- max(sites_core$hac_cluster)
 # ==============================================================================
 # AGGREGATE: build super-site data.frame for MILP input
 # Each super-site:
@@ -130,9 +141,9 @@ sites_core$hac_cluster <- cutree(hc, k = K_opt)
 sites_clustered <- sites_core %>%
   group_by(cluster_id = hac_cluster) %>%
   summarise(
-    lat      = weighted.mean(lat, area_ha),   # area-weighted centroid
-    lng      = weighted.mean(lng, area_ha),
-    area_ha  = sum(area_ha),
+    lat      = weighted.mean(lat, area),   # area-weighted centroid
+    lng      = weighted.mean(lng, area),
+    area_ha  = sum(area),
     n_sites  = n(),
     .groups  = "drop"
   ) %>%
@@ -188,127 +199,150 @@ super          <- sites_clustered
 
 
 # ==============================================================================
-# (A) STATIC GGPLOT2 — side-by-side before/after
+# POLYGON-BASED VISUALISATION — replaces addCircleMarkers for site layers
+#
+# Requires: afs_workspace$feldblocks_sf  — sf object with columns
+#             site_id  (join key to sites_xy / sites_core)
+#             geometry (POLYGON or MULTIPOLYGON, CRS = 4326)
+#
+# If feldblocks_sf is in a different CRS, transform first:
+#   afs_workspace$feldblocks_sf <- st_transform(afs_workspace$feldblocks_sf, 4326)
 # ==============================================================================
 
-# Cluster colour palette (one colour per HAC cluster)
-n_clusters    <- nrow(super)
-cluster_pal   <- colorRampPalette(
-  brewer.pal(min(n_clusters, 11), "Spectral"))(n_clusters)
-names(cluster_pal) <- as.character(seq_len(n_clusters))
+# ── Join cluster labels onto the polygon layer ──────────────────────────────
+fb_sf <- afs_workspace$sites_sf %>%
+  mutate(site_id = seq_len(nrow(sites))) %>%
+  rename(area_ha = area) %>%
+  st_transform(4326) %>%
+  left_join(
+    sites_xy %>% select(site_id, dbscan_cluster),
+    by = "site_id"
+  ) %>%
+  left_join(
+    sites_core %>% select(site_id, hac_cluster),
+    by = "site_id"
+  ) %>%
+  mutate(
+    layer_type = case_when(
+      is.na(dbscan_cluster) | dbscan_cluster == 0 ~ "outlier",
+      TRUE                                         ~ "inlier"
+    ),
+    hac_cluster = if_else(layer_type == "inlier", hac_cluster, NA_integer_)
+  )
 
-sites_inlier <- sites_inlier %>%
-  mutate(cluster_col = cluster_pal[as.character(hac_cluster)])
+# Separate layers for convenience
+fb_outlier <- fb_sf %>% filter(layer_type == "outlier")
+fb_inlier  <- fb_sf %>% filter(layer_type == "inlier")
 
-# ==============================================================================
-# (B) INTERACTIVE LEAFLET — layers for original, outliers, super-sites
-# ==============================================================================
-
-# Leaflet colour palette: one colour per cluster (max 256 distinct)
-pal_cluster <- colorFactor(
-  palette = colorRampPalette(brewer.pal(11, "Spectral"))(n_clusters),
-  domain  = as.factor(sites_inlier$hac_cluster)
+# Polygon-level popups
+popup_fb_orig <- paste0(
+  "<b>", fb_sf$name, "</b><br>",
+  "Fläche: ", round(fb_sf$area_ha, 1), " ha"
 )
 
-# Popup helpers
-popup_orig <- paste0(
-  "<b>", sites_orig$name, "</b><br>",
-  "Fläche: ", round(sites_orig$area_ha, 1), " ha"
-)
-
-popup_super <- paste0(
-  "<b>Super-Site SC_", super$site_id, "</b><br>",
-  "Cluster-ID: ", super$cluster_id, "<br>",
-  "Mitglieder: ", super$n_sites, " Feldblöcke<br>",
-  "Gesamtfläche: ", round(super$area_ha, 0), " ha<br>",
-  "Zentroid: ", round(super$lat, 4), "° N, ", round(super$lng, 4), "° E"
-)
-
-popup_outlier <- paste0(
+popup_fb_outlier <- paste0(
   "<b>Outlier (entfernt)</b><br>",
-  "site_id: ", sites_outlier$site_id, "<br>",
-  "Fläche: ", round(sites_outlier$area_ha, 1), " ha"
+  "site_id: ", fb_outlier$site_id, "<br>",
+  "Fläche: ", round(fb_outlier$area_ha, 1), " ha"
 )
 
-popup_storage <- paste0(
-  "<b>", storages$name, "</b><br>",
-  "Typ: ", storages$type, "<br>",
-  "CAP_proc: ", storages$CAP_proc, " kt/Jahr"
+popup_fb_inlier <- paste0(
+  "<b>", fb_inlier$name, "</b><br>",
+  "HAC-Cluster: ", fb_inlier$hac_cluster, "<br>",
+  "Fläche: ", round(fb_inlier$area_ha, 1), " ha"
 )
 
+# ── Leaflet colour palette (same Spectral ramp as before) ───────────────────
+pal_cluster_poly <- colorFactor(
+  palette = colorRampPalette(brewer.pal(11, "Spectral"))(n_clusters),
+  domain  = as.factor(fb_inlier$hac_cluster),
+  na.color = "transparent"
+)
+
+# ==============================================================================
+# BUILD MAP — polygon version
+# ==============================================================================
 cluster_map <- leaflet(options = leafletOptions(preferCanvas = TRUE)) %>%
   
   # --- Base tiles ---
   addProviderTiles("CartoDB.Positron",  group = "CartoDB (hell)") %>%
   addProviderTiles("OpenStreetMap.DE",  group = "OpenStreetMap DE") %>%
+  addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
   setView(lng = 11.85, lat = 51.55, zoom = 8) %>%
   addScaleBar(position = "bottomleft") %>%
   
-  # ── Layer 1: Original sites (all) ──────────────────────────────────────────
-  addCircleMarkers(
-    data        = sites_orig,
-    lng = ~lng, lat = ~lat,
-    radius      = 3,
-    color       = "#2d6a2d", fillColor = COL_ORIG_CORE,
-    weight = 0.8, opacity = 0.9, fillOpacity = 0.5,
-    popup       = popup_orig,
+  # ── Layer 1: All original Feldblock polygons ────────────────────────────────
+  addPolygons(
+    data        = fb_sf,
+    fillColor   = COL_ORIG_CORE,
+    fillOpacity = 0.45,
+    color       = "#2d6a2d",
+    weight      = 0.6,
+    opacity     = 0.8,
+    smoothFactor = 0.5,
+    popup       = popup_fb_orig,
     group       = "Originalstandorte (alle)"
   ) %>%
   
-  # ── Layer 2: DBSCAN outliers (removed sites) ───────────────────────────────
-  addCircleMarkers(
-    data        = sites_outlier,
-    lng = ~lng, lat = ~lat,
-    radius      = 4,
-    color       = "#cb181d", fillColor = COL_ORIG_OUTLIER,
-    weight = 1.5, opacity = 1.0, fillOpacity = 0.7,
-    popup       = popup_outlier,
+  # ── Layer 2: DBSCAN outlier polygons ──────────────────────────────────────
+  addPolygons(
+    data        = fb_outlier,
+    fillColor   = COL_ORIG_OUTLIER,
+    fillOpacity = 0.65,
+    color       = "#cb181d",
+    weight      = 1.2,
+    opacity     = 1.0,
+    smoothFactor = 0.5,
+    popup       = popup_fb_outlier,
     group       = "Stage 1: DBSCAN-Outlier (entfernt)"
   ) %>%
   
-  # ── Layer 3: Cluster members coloured by HAC cluster ──────────────────────
-  addCircleMarkers(
-    data        = sites_inlier,
-    lng = ~lng, lat = ~lat,
-    radius      = 3,
-    color       = ~pal_cluster(as.factor(hac_cluster)),
-    fillColor   = ~pal_cluster(as.factor(hac_cluster)),
-    weight = 0.5, opacity = 0.8, fillOpacity = 0.6,
-    popup = ~paste0(
-      "<b>", name, "</b><br>",
-      "HAC-Cluster: ", hac_cluster, "<br>",
-      "Fläche: ", round(area_ha, 1), " ha"
+  # ── Layer 3: Cluster-member polygons coloured by HAC cluster ──────────────
+  addPolygons(
+    data        = fb_inlier,
+    fillColor   = ~pal_cluster_poly(as.factor(hac_cluster)),
+    fillOpacity = 0.55,
+    color       = ~pal_cluster_poly(as.factor(hac_cluster)),
+    weight      = 0.8,
+    opacity     = 0.9,
+    smoothFactor = 0.5,
+    popup       = popup_fb_inlier,
+    highlightOptions = highlightOptions(
+      weight      = 2.5,
+      color       = "#333333",
+      fillOpacity = 0.85,
+      bringToFront = TRUE
     ),
-    group = "Stage 2: Cluster-Mitglieder"
+    group = "Stage 2: Cluster-Mitglieder (Polygone)"
   ) %>%
   
-  # ── Layer 4: Super-site centroids (area-weighted) ─────────────────────────
+  # ── Layer 4: Super-site centroids (area-weighted, unchanged) ──────────────
   addCircleMarkers(
     data        = super,
     lng = ~lng, lat = ~lat,
     radius      = ~pmin(20, pmax(6, 4 + log1p(area_ha) * 1.5)),
     color       = COL_SUPER_BORDER,
     fillColor   = COL_SUPER_FILL,
-    weight = 2.0, opacity = 1.0, fillOpacity = 0.85,
-    popup       = popup_super,
+    weight = 2.0, opacity = 1.0, fillOpacity = 0.9,
+    popup       = popup_fb_inlier,
     label       = ~paste0("SC_", site_id, " (", n_sites, " sites, ",
                           round(area_ha, 0), " ha)"),
-    labelOptions= labelOptions(noHide = FALSE, direction = "top",
-                               textsize = "11px"),
+    labelOptions = labelOptions(noHide = FALSE, direction = "top",
+                                textsize = "11px"),
     group       = "Super-Sites (aggregiert)"
   ) %>%
   
-  # ── Layer 5: Storages ──────────────────────────────────────────────────────
+  # ── Layer 5: Storages (unchanged) ─────────────────────────────────────────
   addCircleMarkers(
     data        = storages,
     lng = ~lng, lat = ~lat,
     radius      = 9,
     color       = "#c05000", fillColor = "#fd8d3c",
     weight = 2.5, opacity = 1.0, fillOpacity = 0.9,
-    popup       = popup_storage,
+    #popup       = popup_storage,
     label       = ~name,
-    labelOptions= labelOptions(noHide = FALSE, direction = "top",
-                               textsize = "12px"),
+    labelOptions = labelOptions(noHide = FALSE, direction = "top",
+                                textsize = "12px"),
     group       = "Vorbehandlung / Umschlag"
   ) %>%
   
@@ -318,9 +352,9 @@ cluster_map <- leaflet(options = leafletOptions(preferCanvas = TRUE)) %>%
     colors   = c(COL_ORIG_CORE, COL_ORIG_OUTLIER,
                  COL_SUPER_FILL, COL_STORAGE),
     labels   = c(
-      paste0("Original-Standorte (n = ", nrow(sites_orig), ")"),
+      paste0("Feldblöcke original (n = ", nrow(sites_orig), ")"),
       paste0("DBSCAN-Outlier entfernt (n = ", n_outliers, ")"),
-      paste0("Super-Sites, fläcengewichteter Zentroid (K = ", nrow(super), ")"),
+      paste0("Super-Sites, Zentroid (K = ", nrow(super), ")"),
       "Vorbehandlung / Umschlag"
     ),
     opacity  = 0.9,
@@ -334,34 +368,31 @@ cluster_map <- leaflet(options = leafletOptions(preferCanvas = TRUE)) %>%
     overlayGroups = c(
       "Originalstandorte (alle)",
       "Stage 1: DBSCAN-Outlier (entfernt)",
-      "Stage 2: Cluster-Mitglieder",
+      "Stage 2: Cluster-Mitglieder (Polygone)",
       "Super-Sites (aggregiert)",
       "Vorbehandlung / Umschlag"
     ),
     options = layersControlOptions(collapsed = FALSE)
   ) %>%
-  hideGroup("Originalstandorte (alle)") %>%   # hidden by default (performance)
+  hideGroup("Originalstandorte (alle)") %>%
   hideGroup("Stage 1: DBSCAN-Outlier (entfernt)")
-# 
-# # Export as self-contained HTML
-# htmlwidgets::saveWidget(
-#   widget   = cluster_map,
-#   file     = "plot_clustering_map.html",
-#   selfcontained = TRUE
-# )
-# cat("✓ Saved: plot_clustering_map.html\n")
-# cat("  → Open in browser or htmltools::browsable(cluster_map) in RStudio\n")
 
-# Print in RStudio viewer
 cluster_map
-
 
 # ==============================================================================
 # UPDATE WORKSPACE — replace sites, clear stale distance matrix
 # afs_workspace$dist_ij must be recomputed via OSRM after this step
 # ==============================================================================
-afs_workspace$sites   <- sites_clustered
+afs_workspace$sites   <- sites
 afs_workspace$dist_ij <- NULL               # invalidated; recompute with OSRM
+
+afs_workspace$sites_clustered <- sites_clustered %>%
+  select(site_id, name, lat, lng, area_ha, n_sites)
+
+
+afs_workspace$site_cluster_assig <- sites_core %>%
+  select(site_id, lat, lng, area, hac_cluster)
+
 
 afs_workspace$meta$n_sites          <- nrow(sites_clustered)
 afs_workspace$meta$clustering <- list(
@@ -374,21 +405,8 @@ afs_workspace$meta$clustering <- list(
   date         = Sys.time()
 )
 
-save(afs_workspace, file = "afs_workspace.RData")
+save(afs_workspace, file = "afs_workspace_red.RData")
 cat("\n✓ afs_workspace.RData updated with clustered sites.\n")
 cat("  → Recompute dist_ij via OSRM before running build_agroforestry_lp_v10.r\n")
-
-
-# ==============================================================================
-# OPTIONAL: Silhouette diagnostic plot
-# ==============================================================================
-if (requireNamespace("cluster", quietly = TRUE) && K_opt > 1) {
-  sil <- cluster::silhouette(
-    x    = sites_core$hac_cluster,
-    dist = as.dist(D_geo)
-  )
-  avg_sil <- mean(sil[, "sil_width"])
-  cat(sprintf("  Average silhouette width : %.3f  (>0.5 = good structure)\n", avg_sil))
-}
 
 

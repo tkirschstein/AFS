@@ -101,7 +101,8 @@ source("../Modell/!helper_func.r")
 source("../Modell/!helper_instance_builder_v8a.R")
 source("../Modell/build_agroforestry_lp_v10.R")
 
-load("../Modell/afs_workspace.RData")
+#load("../Modell/afs_workspace.RData")
+load("afs_workspace_red.RData")
 
 sites_sf   <- afs_workspace$sites_sf
 sites      <- afs_workspace$sites
