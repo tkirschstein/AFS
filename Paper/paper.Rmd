@@ -776,10 +776,11 @@ The proposed MILP model is intended to support the design of agroforestry biomas
 
 ```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Green polygons: potential KUP sites. Orange symbols: pre-treatment facilities (circle~=~sawmill, triangle~=~logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth"}
 
-COL_SITE_F <- "#74c476"; COL_SITE_B <- "#2d6a2d"
-COL_SAW    <- "#e65c00"; COL_HUB    <- "#c05000"
-COL_P1     <- "#6a0dad"; COL_P2     <- "#08519c"; COL_P3     <- "#a50026"
+# ── Colour palette constants ─────────────────────────────────────────────────
+COL_SAW  <- "#e65c00"; COL_HUB  <- "#c05000"
+COL_P1   <- "#6a0dad"; COL_P2   <- "#08519c"; COL_P3   <- "#a50026"
 
+# ── Base-map layers ───────────────────────────────────────────────────────────
 de_states <- ne_states(country = "Germany", returnclass = "sf") %>%
   st_transform(4326)
 
@@ -790,6 +791,33 @@ rivers_eu <- ne_download(
   st_transform(4326) %>%
   st_crop(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8)
 
+# ── Join hac_cluster from site_cluster_assig onto sites_sf ───────────────────
+# afs_workspace$site_cluster_assig: columns include site_id and hac_cluster
+cluster_assig <- afs_workspace$site_cluster_assig %>%
+  select(site_id, hac_cluster) %>%
+  mutate(hac_cluster = as.factor(hac_cluster))   # discrete colour scale
+
+sites_sf_clust <- sites_sf %>%
+  mutate(site_id = seq_len(nrow(sites_sf))) %>%  # ensure site_id matches row order)
+  left_join(cluster_assig, by = "site_id")
+
+# Number of clusters → build a qualitative colour palette that scales with K
+n_clusters <- length(unique(cluster_assig$hac_cluster))
+
+# Use ColorBrewer "Set3" up to 12; for larger K fall back to viridis
+if (n_clusters <= 12) {
+  cluster_pal <- setNames(
+    colorRampPalette(RColorBrewer::brewer.pal(min(n_clusters, 12), "Set3"))(n_clusters),
+    levels(cluster_assig$hac_cluster)
+  )
+} else {
+  cluster_pal <- setNames(
+    scales::viridis_pal(option = "turbo")(n_clusters),
+    levels(cluster_assig$hac_cluster)
+  )
+}
+
+# ── Consumers & storages ──────────────────────────────────────────────────────
 consumers_plt <- consumers %>%
   mutate(
     total_demand = demand_P1 + demand_P2 + demand_P3,
@@ -811,14 +839,37 @@ storages_plt <- storages %>%
 stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326)
 cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326)
 
+# ── Map ───────────────────────────────────────────────────────────────────────
 ggplot() +
+  # Base map
   geom_sf(data = de_states,
           fill = "grey96", colour = "grey55", linewidth = 0.35) +
   geom_sf(data = rivers_eu,
           colour = "#4292c6", linewidth = 0.45, alpha = 0.7) +
-  geom_sf(data = sites_sf,
-          fill = COL_SITE_F, colour = COL_SITE_B,
-          linewidth = 0.12, alpha = 0.45) +
+
+  # ── Feldblöcke coloured by HAC cluster ──────────────────────────────────────
+  geom_sf(data  = sites_sf_clust,
+          aes(fill = hac_cluster),
+          colour  = "grey30",
+          linewidth = 0.10,
+          alpha   = 0.65,
+          show.legend = TRUE) +
+  scale_fill_manual(
+    name   = "HAC super-site",
+    values = cluster_pal,
+    guide  = guide_legend(
+      ncol           = ceiling(sqrt(n_clusters)),
+      override.aes   = list(colour = "grey30", linewidth = 0.3, alpha = 0.85),
+      title.position = "top",
+      keywidth       = unit(0.35, "cm"),
+      keyheight      = unit(0.35, "cm"),
+      label.theme    = element_text(size = 5)
+    )
+  ) +
+
+  # ── Pre-treatment facilities ─────────────────────────────────────────────────
+  ggnewscale::new_scale_colour() +
+  ggnewscale::new_scale("shape") +
   geom_sf(data = stor_sf,
           aes(colour = subtype, shape = subtype, size = pt_size),
           stroke = 1.2, alpha = 0.92, show.legend = TRUE) +
@@ -830,6 +881,8 @@ ggplot() +
     name   = "Pre-treatment",
     values = c("Sawmill" = 16, "Logistics Hub" = 17)
   ) +
+
+  # ── Consumer sites ───────────────────────────────────────────────────────────
   ggnewscale::new_scale_fill() +
   geom_sf(data  = cons_sf,
           aes(fill = kategorie, size = pt_size),
@@ -844,22 +897,29 @@ ggplot() +
       "Other"                = "grey60"
     )
   ) +
+
+  # ── Shared size scale & legend order ─────────────────────────────────────────
   scale_size_continuous(range = c(1.5, 5), guide = "none") +
   guides(
-    colour = guide_legend(order = 1, override.aes = list(size = 4, stroke = 1.5)),
-    shape  = guide_legend(order = 1, override.aes = list(size = 4, stroke = 1.5)),
-    fill   = guide_legend(order = 2, override.aes = list(size = 4, shape = 22, colour = "white")),
+    fill   = guide_legend(order = 1,
+                          override.aes = list(colour = "grey30",
+                                              linewidth = 0.3, alpha = 0.85)),
+    colour = guide_legend(order = 2,
+                          override.aes = list(size = 4, stroke = 1.5)),
+    shape  = guide_legend(order = 2,
+                          override.aes = list(size = 4, stroke = 1.5)),
     size   = "none"
   ) +
+
   coord_sf(xlim = c(10.6, 13.2), ylim = c(50.9, 52.8), expand = FALSE) +
   labs(x = "Longitude", y = "Latitude") +
   theme_minimal(base_size = 9) +
   theme(
     panel.grid      = element_line(colour = "grey88", linewidth = 0.25),
     legend.position = "right",
-    legend.key.size = unit(0.45, "cm"),
-    legend.text     = element_text(size = 7),
-    legend.title    = element_text(size = 8, face = "bold"),
+    legend.key.size = unit(0.40, "cm"),
+    legend.text     = element_text(size = 6),
+    legend.title    = element_text(size = 7.5, face = "bold"),
     axis.text       = element_text(size = 7)
   )
 ```

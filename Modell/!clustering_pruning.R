@@ -383,18 +383,46 @@ cluster_map
 # UPDATE WORKSPACE — replace sites, clear stale distance matrix
 # afs_workspace$dist_ij must be recomputed via OSRM after this step
 # ==============================================================================
-afs_workspace$sites   <- sites
-afs_workspace$dist_ij <- NULL               # invalidated; recompute with OSRM
+
+
+source("../Modell/!helper_func.r")
+source("../Modell/!helper_instance_builder_v8a.R")
+source("../Modell/build_agroforestry_lp_v10.R")
+
 
 afs_workspace$sites_clustered <- sites_clustered %>%
   select(site_id, name, lat, lng, area_ha, n_sites)
-
 
 afs_workspace$site_cluster_assig <- sites_core %>%
   select(site_id, lat, lng, area, hac_cluster)
 
 
-afs_workspace$meta$n_sites          <- nrow(sites_clustered)
+# calculate new distance matrix with OSRM for the clustered sites
+
+dist_ij_clustered <- calculate_distance_matrix_osm(
+  starts       = afs_workspace$sites_clustered %>% select(lat, lng),
+  destinations = afs_workspace$storages %>% select(lat, lng),
+  max_entries  = 100
+) 
+
+
+dist_ij <- calculate_distance_matrix_osm(
+  starts       = afs_workspace$sites %>% select(lat, lng),
+  destinations = afs_workspace$storages %>% select(lat, lng),
+  max_entries  = 100
+) 
+
+dist_jk <- calculate_distance_matrix_osm(
+  starts       = afs_workspace$storages %>% select(lat, lng),
+  destinations = afs_workspace$consumers %>% select(lat, lng),
+  max_entries  = 100
+) 
+
+afs_workspace$dist_ij_clust <- dist_ij_clustered$distance_matrix_km
+afs_workspace$dist_ij <- dist_ij$distance_matrix_km
+afs_workspace$dist_jk <- dist_jk$distance_matrix_km
+
+afs_workspace$meta$n_sites          <- nrow(afs_workspace$sites_clustered)
 afs_workspace$meta$clustering <- list(
   method       = "DBSCAN + HAC Ward.D2",
   dbscan_eps   = DBSCAN_EPS_KM,
