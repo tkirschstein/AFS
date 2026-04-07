@@ -769,8 +769,8 @@ The yield coefficients $\eta_{pa}$ in \eqref{eq:C3} are the critical bridge betw
 \end{equation}
 where $M^{sl}(a)$ follows from \eqref{eq:total-stand-biomass} and $f_p(a)$ follows from \eqref{eq:component-share}. For poplar clone Max~3 under SRAFS conditions, the component-specific Gompertz parameterisations from Section \@ref(sec:lit-growth) imply that $\eta_{\text{stem},a}$ rises steeply between ages~4 and 10, while $\eta_{\text{branch},a}$ and $\eta_{\text{residue},a}$ plateau earlier, as illustrated in Figure~\@ref(fig:max3-growth). This age-dependence of product fractions is the core mechanism through which rotation-length decisions --- governed by $A^{\min}$ and $A^{\max}$ and the arc set $\mathcal{S}$ --- determine achievable product portfolios and, hence, revenues in the objective function \eqref{eq:obj-revenue}.
 
+# Case Study {#sec-casestudy}
 
-# Case study and computational experiment plan {#sec:experiments}
 
 The proposed MILP model is intended to support the design of agroforestry biomass supply chains for cleaner production in specific regional contexts. In a forthcoming case study, we focus on poplar-based alley-cropping systems in a temperate European setting, informed by empirical data from SRAFS trials in Southern Germany and SRC plantations in Central Europe [@Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF; @Testa2014_Poplar_Economics].
 
@@ -924,3 +924,181 @@ ggplot() +
   )
 ```
 
+
+## Study Region and Supply Chain Configuration
+
+The proposed \problem model is instantiated on a real-world biomass supply chain located in the tri-state region of Saxony-Anhalt, northern Thuringia, and northern Saxony, Germany (Figure \@ref(fig:fig-supply-chain-network)).
+This region combines the highest density of registered short-rotation coppice (SRC) Feldblöcke in eastern Germany with a cluster of major wood-processing industries that collectively represent one of the largest forest-based biomass demand centres in Central Europe. The spatial extent of the study region covers approximately $250 \times 200$ km, with road distances between potential KUP sites and consumer locations ranging from under 10 km to over 180 km.
+
+The supply chain comprises three node types: ($i$) KUP production sites $\mathcal{I}$, ($ii$) pre-treatment and intermediate storage facilities $\mathcal{J}$, and ($iii$) consumer sites $\mathcal{K}$.
+Candidate KUP sites are drawn from the official Feldblock register of Saxony-Anhalt, filtered to parcels with a minimum area of 1 ha and classified as potentially suitable for SRC under the InVeKoS land-use scheme. Following the two-stage spatial clustering procedure described in Section~\ref{sec-clustering}, the $|\mathcal{I}| = `r nrow(afs_workspace$sites)`$ raw Feldblöcke are grouped into $K$ super-sites using DBSCAN ($\varepsilon = 15$ km, $\mathit{minPts} = 3$) and Ward.D2 hierarchical clustering (maximum within-cluster radius 15 km), yielding a computationally tractable MILP instance while preserving the total eligible area. The HAC cluster assignments, visible as distinct colour zones in Figure \@ref(fig:fig-supply-chain-network), confirm a spatially coherent partitioning: dense KUP corridors along the Elbe and Saale floodplains form contiguous super-sites, while isolated parcels in the Harz foothills constitute smaller or singleton clusters.
+
+Two types of intermediate infrastructure nodes are considered: conventional sawmills and logistics hubs.
+Sawmills perform primary mechanical processing (debarking, chipping) and can serve product streams P1 and P2; logistics hubs serve as consolidation and temporary storage points for all three product grades and are characterised by lower capital intensity but limited processing capacity. The $|\mathcal{J}| = `r nrow(afs_workspace$storages)`$ candidate storage/pre-treatment locations are sourced from publicly registered forestry enterprises and existing logistic nodes in the study region. Road distances $d_{ij}$ (site $i$ to storage $j$) and $d_{jk}$ (storage $j$ to consumer $k$) are computed via the OSRM open-source routing engine using the German road network, providing realistic transport cost estimates that are embedded directly in the MILP objective.
+
+## Consumer Demand and Product Classification
+
+Nine consumer sites are included in the base case ($|\mathcal{K}| = 9$), covering the full quality cascade from high-value chemical/pulp applications down to energy use (Table \@ref(tab:tab-consumers)).
+Consumer demands $D_{kpt}^{\max}$ are derived from publicly reported annual throughput figures, production capacities, and regulatory filings, and are held constant across periods ($D_{kpt}^{\max} = D_{kp}^{\max}\ \forall\, t \in \mathcal{T}$) to reflect stable long-term offtake contracts.
+
+Three biomass product grades are distinguished, reflecting the cascading-use principle embedded in the \problem objective:
+
+- **P1 – Chemical/pulp grade** ($p = 1$): long-fibre hardwood chips suitable for chemical pulping and biorefinery conversion. Dominated by Mercer Stendal GmbH (Arneburg, 1{,}500 kt/yr) and Zellstoff Rosenthal/Mercer (Blankenstein, 1{,}000 kt/yr), which together account for `r round(100*(1500+1000)/sum(consumers$demand_P1), 0)`% of total P1 demand. UPM Biochemicals (Leuna) contributes 500 kt/yr of high-purity beech-fraction demand for biochemical conversion. Gate prices for P1 range from 80 to 120 €/t wood input.
+
+- **P2 – Sawlog/pulpwood grade** ($p = 2$): roundwood and chipped material suitable for mechanical processing in sawmills.  Demand is distributed across six smaller facilities with individual annual demands of 5–300 kt/yr.
+  Gate prices range from 55 to 75 €/t.
+
+- **P3 – Energy/pellets grade** ($p = 3$): residual wood fractions (chips, bark, off-cuts) used for heat and electricity generation or pellet production. This grade absorbs material that cannot meet P1 or P2 quality thresholds, operationalising the cascade constraint in the MILP.  Gate prices range from 30 to 40 €/t.
+
+The demand derivation follows a three-step procedure. First, publicly available capacity data (kt wood input per year) are collected for each facility from official sources, industry reports, and corporate disclosures [@mercerStendal2024; @upmBiochemicals2024]. Second, the total annual capacity is assigned to the product grade that corresponds to the primary feedstock of each facility (P1 for chemical/biorefinery processes, P2 for mechanical sawmilling, P3 for thermal conversion and pellet lines). Third, a minor P3 component is added to sawmill facilities to capture by-product streams (bark, sawdust), consistent with observed industrial practice.
+The resulting demand matrix $D_{kp}^{\max}$ (kt/yr) is shown in Figure \@ref(fig:fig-consumer-demand) and summarised in Table \@ref(tab:tab-consumers). Aggregate demand across the study region totals `r sum(consumers$demand_P1)` kt/yr for P1, `r sum(consumers$demand_P2)` kt/yr for P2, and `r sum(consumers$demand_P3)` kt/yr for P3.
+
+```{r tab-consumers, echo=FALSE, message=FALSE, warning=FALSE}
+
+consumers %>%
+  mutate(name_pseudo = paste("consumer ", seq_len(nrow(consumers))) ) %>% 
+  select(name_pseudo, demand_P1, demand_P2, demand_P3, P1, P2, P3) %>%
+  mutate(across(c(demand_P1, demand_P2, demand_P3), ~ ifelse(.x == 0, "–", format(.x, big.mark = ",")))) %>%
+  mutate(across(c(P1, P2, P3), ~ ifelse(.x == 0, "–", paste0(.x)))) %>%
+  kbl(
+    col.names = c("Consumer", "P1 (kt/yr)", "P2 (kt/yr)", "P3 (kt/yr)",
+                  "P1 (€/t)", "P2 (€/t)", "P3 (€/t)"),
+    caption   = "Consumer demand quantities and gate prices by product grade. P1: chemical/pulp; P2: sawlog/pulpwood; P3: energy/pellets. Demands in kt wood input per year; prices in €/t wood input at the factory gate.",
+    booktabs  = TRUE,
+    align     = c("l", rep("r", 6)),
+    label     = "tab-consumers"
+  ) %>%
+  kable_styling(latex_options = c("striped", "hold_position", "scale_down"),
+                font_size = 8) %>%
+  add_header_above(c(" " = 1, "Annual demand" = 3, "Gate price" = 3))
+```
+
+```{r fig-consumer-demand, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Annual biomass demand by consumer and product grade. Bar length proportional to kt wood input per year (log-scale x-axis). Colours indicate product grade: violet P1 chemical/pulp, blue P2 sawlog/pulpwood, red P3 energy/pellets. Consumers sorted by total demand.", fig.width=6.5, fig.height=4.2, out.width="\\textwidth"}
+
+
+COL_P1 <- "#6a0dad"; COL_P2 <- "#08519c"; COL_P3 <- "#a50026"
+
+demand_long <- consumers %>%
+  mutate(name_pseudo = paste("consumer ", seq_len(nrow(consumers))) ) %>% 
+  #mutate(name_short = gsub("\\(.*\\)", "", name) %>% trimws()) %>%
+  select(name_pseudo, demand_P1, demand_P2, demand_P3) %>%
+  pivot_longer(
+    cols      = starts_with("demand_"),
+    names_to  = "product",
+    values_to = "demand_kt"
+  ) %>%
+  mutate(
+    product_label = recode(product,
+      demand_P1 = "P1 – Chemical / Pulp",
+      demand_P2 = "P2 – Sawlog / Pulpwood",
+      demand_P3 = "P3 – Energy / Pellets"
+    ),
+    product_label = factor(product_label, levels = c(
+      "P1 – Chemical / Pulp",
+      "P2 – Sawlog / Pulpwood",
+      "P3 – Energy / Pellets"
+    ))
+  ) %>%
+  filter(demand_kt > 0)
+
+# Order consumers by descending total demand
+order_names <- consumers %>%
+  mutate(
+    total = demand_P1 + demand_P2 + demand_P3,
+    name_short = gsub("\\(.*\\)", "", name) %>% trimws()
+  ) %>%
+  arrange(total) %>%
+  pull(name_short)
+
+demand_long <- demand_long %>%
+  mutate(name_short = factor(name_short, levels = order_names))
+
+ggplot(demand_long, aes(x = demand_kt, y = name_short, fill = product_label)) +
+  geom_col(position = position_dodge(width = 0.75), width = 0.65,
+           colour = "white", linewidth = 0.25) +
+  geom_text(aes(label = paste0(demand_kt, " kt")),
+            position = position_dodge(width = 0.75),
+            hjust = -0.08, size = 2.3, colour = "grey30") +
+  scale_x_continuous(
+    trans  = "log10",
+    labels = scales::comma,
+    expand = expansion(mult = c(0, 0.30)),
+    name   = "Annual demand (kt wood input / yr, log scale)"
+  ) +
+  scale_fill_manual(
+    name   = "Product grade",
+    values = c(
+      "P1 – Chemical / Pulp"    = COL_P1,
+      "P2 – Sawlog / Pulpwood"  = COL_P2,
+      "P3 – Energy / Pellets"   = COL_P3
+    )
+  ) +
+  labs(y = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(
+    legend.position   = "bottom",
+    legend.key.size   = unit(0.4, "cm"),
+    legend.text       = element_text(size = 7.5),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    axis.text.y        = element_text(size = 7.5),
+    axis.text.x        = element_text(size = 7.5)
+  )
+```
+
+## MILP Model Parameters
+
+Table \@ref(tab:tab-milp-params) summarises all scalar parameters of the \problem instance.
+The planning horizon covers $|\mathcal{T}| = 15$ periods, corresponding to one full poplar rotation (years 1–15), with a minimum harvest age $a^{\min} = 4$ and maximum productive stand age $a^{\max} = 15$ [@lehmkuhl2023].
+Biomass yield functions $\eta_{pa}$ (odt ha$^{-1}$ yr$^{-1}$) follow the age-structured Chapman-Richards profile calibrated in Section~\ref{sec-biomass}, where distinct yield curves are assigned to each product grade to reflect the fraction of stem, branch, and foliage biomass that qualifies under each quality threshold.
+
+Transport costs are disaggregated into two components reflecting the two-echelon logistics structure.
+Raw material transport from site $i$ to pre-treatment facility $j$ incurs a variable cost $c^{tr\text{-}raw} \cdot d_{ij}$ (€ t$^{-1}$ km$^{-1}$), while processed material transport from $j$ to consumer $k$ is costed at $c^{tr\text{-}pre} \cdot d_{jk}$.
+The pre-treatment rate $c^{tr\text{-}pre}$ is set lower than $c^{tr\text{-}raw}$ to reflect the higher load density and standardised packaging of chipped and pelletised material compared to loose roundwood.
+An opportunity cost parameter $c^{opp}$ (€ ha$^{-1}$ yr$^{-1}$) accounts for foregone agricultural revenue on converted parcels, calibrated to the average arable land rental rate in Saxony-Anhalt [@destatis2023].
+Storage capacity at each facility $j$ is bounded by $\overline{S}_j$, and processing capacity by $\overline{C}_j$ (kt yr$^{-1}$), both drawn from publicly available facility data.
+
+```{r tab-milp-params, echo=FALSE, message=FALSE, warning=FALSE}
+params_df <- data.frame(
+  Symbol          = c("$|\\mathcal{T}|$", "$|\\mathcal{I}|$", "$|\\mathcal{J}|$",
+                      "$|\\mathcal{K}|$", "$|\\mathcal{P}|$",
+                      "$a^{\\min}$", "$a^{\\max}$",
+                      "$c^{tr\\text{-}raw}$", "$c^{tr\\text{-}pre}$",
+                      "$c^{opp}$",
+                      "$\\bar{R}_{P1}$", "$\\bar{R}_{P2}$", "$\\bar{R}_{P3}$"),
+  Description     = c("Planning periods", "KUP super-sites (post-clustering)",
+                      "Pre-treatment / storage nodes", "Consumer sites", "Product grades",
+                      "Minimum harvest age (years)", "Maximum stand age (years)",
+                      "Raw transport cost", "Pre-processed transport cost",
+                      "Opportunity cost (foregone arable rent)",
+                      "Mean gate price P1", "Mean gate price P2", "Mean gate price P3"),
+  Value           = c("15", "$K$ (clustering-dependent)", nrow(afs_workspace$storages),
+                      "9", "3",
+                      "4", "15",
+                      "0.08", "0.05",
+                      "280",
+                      "99", "69", "36"),
+  Unit            = c("yr", "–", "–", "–", "–",
+                      "yr", "yr",
+                      "€ t$^{-1}$ km$^{-1}$", "€ t$^{-1}$ km$^{-1}$",
+                      "€ ha$^{-1}$ yr$^{-1}$",
+                      "€ t$^{-1}$", "€ t$^{-1}$", "€ t$^{-1}$"),
+  stringsAsFactors = FALSE
+)
+
+params_df %>%
+  kbl(
+    col.names = c("Parameter", "Description", "Base-case value", "Unit"),
+    caption   = "\\problem base-case parameter values for the Saxony-Anhalt case study. Transport costs refer to road distance (OSRM). Gate prices are weighted averages across consumer sites.",
+    booktabs  = TRUE,
+    escape    = FALSE,
+    align     = c("l", "l", "r", "l"),
+    label     = "tab-milp-params"
+  ) %>%
+  kable_styling(latex_options = c("striped", "hold_position"),
+                font_size = 8) %>%
+  pack_rows("Index sets", 1, 5) %>%
+  pack_rows("Biomass dynamics", 6, 7) %>%
+  pack_rows("Cost parameters", 8, 10) %>%
+  pack_rows("Revenue parameters", 11, 13)
+```
