@@ -43,7 +43,15 @@ header-includes:
   - \usepackage{pdflscape}
   - \usepackage{float}
   - \usepackage{xcolor}
-
+  - \newcommand{\Tc}{\mathcal{T}}
+  - \newcommand{\Pc}{\mathcal{P}}
+  - \newcommand{\Qc}{\mathcal{Q}}
+  - \newcommand{\Sc}{\mathcal{S}}
+  - \newcommand{\Ic}{\mathcal{I}}
+  - \newcommand{\Jc}{\mathcal{J}}
+  - \newcommand{\Kc}{\mathcal{K}}
+  - \newcommand{\problem}{AFS-SCD }
+  
 bibliography: references.bib
 csl: elsevier-harvard.csl
 ---
@@ -122,96 +130,6 @@ In the last two decades, a large body of research has analysed biomass supply ch
 The present paper contributes to this literature in four ways. First, we propose a novel MILP formulation for AFS-based biomass supply chain design that explicitly links establishment decisions and consecutive harvest decisions, ensuring that harvesting decisions at each site are consistent with minimum and maximum rotation ages. Second, we embed allometric yield functions for different biomass types generating age-specific yields for different woody biomass types (like stems, branches, or leaves and twigs). Third, these different woody biomass types can be processed in specific downstream industries, like chemical or paper industry as well as energy sector. The model aims to provide strategic decision support for establishing regional AFS-based bioeconomy ecosystems connecting multiple industries and product markets.
 
 The remainder of the paper is structured as follows. Section \@ref(sec:litreview) reviews the relevant literature on agroforestry biomass systems, allometric biomass modelling, and biomass supply chain optimisation. Section \@ref(sec:milp) summarises the MILP formulation for the agroforestry supply chain with age-lag constraints. Section \@ref(sec:experiments) outlines the planned computational experiments for the case study and discusses expected insights for cleaner production strategies.
-
-```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Green polygons: potential KUP sites. Orange symbols: pre-treatment facilities (circle~=~sawmill, triangle~=~logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth"}
-
-COL_SITE_F <- "#74c476"; COL_SITE_B <- "#2d6a2d"
-COL_SAW    <- "#e65c00"; COL_HUB    <- "#c05000"
-COL_P1     <- "#6a0dad"; COL_P2     <- "#08519c"; COL_P3     <- "#a50026"
-
-de_states <- ne_states(country = "Germany", returnclass = "sf") %>%
-  st_transform(4326)
-
-rivers_eu <- ne_download(
-  scale = 10, type = "rivers_lake_centerlines",
-  category = "physical", returnclass = "sf"
-) %>%
-  st_transform(4326) %>%
-  st_crop(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8)
-
-consumers_plt <- consumers %>%
-  mutate(
-    total_demand = demand_P1 + demand_P2 + demand_P3,
-    kategorie = case_when(
-      demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
-      demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
-      demand_P3 > 0 ~ "Energy / Biogas (P3)",
-      TRUE          ~ "Other"
-    ),
-    pt_size = pmin(4.5, pmax(1.5, 1.5 + log1p(total_demand) * 0.55))
-  )
-
-storages_plt <- storages %>%
-  mutate(
-    subtype = if_else(type == "Hub", "Logistics Hub", "Sawmill"),
-    pt_size = pmin(3.5, pmax(1.2, 1.2 + log1p(CAP_proc) * 0.38))
-  )
-
-stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326)
-cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326)
-
-ggplot() +
-  geom_sf(data = de_states,
-          fill = "grey96", colour = "grey55", linewidth = 0.35) +
-  geom_sf(data = rivers_eu,
-          colour = "#4292c6", linewidth = 0.45, alpha = 0.7) +
-  geom_sf(data = sites_sf,
-          fill = COL_SITE_F, colour = COL_SITE_B,
-          linewidth = 0.12, alpha = 0.45) +
-  geom_sf(data = stor_sf,
-          aes(colour = subtype, shape = subtype, size = pt_size),
-          stroke = 1.2, alpha = 0.92, show.legend = TRUE) +
-  scale_colour_manual(
-    name   = "Pre-treatment",
-    values = c("Sawmill" = COL_SAW, "Logistics Hub" = COL_HUB)
-  ) +
-  scale_shape_manual(
-    name   = "Pre-treatment",
-    values = c("Sawmill" = 16, "Logistics Hub" = 17)
-  ) +
-  ggnewscale::new_scale_fill() +
-  geom_sf(data  = cons_sf,
-          aes(fill = kategorie, size = pt_size),
-          shape = 22, colour = "white", stroke = 0.45,
-          alpha = 0.88, show.legend = TRUE) +
-  scale_fill_manual(
-    name   = "Consumer type",
-    values = c(
-      "Chemical / Pulp (P1)" = COL_P1,
-      "Pulp / Paper (P2)"    = COL_P2,
-      "Energy / Biogas (P3)" = COL_P3,
-      "Other"                = "grey60"
-    )
-  ) +
-  scale_size_continuous(range = c(1.5, 5), guide = "none") +
-  guides(
-    colour = guide_legend(order = 1, override.aes = list(size = 4, stroke = 1.5)),
-    shape  = guide_legend(order = 1, override.aes = list(size = 4, stroke = 1.5)),
-    fill   = guide_legend(order = 2, override.aes = list(size = 4, shape = 22, colour = "white")),
-    size   = "none"
-  ) +
-  coord_sf(xlim = c(10.6, 13.2), ylim = c(50.9, 52.8), expand = FALSE) +
-  labs(x = "Longitude", y = "Latitude") +
-  theme_minimal(base_size = 9) +
-  theme(
-    panel.grid      = element_line(colour = "grey88", linewidth = 0.25),
-    legend.position = "right",
-    legend.key.size = unit(0.45, "cm"),
-    legend.text     = element_text(size = 7),
-    legend.title    = element_text(size = 8, face = "bold"),
-    axis.text       = element_text(size = 7)
-  )
-```
 
 # Literature review {#sec:litreview}
 
@@ -325,10 +243,10 @@ Total aboveground biomass quantities on stand level \(M^{sl}(t)\) (in t per ha) 
 \end{equation}
 where \(\bar{n}^{shoot}\) is the mean number of shoots per tree [@Huber2018_SRAFS_growth]. Both \(\bar{n}^{sh}(t)\) and \(N(t)\) may change over time. The number of shoots is often controlled in tree care processes and reduced to 1 or 2 shoots per tree [@Huber2018_SRAFS_growth]. Stand level density $N(t)$ is initially defined when the AFS is established and often declines somewhat over time, but usually saturates quickly [REFERENCE]. For the product \(M^{sl}(t)\) in \eqref{eq:stand-biomass} a right-skewed sigmoidal shape with an inflection occurring at a relatively low fraction of the asymptote can be assumed which can be captured in a Gompertz model as well [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics]. Assuming constant tree density  and an average shoot number of 1, \(M^{sl}(t)\) can be simplified as 
 \begin{equation}
-  M^{sl}(t) = a^{\infty} \cdot e^{-e^{-b'^1 \cdot (t - \tau)}}.
+  M^{sl}(t) = a^{\infty} \cdot e^{-e^{-\tilde{b}^1 \cdot (t - \tau)}}.
   \label{eq:total-stand-biomass}
 \end{equation}
-where $a^\infty = N \cdot \bar{n}^{sh} \cdot d^{\infty} \cdot b^0$ is the asymptotic stand-level biomass. For poplar clone Max~3 under SRAFS conditions in Central Europe, representative parameter values are \(d^{\infty} = 9.5\) cm, \(r = 0.55\), and \(\tau = 2.5\) years, yielding a mean SBD of approximately 4--5 cm at age 3 and 7--9 cm at age 7 which is consistent with the diameter ranges reported by @Huber2018_SRAFS_growth and @BarrioAnta2008_Poplar_Growth. For total aboveground biomass of poplar clone Max 3 under SRAFS management, the Gompertz model \eqref{eq:total-stand-biomass} is parameterised as \(a^{\infty} = 100\) t of dry biomass per ha, \(b'^1 = 0.32\) per year, and \(\tau = 4.0\) years, yielding a growth peak at approximately age 4 and a total aboveground biomass of roughly 65 t of dry biomass per ha at age 10 which is consistent with the empirical reference range of 50--135 t per ha reported for comparable poplar systems in the literature [@Huber2018_SRAFS_growth; @Niemczyk2021_Poplar_Rotation].
+where $a^\infty = N \cdot \bar{n}^{sh} \cdot d^{\infty} \cdot b^0$ is the asymptotic stand-level biomass. For poplar clone Max~3 under SRAFS conditions in Central Europe, representative parameter values are \(d^{\infty} = 9.5\) cm, \(r = 0.55\), and \(\tau = 2.5\) years, yielding a mean SBD of approximately 4--5 cm at age 3 and 7--9 cm at age 7 which is consistent with the diameter ranges reported by @Huber2018_SRAFS_growth and @BarrioAnta2008_Poplar_Growth. For total aboveground biomass of poplar clone Max 3 under SRAFS management, the Gompertz model \eqref{eq:total-stand-biomass} is parameterised as \(a^{\infty} = 100\) t of dry biomass per ha, \(\tilde{b}^1 = 0.32\) per year, and \(\tau = 4.0\) years, yielding a growth peak at approximately age 4 and a total aboveground biomass of roughly 65 t of dry biomass per ha at age 10 which is consistent with the empirical reference range of 50--135 t per ha reported for comparable poplar systems in the literature [@Huber2018_SRAFS_growth; @Niemczyk2021_Poplar_Rotation].
 
 Yet, for the purpose of modelling AFS supply chains, the three biomass components merchantable stem, structural branches, and fine residues need to be distinguished. Thus, the total biomass growth model \eqref{eq:total-stand-biomass} needs to be adjusted those types. Thereby, growth characteristics are different each type and, thus, require paramterization. Thereby, the differentiation between the merchantable stem and branch depends on the requirements defined by downstream processes. E.g. for chemical production, the merchantable stem is defined as the portion of the tree with a certain minimum diameter (e.g. 10 cm), while branches and residues are defined as the portion of the tree that cannot be chipped into such large chips and thus require different processing or are used for lower-value applications. The share of these components in total aboveground biomass changes with stand age, which has important implications for product cascading decisions in AFS-based supply chains.
 
@@ -477,22 +395,17 @@ multi-product cascading formulations are rare.
 The structure of biomass supply chain models typically encompasses three decision layers: (i) strategic network design (facility location, capacity sizing, technology selection), (ii) tactical planning (harvest scheduling,
 seasonal flows, inventory), and (iii) operational routing. The following paragraphs discuss key individual contributions and their specific methodological advances.
 
-**Strategic multi-product network design.**
 @Eksioglu2009_Biorefinery_SC develop one of the earliest large-scale MILP models for biomass-to-biorefinery supply chain design, integrating facility location, capacity sizing, and multimodal transport for lignocellulosic
 feedstocks. Their model minimises total system cost and introduces binary facility-opening variables that have since become standard in the field. A key limitation, however, is that biomass supply is treated as an exogenous input, so feedstock availability is not endogenised as a function of land-use or growth decisions. @Mansoornejad2013_Forest_Biorefinery_SC extend the strategic design perspective to forest biorefineries by integrating product portfolio design with supply chain configuration in a single MILP. Their model explicitly accounts for product conversion efficiencies along different processing pathways, enabling joint optimisation of process technology selection and logistics.
 
-**Multi-period and tactical formulations.**
 @DeMeyer2015_OPTIMASS introduce the OPTIMASS framework, a generic MILP for biomass-based supply chain optimisation that explicitly models product quality cascades: higher-quality biomass classes can substitute for lower-quality demands downstream, whereas the reverse is infeasible. This cascade hierarchy, formalised through ordered product sets, is particularly relevant for woody biomass where stem, branch, and residue fractions command different market prices. The companion t-OPTIMASS extension [@DeMeyer2016_tOPTIMASS] incorporates temporal dynamics by explicitly representing biomass growth and regeneration over multiple periods, enabling simultaneous optimisation of harvest timing and network flows. However, in both OPTIMASS formulations the growth dynamics are represented as exogenous time-series rather than as age-structured stand models, so rotation-length decisions and age-dependent biomass quality are not endogenised. @Arabi2019_Microalgae_Biobutanol_SC demonstrate multi-period MILP extensions for bio-based supply chains with production dynamics, but focus on microalgae rather than woody biomass and do not address product quality cascades.
 
-**Uncertainty and stochastic formulations.**
 @Sharma2013_BSC_review identify supply-side uncertainty (yield variability, seasonal availability, moisture content) as the most critical source of risk in biomass supply chains. In response, a strand of literature has developed stochastic and robust optimisation extensions. @Zahraee2020_BSC_review document that two-stage stochastic MILP and robust optimisation approaches now account for roughly 30\% of the modelling literature, with biomass yield uncertainty and price volatility as the dominant stochastic parameters.
 
-**Agroforestry and short-rotation coppice logistics.**
 Biomass supply chain research focusing specifically on agroforestry or SRC contexts is comparatively sparse.
 @Espinoza2017_Biorefinery_SC_review note that most supply chain models aassume continuous feedstock availability and do not represent the periodic harvest cycles characteristic of coppice systems. @Lamers2015_Feedstock_Design analyse feedstock design principles for lignocellulosic supply chains and argue that the allocation of different biomass fractions to valorisation pathways—product cascading—is a key lever for economic viability, yet is rarely optimised jointly with network design decisions. The model developed in Section~\@ref(sec:milp) of this paper directly
 addresses this gap by endogenising stand age dynamics through binary age-lag variables and coupling component-specific yield coefficients with a product quality cascade.
 
-**Modelling features overview.**
 Table~\@ref(tab:lit-sc-features) summarises the key modelling features of
 the reviewed contributions.
 
@@ -539,121 +452,24 @@ kable(lit_tab,
   column_spec(3:7, width = "1.4cm")
 ```
 
-# MILP model for agroforestry supply chain design {#sec:milp}
 
-## Sets, indices, and time structure
+# MILP Model for Agroforestry Supply Chain Design {#sec:milp}
 
-The model considers a set of agroforestry sites \(\mathcal{I}\), storage/processing facilities \(\mathcal{J}\), consumer sites \(\mathcal{K}\), and product types \(\mathcal{P} = \{1,2,3\}\). Time is discretised into annual periods \(t \in \mathcal{T} = \{1,\dots,T_{\max}\}\). To represent stand establishment and harvest timing, extended time sets \(\mathcal{T}^{+} = \{0,\dots,T_{\max}+1\}\) and harvest periods \(\mathcal{T}^{\text{harv}} = \{A^{\min}+1,\dots,T_{\max}\}\) are defined, where \(A^{\min}\) and \(A^{\max}\) are minimum and maximum stand ages (years) at harvest. The set \(\mathcal{S}\) comprises all ordered pairs \((s,t)\) of consecutive harvest periods (including establishment at \(s=0\)) satisfying the age-lag bounds:
-\begin{equation}
-\mathcal{S} = \{(s,t) \mid s,t \in \{0,\dots,T_{\max}+1\},\; t-s \in \{A^{\min},\dots,A^{\max}\} \}.
-\label{eq:age-lag-set}
-\end{equation}
+Building on the biomass growth models introduced in Section \@ref(sec:lit-growth) and the supply chain design literature reviewed in Section \@ref(sec:lit-sc), this section describes the AFS supply chain design problem (\problem), a mixed-integer linear programming (MILP) model for the integrated design and operation of an agroforestry biomass supply chain. The model endogenises stand age dynamics through binary age-lag variables, couples the component-specific yield coefficients $\eta_{pa}$ derived from the Gompertz growth models \eqref{eq:total-stand-biomass}--\eqref{eq:component-share} with supply chain flow variables, and assigns AFS biomass types (i.e., stem, branch, and residue fractions) to potential consumers in chemical, pulp and paper as well as energy industry.
 
+## Sets, Indices, and Time Structure
 
-```{r tab-notation-milp, echo=FALSE, message=FALSE, warning=FALSE}
-library(knitr)
-library(kableExtra)
-options(kableExtra.latex.load_packages = FALSE)
-options(knitr.table.format = "latex")
+The model considers a set of agroforestry sites $\mathcal{I}$, storage/pre-treatment facilities $\mathcal{J}$, consumer sites $\mathcal{K}$, and biomass types $\mathcal{P} = \{stem, branches, residues\}$, whose growth models are outlined above in \eqref{eq:biomass-partial}--\eqref{eq:component-share}. Time is discretised into annual periods $t \in \Tc = \{1,\dots,T_{\max}\}$. To model flexible harvest timing according to typical rotation structures of SRAFS and LRAFS, $A^{\min}$ and $A^{\max}$ define minimum and maximum stand ages. Thus, harvest are possible in periods $\mathcal{T}^{\text{harv}} = \{A^{\min}+1,\dots,T_{\max}\}$. To consistently model establishment and consecutive harvest decisions, the following arc sets are defined: $\Sc^{est}$ defines potential establishments of AFS. If an AFS is established in period $t \in \Tc$, arc $(0,t)$ is selected. Harvest set $\Sc^{harv}$ summarizes all potential consecutive harvest periods within the age-lag bounds $A^{\min}$ and $A^{\max}$. I.e., if an AFS is established or harvested in period $s$ and next harvest is in period $t$, arc $(s,t)$ is selected. Finally, there is no subsequent harvest after period $t$, the AFS is terminated by selecting arc $(t,T^{\max}+1)$. Termination arcs are summarized in set $\Sc^{term}$. All arc sets are formally defined as follows:
+\begin{align}
+  \Sc^{{est}}  &= \{(0,t) \mid t \in \{1,\dots,T^{\max}-A^{\min}\}\}, \notag\\
+  \Sc^{{harv}} &= \{(s,t) \mid s,t \in \Tc \wedge t-s \in \{A^{\min},\dots,A^{\max}\}\},  \notag\\
+  \Sc^{{term}} &= \{(s,T^{\max}+1) \mid s \in \{A^{\min}+1,\dots,T_{\max}\}\}, \notag\\
+  \Sc               &= \Sc^{{est}} \cup \Sc^{{harv}} \cup \Sc^{{term}}. \notag
+\end{align}
 
-# Hilfsfunktion: bricht einen langen Math-Ausdruck an einer definierten
-# Stelle um — teilt bei | in zwei Zeilen mit \shortstack
-math_break <- function(line1, line2) {
-  paste0("\\shortstack[l]{$", line1, "$\\\\$", line2, "$}")
-}
+Figure \@ref(fig:fig-set-S-tikz) illustrates this network structure of all arc sets for $T=8$, $A^{\min}=3$, $A^{\max}=5$. 
 
-notation <- tribble(
-  ~Symbol, ~Description,
-
-  # --- SETS & INDICES ---
-  "$i \\in \\mathcal{I}$",   "Agroforestry sites",
-  "$j \\in \\mathcal{J}$",   "Storage / pre-treatment facilities",
-  "$k \\in \\mathcal{K}$",   "Consumer sites",
-  "$p \\in \\mathcal{P}$",   "Product types (stem, branches, residues)",
-  "$(p,p') \\in \\mathcal{Q}$",   "Product usage",
-  "$\\mathcal{T}=\\{1,\\dots,T_{\\max}\\}$",
-    "Planning periods (years)",
-  "$\\mathcal{T}^{+}=\\{0,\\dots,T_{\\max}+1\\}$",
-    "Extended time set incl.\\ dummy nodes",
-    "$\\mathcal{T}^{\\text{harv}}=\\{A^{\\min}+1,\\dots,T_{\\max}\\}$",
-    "Feasible harvest periods",
-    "$\\mathcal{S}^{\\text{est}}=\\{(0,t)\\mid t\\in\\{1,\\dots,T_{\\max}-A^{\\min}\\}\\}$",
-    "Establishment arcs: dummy source to period $t$",
-  math_break(
-    "\\mathcal{S}^{\\text{harv}}=\\{(s,t)\\mid s,t\\in \\mathcal{T},",
-    "t-s\\in\\{A^{\\min},\\dots,A^{\\max}\\}\\}"),
-    "Harvest cycles within age-lag bounds",
-  math_break(
-    "\\mathcal{S}^{\\text{term}}=\\{(s,T_{\\max}+1)\\mid",
-    "s\\in\\{A^{\\min}+1,\\dots,T_{\\max}\\}\\}"),
-    "Termination arcs to dummy sink $T_{\\max}+1$",
-  
-    "$\\mathcal{S} = \\mathcal{S}^{\\text{est}} \\cup \\mathcal{S}^{\\text{harv}} \\cup\\; \\mathcal{S}^{\\text{term}}$",
-    "Age-lag arc set (establishment $\\cup$ harvest $\\cup$ termination)",
-
-  # --- DECISION VARIABLES ---
-  "$z_{ist}\\in\\{0,1\\}$",
-    "1 if $s$ and $t$ are consecutive harvest cycles at site $i$",
-  "$Y_{ipt}\\ge 0$",
-    "Harvest quantity (t) of product $p$ at site $i$ in period $t$",
-  "$X_{ijpt}\\ge 0$",
-    "Transport flow (t) of $p$ from site $i$ to facility $j$ in $t$",
-  "$X_{jkpp't}\\ge 0$",
-    "Flow of $p$ from facility $j$ to consumer $k$ satisfying $p'$ in $t$",
-  "$S_{jpt}\\ge 0$",
-    "Inventory (t) of product $p$ at facility $j$ end of period $t$",
-
-  # --- PARAMETERS ---
-  "$T_{\\max}$",              "Length of planning horizon (years)",
-  "$A^{\\min}$, $A^{\\max}$", "Minimum / maximum stand age at harvest (years)",
-  "$\\text{AREA}_i$",         "Area of site $i$ (ha)",
-  "$\\eta_{pa}$",             "Yield coefficient (t/ha) of product $p$ at age $a$",
-  "$R_{kp}$",                 "Revenue (\\euro/t) for product $p$ at consumer $k$",
-  "$C^{\\text{est}}_i$",      "Establishment cost (\\euro/ha) at site $i$",
-  "$C^{\\text{opp}}_i$",      "Annual opportunity cost (\\euro/ha) at site $i$",
-  "$C^{\\text{harv}}_i$",     "Harvest \\& refitting cost (\\euro/ha) at site $i$",
-  "$c^{\\text{tr-raw}}$",     "Transport cost rate (\\euro/t\\,km) for raw biomass",
-  "$c^{\\text{tr-pre}}$",     "Transport cost rate (\\euro/t\\,km) pre-treated biomass",
-  "$c^{\\text{stor}}_j$",     "Storage holding cost (\\euro/t) at facility $j$",
-  "$d_{ij}$, $d_{jk}$",       "Distance (km) between nodes",
-  "$\\text{CAP}^{\\text{stor}}_j$", "Storage capacity (t) at facility $j$",
-  "$\\text{CAP}^{\\text{proc}}_j$", "Processing capacity (t/period) at facility $j$",
-  "$D^{\\max}_{kpt}$",        "Maximum demand (t) of $p$ at consumer $k$ in period $t$"
-)
-
-tbl <- kable(notation,
-      format    = "latex",
-      booktabs  = TRUE,
-      escape    = FALSE,
-      col.names = NULL,
-      caption   = "Notation for the MILP model.",
-      label     = "tab-notation-milp") |>
-  kable_styling(
-    font_size     = 8,
-    latex_options = c("hold_position", "scale_down","striped"),
-    full_width    = FALSE
-  ) |>
-  column_spec(1, width = "5cm") |>
-  column_spec(2, width = "9cm") |>
-  pack_rows("Sets \\& Indices",    1,  12,
-            bold = TRUE, italic = FALSE, hline_before = TRUE, escape = FALSE) |>
-  pack_rows("Decision Variables", 13,  17,
-            bold = TRUE, italic = FALSE, hline_before = TRUE) |>
-  pack_rows("Parameters",         18,  32,
-            bold = TRUE, italic = FALSE, hline_before = TRUE)
-
-# Spaltentyp p{} → >{\raggedright\arraybackslash}p{} direkt im LaTeX-String ersetzen
-tbl <- gsub(
-  "p\\{(5\\.8cm|8\\.5cm)\\}",
-  ">\\{\\\\raggedright\\\\arraybackslash\\}p\\{\\1\\}",
-  tbl
-)
-
-tbl
-```
-
-
-```{tikz fig-set-S-tikz, echo=FALSE,     fig.cap="Network structure of set $\\mathcal{S}$ for $T=8$, $A_{\\min}=3$,    $A_{\\max}=5$. Dashed blue arcs: establishment arcs $(0,t)$,     $t\\in\\{1,\\ldots,T-1\\}$. Solid green arcs above: harvest arcs $(s,t)$     with odd $s$; below: harvest arcs with even $s$. Solid red arcs:     termination arcs $(s,T+1)$, $s\\in\\{A_{\\min}+1,\\ldots,T\\}$.",    fig.align="center", out.width="\\textwidth",     engine.opts=list(extra.preamble=c(      "\\usetikzlibrary{arrows.meta,bending,positioning}"    ))}
+```{tikz fig-set-S-tikz, echo=FALSE, fig.cap="Network structure of set $\\mathcal{S}$ for $T=8$, $A_{\\min}=3$, $A_{\\max}=5$. Dashed blue arcs: establishment arcs $(0,t)$, $t\\in\\{1,\\ldots,T-1\\}$. Solid green arcs above: harvest arcs $(s,t)$ with odd $s$; below: harvest arcs with even $s$. Solid red arcs:    termination arcs $(s,T+1)$, $s\\in\\{A_{\\min}+1,\\ldots,T\\}$.",    fig.align="center", out.width="\\textwidth", engine.opts=list(extra.preamble=c(      "\\usetikzlibrary{arrows.meta,bending,positioning}"   ))}
 
 \begin{tikzpicture}[
   x=1.55cm, y=1cm,
@@ -672,43 +488,33 @@ tbl
 }
 \node[node=red!70!black]   (n9) at (9,0) {$T\!+\!1$};
 
-%\node[below=10pt of n0, font=\scriptsize\itshape, text=blue!70!black]
-%  {Estab.\,(dummy)};
-%\node[below=10pt of n9, font=\scriptsize\itshape, text=red!70!black]
-%  {Term.\,(dummy)};
-
 %% ---- Establishment arcs ----
-%% (0,1) straight
 \draw[est] (n0) -- (n1);
 \foreach \t/\l in {2/1.3, 3/1.0, 4/0.80, 5/0.65, 6/0.55, 7/0.48}{
   \draw[est] (n0) to[out=55, in=125, looseness=\l] (n\t);
 }
 
-%% ---- Harvest arcs (odd s above, even s below) ----
-% span 3
+%% ---- Harvest arcs ----
 \draw[harva] (n1) to[out=55,  in=125,  looseness=0.55] (n4);
 \draw[harvb] (n2) to[out=-55, in=-125, looseness=0.55] (n5);
 \draw[harva] (n3) to[out=55,  in=125,  looseness=0.55] (n6);
 \draw[harvb] (n4) to[out=-55, in=-125, looseness=0.55] (n7);
 \draw[harva] (n5) to[out=55,  in=125,  looseness=0.55] (n8);
-% span 4
 \draw[harva] (n1) to[out=60,  in=120,  looseness=0.42] (n5);
 \draw[harvb] (n2) to[out=-60, in=-120, looseness=0.42] (n6);
 \draw[harva] (n3) to[out=60,  in=120,  looseness=0.42] (n7);
 \draw[harvb] (n4) to[out=-60, in=-120, looseness=0.42] (n8);
-% span 5
 \draw[harva] (n1) to[out=65,  in=115,  looseness=0.35] (n6);
 \draw[harvb] (n2) to[out=-65, in=-115, looseness=0.35] (n7);
 \draw[harva] (n3) to[out=65,  in=115,  looseness=0.35] (n8);
 
 %% ---- Termination arcs ----
-%% (8,T+1) straight
 \foreach \s/\l in {4/0.80, 5/0.65, 6/0.55, 7/0.48}{
   \draw[term] (n\s) to[out=55, in=125, looseness=\l] (n9);
 }
 \draw[term] (n8) -- (n9);
 
-%% ---- Legend (no frame, side by side) ----
+%% ---- Legend ----
 \node[anchor=north west] at (0.0,-0.85) {%
   \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
     \draw[est]   (0,0)--(1,0);
@@ -732,7 +538,11 @@ tbl
 ```
 
 
-```{tikz fig-set-S-path, echo=FALSE,     fig.cap="Example of a feasible path through the network for $T=8$,     $A_{\\min}=3$, $A_{\\max}=5$: establishment in period~1, harvests in periods~5 and~8, termination at $T+1$.",     fig.align="center", out.width="\\textwidth",     engine.opts=list(extra.preamble=c(      "\\usetikzlibrary{arrows.meta,bending,positioning}"    ))}
+## Decision Variables
+
+Binary variables $z_{ist}$ indicate whether an arc from set $(s,t) \in \Sc$ is selected for site $i$, indicating establishment, (consecutive) harvest, or termination. Taken together across all arcs, these variables trace a path of consecutive harvest cycles at each site over the planning horizon. Figure \@ref(fig:fig-set-S-path) illustrates a feasible path corresponding to the establishment of an AFS in period 1 and harvests in periods 5 and 8, whereby the harvest in $t=8$ is final (and AFS is terminated, thus).
+
+```{tikz fig-set-S-path, echo=FALSE, fig.cap="Example of a feasible path through the network for $T=8$,$A_{\\min}=3$, $A_{\\max}=5$: establishment in period~1,     harvests in periods~5 and~8, termination at $T+1$.",    fig.align="center", out.width="\\textwidth", engine.opts=list(extra.preamble=c(     "\\usetikzlibrary{arrows.meta,bending,positioning}"    ))}
 
 \begin{tikzpicture}[
   x=1.55cm, y=1cm,
@@ -757,11 +567,6 @@ tbl
 }
 \node[n9style]   (n9) at (9,0) {$T\!+\!1$};
 
-%\node[below=10pt of n0, font=\scriptsize\itshape, text=blue!70!black]
-%  {Estab.\,(dummy)};
-%\node[below=10pt of n9, font=\scriptsize\itshape, text=red!70!black]
-%  {Term.\,(dummy)};
-
 %% ---- Path arcs ----
 \draw[est]     (n0) -- (n1);
 \draw[patharc] (n1) to[out=60, in=120, looseness=0.42] (n5);
@@ -774,7 +579,7 @@ tbl
 \node[font=\footnotesize, text=green!40!black]  at (6.5, 0.55) {$t-s=3$};
 \node[font=\footnotesize, text=red!70!black]    at (8.5, 0.28) {term.};
 
-%% ---- Legend (no frame, side by side) ----
+%% ---- Legend ----
 \node[anchor=north west] at (0.0,-0.78) {%
   \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
     \draw[est]     (0,0)--(1,0);
@@ -797,121 +602,264 @@ tbl
 \end{tikzpicture}
 ```
 
-## Decision variables
+When a AFS is harvested in period $t$, continuous variables $Y_{ipt} \ge 0$ represent the harvest quantity (t) of product $p$ at site $i$. Flow variables $X_{ijpt}$ and $X_{jkpp't}$ represent transport of products from AFS sites to storage/pre-treatment facilities and from there to consumers, respectively, while $S_{jpt}$ captures end-of-period inventory at facility $j$.
 
-Binary variables \(z_{ist}\) indicate whether, at site \(i\), periods \(s\) and \(t\) form consecutive harvests (or establishment and first harvest if \(s=0\)), with \((s,t) \in \mathcal{S}\) as defined in \eqref{eq:age-lag-set}. These variables define a path of consecutive harvest cycles at each site over the planning horizon. Continuous variables \(Y_{ipt} \ge 0\) represent the maximum harvest quantity (t) of product \(p\) at site \(i\) in harvest period \(t\). Flow variables \(X_{ijpt}\) and \(X_{jkpp't}\) represent transport of products from sites to storage and from storage to consumers, respectively, and \(S_{jpt}\) represent inventories at storage locations.
-E}OL.?2(vkfy
-## Objective function
+Table \@ref(tab:tab-notation-milp) summarises all sets, decision variables, and parameters used in the MILP formulation. Symbols shared with the growth model of Section \@ref(sec:lit-growth) --- in particular the yield  coefficients $\eta_{pa}$, which are derived from the component-specific Gompertz functions \eqref{eq:biomass-partial}--\eqref{eq:component-share}  and the stand biomass model \eqref{eq:total-stand-biomass} --- are listed in Table \@ref(tab:tab-notation) in Section \@ref(sec:lit-growth).
 
-The model maximises net present value over the planning horizon, expressed as total revenues minus establishment, opportunity, harvest, transport, and storage costs:
+```{r tab-notation-milp, echo=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(kableExtra)
+options(kableExtra.latex.load_packages = FALSE)
+options(knitr.table.format = "latex")
+
+math_break <- function(line1, line2) {
+  paste0("\\shortstack[l]{$", line1, "$\\\\$", line2, "$}")
+}
+
+notation <- tribble(
+  ~Symbol, ~Description,
+
+  # --- SETS & INDICES ---
+  "$i \\in \\mathcal{I}$",   "Agroforestry sites",
+  "$j \\in \\mathcal{J}$",   "Storage / pre-treatment facilities",
+  "$k \\in \\mathcal{K}$",   "Consumer sites",
+  "$p \\in \\mathcal{P}$",   "Product types (stem, branches, residues)",
+  "$(p,p') \\in \\mathcal{Q}$",   "Admissible product-substitution pairs (quality cascade)",
+  "$\\mathcal{T}=\\{1,\\dots,T_{\\max}\\}$",
+    "Planning periods (years)",
+  "$\\mathcal{T}^{+}=\\{0,\\dots,T_{\\max}+1\\}$",
+    "Extended time set incl.\\ dummy nodes",
+  "$\\mathcal{T}^{\\text{harv}}=\\{A^{\\min}+1,\\dots,T_{\\max}\\}$",
+    "Feasible harvest periods",
+  "$\\mathcal{S}^{\\text{est}}=\\{(0,t)\\mid t\\in\\{1,\\dots,T_{\\max}-A^{\\min}\\}\\}$",
+    "Establishment arcs: dummy source to period $t$",
+  math_break(
+    "\\mathcal{S}^{\\text{harv}}=\\{(s,t)\\mid s,t\\in \\mathcal{T},",
+    "t-s\\in\\{A^{\\min},\\dots,A^{\\max}\\}\\}"),
+    "Harvest cycles within age-lag bounds",
+  math_break(
+    "\\mathcal{S}^{\\text{term}}=\\{(s,T_{\\max}+1)\\mid",
+    "s\\in\\{A^{\\min}+1,\\dots,T_{\\max}\\}\\}"),
+    "Termination arcs to dummy sink $T_{\\max}+1$",
+  "$\\mathcal{S} = \\mathcal{S}^{\\text{est}} \\cup \\mathcal{S}^{\\text{harv}} \\cup\\; \\mathcal{S}^{\\text{term}}$",
+    "Age-lag arc set (establishment $\\cup$ harvest $\\cup$ termination)",
+
+  # --- DECISION VARIABLES ---
+  "$z_{ist}\\in\\{0,1\\}$",
+    "1 if $s$ and $t$ are consecutive harvest cycles at site $i$",
+  "$Y_{ipt}\\ge 0$",
+    "Harvest quantity (t) of product $p$ at site $i$ in period $t$",
+  "$X_{ijpt}\\ge 0$",
+    "Transport flow (t) of $p$ from site $i$ to facility $j$ in $t$",
+  "$X_{jkpp't}\\ge 0$",
+    "Flow of $p$ from facility $j$ to consumer $k$ satisfying demand $p'$ in $t$",
+  "$S_{jpt}\\ge 0$",
+    "Inventory (t) of product $p$ at facility $j$ end of period $t$",
+
+  # --- PARAMETERS ---
+  "$T_{\\max}$",              "Length of planning horizon (years)",
+  "$A^{\\min}$, $A^{\\max}$", "Minimum / maximum stand age at harvest (years)",
+  "$\\text{AREA}_i$",         "Area of site $i$ (ha)",
+  "$\\eta_{pa}$",
+    "Yield coefficient (t/ha) of product $p$ at stand age $a$, derived from \\eqref{eq:total-stand-biomass}--\\eqref{eq:component-share}",
+  "$R_{kp}$",                 "Revenue (\\euro/t) for product $p$ at consumer $k$",
+  "$C^{\\text{est}}_i$",      "Establishment cost (\\euro/ha) at site $i$",
+  "$C^{\\text{opp}}_i$",      "Annual opportunity cost (\\euro/ha) at site $i$",
+  "$C^{\\text{harv}}_i$",     "Harvest \\& refitting cost (\\euro/ha) at site $i$",
+  "$c^{\\text{tr-raw}}$",     "Transport cost rate (\\euro/t\\,km) for raw biomass",
+  "$c^{\\text{tr-pre}}$",     "Transport cost rate (\\euro/t\\,km) for pre-treated biomass",
+  "$c^{\\text{stor}}_j$",     "Storage holding cost (\\euro/t) at facility $j$",
+  "$d_{ij}$, $d_{jk}$",       "Distance (km) between nodes",
+  "$\\text{CAP}^{\\text{stor}}_j$", "Storage capacity (t) at facility $j$",
+  "$\\text{CAP}^{\\text{proc}}_j$", "Processing throughput capacity (t/period) at facility $j$",
+  "$D^{\\max}_{kpt}$",        "Maximum demand (t) of product $p$ at consumer $k$ in period $t$"
+)
+
+tbl <- kable(notation,
+      format    = "latex",
+      booktabs  = TRUE,
+      escape    = FALSE,
+      col.names = NULL,
+      caption   = "Notation for the MILP model.",
+      label     = "tab-notation-milp") |>
+  kable_styling(
+    font_size     = 8,
+    latex_options = c("hold_position", "scale_down", "striped"),
+    full_width    = FALSE
+  ) |>
+  column_spec(1, width = "5cm") |>
+  column_spec(2, width = "9cm") |>
+  pack_rows("Sets \\& Indices",    1,  12,
+            bold = TRUE, italic = FALSE, hline_before = TRUE, escape = FALSE) |>
+  pack_rows("Decision Variables", 13,  17,
+            bold = TRUE, italic = FALSE, hline_before = TRUE) |>
+  pack_rows("Parameters",         18,  32,
+            bold = TRUE, italic = FALSE, hline_before = TRUE)
+
+tbl <- gsub(
+  "p\\{(5\\.8cm|8\\.5cm)\\}",
+  ">\\{\\\\raggedright\\\\arraybackslash\\}p\\{\\1\\}",
+  tbl
+)
+
+tbl
+```
+
+## Objective Function
+
+As discussed in Section \@ref(sec:lit-afs), the economic attractiveness of AFS supply chains must be assessed from a global perspective taking into account all processes, activities, and participants involved in finally serving customer markets with bio-based feedstocks. Therefore, revenues for the different biomass fractions and must be weighed against costs occurring at all value-adding stages of the supply chains. To be precise, revenues created by selling AFS-based feedstocks to different industrial consumers  are counterweighted by  establishment, opportunity, harvest, transport, and storage costs of landowners, agricultural firms as well as biomass logistics companies. The model therefore maximises total contribution margin of all participants in the AFS supply chain over the planning horizon as follows:
 \begin{align}
 \max\; Z \;=\;&
-  \sum_{k \in \mathcal{K},\, p \in \mathcal{P},\, t \in \mathcal{T}}
-    R_{kp}
-    \sum_{j \in \mathcal{J},\, (p,p') \in \mathcal{Q} }
-      X_{jkp'pt}
-  \label{eq:obj-revenue} \\
-&- \sum_{i \in \mathcal{I}}
-     C^{\text{est}}_i \cdot \text{AREA}_i
-     \sum_{(0,t) \in \mathcal{S}^{\text{est}}} z_{i0t} \notag  \\ 
-&- \sum_{i \in \mathcal{I}}
-     C^{\text{opp}}_i \cdot \text{AREA}_i
-     \sum_{(0,t) \in \mathcal{S}^{\text{est}}} (T_{\max} - t)\, z_{i0t} \notag \\
-&- \sum_{i \in \mathcal{I}}
-     C^{\text{harv}}_i \cdot \text{AREA}_i
-     \sum_{(s,t) \in \mathcal{S}^{\text{harv}}} z_{ist} \notag \\
-&- c^{\text{tr-raw}}
-     \sum_{i \in \mathcal{I},\, j \in \mathcal{J},\, p \in \mathcal{P},\, t \in \mathcal{T}}
-       d_{ij}\, X_{ijpt} \notag \\
-&- c^{\text{tr-pre}}
-     \sum_{j \in \mathcal{J},\, k \in \mathcal{K},\, (p,p') \in \mathcal{Q},\, t \in \mathcal{T}}
-       d_{jk}\, X_{jkpp't}
-  \notag \\
-&- \sum_{j \in \mathcal{J},\, p \in \mathcal{P},\, t \in \mathcal{T}}
-     c^{\text{stor}}_j\, S_{jpt}  \notag
+  \sum_{k \in \Kc,\, p \in \Pc} R_{kp} \cdot\sum_{j \in \Jc, (p',p) \in \Qc, t \in \Tc}  X_{jkp'pt}  \label{eq:obj-revenue} \\
+&- \sum_{i \in \Ic} c^{{est}}_i \cdot \text{AREA}_i  \cdot\sum_{(0,t) \in \Sc^{{est}}} z_{i0t} \notag \\
+&- \sum_{i \in \Ic} c^{{opp}}_i \cdot \text{AREA}_i \cdot\left(\sum_{(s,T+1) \in \Sc^{term}} (s+1) \cdot z_{is(T+1)}  -  \sum_{(0,t) \in \Sc^{{est}}}  t \cdot z_{i0t} \right) \notag \\
+&- \sum_{i \in \Ic} c^{main}_{i} \cdot (t-s) \cdot \text{AREA}_i \sum_{(s,t) \in \Sc^{{harv}}} z_{ist} \notag \\
+&- \sum_{i \in \Ic} c^{{harv}}_i \cdot \text{AREA}_i \cdot \sum_{(s,t) \in \Sc^{{harv}}} z_{ist} \notag \\
+&- \sum_{i \in \Ic, j \in \Jc, p \in \Pc,\, t \in \Tc} c^{\text{tr-raw}}_p \cdot d_{ij} \cdot X_{ijpt} \notag \\
+&- \sum_{j \in \Jc, k \in \Kc, (p,p') \in \Qc,\, t \in \Tc} c^{\text{tr-pre}}_{p'} \cdot d_{jk} \cdot X_{jkpp't} \notag \\
+&- \sum_{j \in \Jc, p \in \Pc, t \in \Tc}  c^{{stor}}_j \cdot S_{jpt}  \notag
 \end{align}
 
-Here, \(R_{k,p}\) are product- and consumer-specific revenues (€/t), \(C^{\text{est}}_{i}\) are establishment costs per hectare, \(C^{\text{opp}}_{i}\) are annual opportunity costs per hectare, and \(C^{\text{harv}}_{i}\) are harvest and refitting costs per hectare [@Testa2014_Poplar_Economics]. Transport costs are proportional to flow and distance with rates \(c^{\text{tr-raw}}\) and \(c^{\text{tr-pre}}\) for raw and pre-treated biomass, respectively, and storage incurs linear holding costs \(c^{\text{stor}}_j\) per tonne.
+Here, $R_{kp}$ are product- and consumer-specific revenues (€/t). The opportunity cost term penalises dereduced crop revenues in each year an AFS is established. Transport cost terms mirror the two-stage flow structure of the AFS supply chain with differentiated rates for raw and pre-treated biomass depending on the biomass type. Cost rates differ because as e.g. the density and water content of the shipped biomasses differ or because specialized equippment (e.g. for log transports) is used [REFERENCES]. Moreover, site-specific establishment cost for planting the AFS trees is considered, next to yearly maintenance costs and harvesting cost. All these costs scale with the size of a site ($AREA_i$) measured in hectar. Maintenance cost comprise e.g. costs for trimming, replanting, and pruning unnecessary shoots. Storage costs are considered if biomasses are stored for more than a year to compensate direct costs (e.g. for storage site maintenance) but primarily opportunity cost due to potential material losses and capital commitment. The usual case is that AFS are harvested at the beginning of a year. Harvested biomass dry during spring and summer such that the biomasses can be used in autumn or winter the same year. As drying is necessary for most industrial applications and beneficial for transport economics, drying storage in the year of harvest is not associated with additional cost. 
 
 ## Constraints
 
+Constraints \eqref{eq:C1} limit each site to at most one establishment decision over the planning horizon. Constraints \eqref{eq:C2} enforce flow conservation in each period. If an activity in period $t \in \Tc$ takes place, there needs to be a preceeding activity (harvest or establishment) and a succeeding activity (harvest or termination). This way, \eqref{eq:C2} guarantee valid (possibly empty) activity paths over the complete time horizon for each site. Constraints \eqref{eq:C3} links the binary harvest-cycle variables to physical yield quantities via the age-dependent yield coefficients $\eta_{p(t-s)}$. These coefficients are pre-computed by evaluating the component-specific Gompertz functions \eqref{eq:biomass-partial} and \eqref{eq:component-share} at stand age $a = t - s$ and scaled by site area $\text{AREA}_i$. Thus, implicitly we assume consant yields per hectar for each site $i$. Note that this simplification can be dropped and site-specific yields $\eta_{ip(t-s)}$ could be introduced without increasing numerical complexity of the \problem.  Constraints \eqref{eq:C4}--\eqref{eq:C5} link harvest quantities to transport flows and ensure inventory balance at each facility, following the multi-period network-flow structure of OPTIMASS [@DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS]. Thereby, harvest quantities can be smaller than available AFS biomasses allowing partial harvesting. Constraints \eqref{eq:C6}--\eqref{eq:C7} enforce storage and processing capacity limits at each facility $j$. Constraints \eqref{eq:C8} implement product usage at multiple consumption sites $k$. Thereby, $(p',p) \in \Qc$ defines a product mapping allowing high-quality product $p'$ (e.g. stems) satisfying demand of a lower-quality products $p$ up to maximum demand $D^{\max}_{kpt}$. This way, the cascading principle is operationalized as a central economic rationale.
+
 \begin{align}
-  % --- C1: Establishment ---
-\sum_{(0,t)\,\in\,\mathcal{S}^{\text{est}}} z_{i0t}
-  &\leq 1
-  && \forall\; i \in \mathcal{I}
-  \label{eq:C1} \\[6pt]
-% --- C2: Path connectivity ---
-\sum_{(s,t)\,\in\,\mathcal{S} } z_{ist}
-  &= \sum_{(t,u)\,\in\,\mathcal{S} } z_{itu}
-  && \forall\; i \in \mathcal{I},\; t \in \mathcal{T}
-  \label{eq:C2} \\[6pt]
-% --- C3: Biomass yield ---
-Y_{ipt}
-  &= \sum_{(s,t)\,\in\,\mathcal{S}^{\text{harv}}}
-       \eta_{p,\,(t-s)} \cdot \text{AREA}_i \cdot z_{ist}
-  && \forall\; i \in \mathcal{I},\; p \in \mathcal{P},\; t \in \mathcal{T}^{\text{harv}}
-  \label{eq:C3} \\[6pt]
-% --- C4: Shipping linkage ---
-\sum_{j \in \mathcal{J}} X_{ijpt}
-  &\leq Y_{ipt}
-  && \forall\; i \in \mathcal{I},\; p \in \mathcal{P},\; t \in \mathcal{T}^{\text{harv}}
-  \label{eq:C4} \\[6pt]
+  % --- C1: Establishment (at most once per site) ---
+  \sum_{(0,t) \in \Sc^{{est}}} z_{i0t} &\leq 1 && \forall\; i \in \Ic \label{eq:C1} \\[2pt]
+  %
+  % --- C2: Path connectivity (flow conservation) ---
+  \sum_{(s,t) \in \Sc} z_{ist} &= \sum_{(t,u) \in \Sc} z_{itu} && \forall\; i \in \Ic,\; t \in \Tc \label{eq:C2} \\[2pt]
+  %
+  % --- C3: Biomass yield from Gompertz coefficients ---
+  Y_{ipt}    &= \sum_{(s,t) \in \Sc^{{harv}}} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist} && \forall\; i \in \Ic,\; p \in \Pc,\; t \in \Tc^{{harv}}     \label{eq:C3} \\[2pt]
+  %
+  % --- C4: Shipping linkage ---
+  \sum_{j \in \Jc} X_{ijpt}  &\leq Y_{ipt} && \forall\; i \in \Ic,\; p \in \Pc,\; t \in \Tc^{{harv}} \label{eq:C4} \\[2pt]
+  %
   % --- C5: Inventory balance ---
-  S_{jpt} = S_{jp,t-1} + &\sum_{i \in \mathcal{I}} X_{ijpt} - \sum_{k \in \mathcal{K},\, (p,p') \in \mathcal{Q} } X_{jkpp't}
-  && \forall\; j \in \mathcal{J},\; p \in \mathcal{P},\; t \in \mathcal{T}
-  \label{eq:C5} \\[6pt]
-% --- C6: Storage capacity ---
-\sum_{p \in \mathcal{P}} S_{jpt}
-  &\leq \text{CAP}^{\text{stor}}_j
-  && \forall\; j \in \mathcal{J},\; t \in \mathcal{T}
-  \label{eq:C6} \\[6pt]
-% --- C7: Processing capacity ---
-\sum_{i \in \mathcal{I},\, p \in \mathcal{P}} X_{ijpt}
-  &\leq \text{CAP}^{\text{proc}}_j
-  && \forall\; j \in \mathcal{J},\; t \in \mathcal{T}
-  \label{eq:C7} \\[6pt]
-% --- C8: Demand / product cascade ---
-\sum_{j \in \mathcal{J},\, (p,p') \in \mathcal{Q} }
-  X_{jkp'pt}
-  &\leq D^{\max}_{kpt}
-  && \forall\; k \in \mathcal{K},\; p \in \mathcal{P},\; t \in \mathcal{T}
-  \label{eq:C8} \\[6pt]
-% --- Domain: binary ---
-z_{ist}
-  &\in \{0,1\}
-  && \forall\; i \in \mathcal{I},\; (s,t) \in \mathcal{S}
-  \label{eq:D1} \\
-% --- Domain: continuous ---
-Y_{ipt},\; & X_{ijpt},\; X_{jkpp't},\; S_{jpt}  \geq 0
-  && \forall\; 
-  \label{eq:D2}
+  S_{jpt}    = S_{jp,t-1} + &\sum_{i \in \Ic} X_{ijpt} - \sum_{k \in \Kc,\,(p,p') \in \Qc} X_{jkpp't}   && \forall\; j \in \Jc,\; p \in \Pc,\; t \in \Tc  \label{eq:C5} \\[2pt]
+  %
+  % --- C6: Storage capacity ---
+  \sum_{p \in \Pc} S_{jpt}    &\leq \text{CAP}^{{stor}}_j    && \forall\; j \in \Jc,\; t \in \Tc     \label{eq:C6} \\[2pt]
+  %
+  % --- C7: Processing capacity ---
+  \sum_{i \in \Ic,\, p \in \Pc} X_{ijpt}  &\leq \text{CAP}^{{proc}}_j && \forall\; j \in \Jc,\; t \in \Tc \label{eq:C7} \\[2pt]
+  %
+  % --- C8: Demand satisfaction with quality cascade ---
+  \sum_{j \in \Jc,\,(p',p) \in \Qc} X_{jkp'pt} &\leq D^{\max}_{kpt} && \forall\; k \in \Kc,\; p \in \Pc,\; t \in \Tc     \label{eq:C8} \\[2pt]
+  %
+  % --- Domain: binary ---
+  z_{ist} &\in \{0,1\} && \forall\; i \in \Ic,\; (s,t) \in \Sc \label{eq:D1} \\[2pt]
+  %
+  % --- Domain: continuous non-negativity ---
+  Y_{ipt},\; X_{ijpt},\; &X_{jkp'pt},\; S_{jpt} \geq 0 && \forall\; i,j,k,p,p',t     \label{eq:D2}
+  %
 \end{align}
 
-Demand satisfaction with cascades is modelled as described above, where higher-quality products can satisfy lower-quality demands up to maximum demand levels \(D^{\max}_{kpt}\).
+The yield coefficients $\eta_{pa}$ in \eqref{eq:C3} are the critical bridge between the stand-level growth model of Chapter~2 and the supply chain optimisation. For stand age $a = t - s$ and product component $p$, they are computed as:
+\begin{equation}
+  \eta_{pa} = f_p(a) \cdot M^{sl}(a)
+  = \frac{h_p(a)}{\sum_{p'} h_{p'}(a)}
+    \cdot a^{\infty} \cdot e^{-e^{-b'^1 \cdot (a - \tau)}},
+  \label{eq:yield-coeff}
+\end{equation}
+where $M^{sl}(a)$ follows from \eqref{eq:total-stand-biomass} and $f_p(a)$ follows from \eqref{eq:component-share}. For poplar clone Max~3 under SRAFS conditions, the component-specific Gompertz parameterisations from Section \@ref(sec:lit-growth) imply that $\eta_{\text{stem},a}$ rises steeply between ages~4 and 10, while $\eta_{\text{branch},a}$ and $\eta_{\text{residue},a}$ plateau earlier, as illustrated in Figure~\@ref(fig:max3-growth). This age-dependence of product fractions is the core mechanism through which rotation-length decisions --- governed by $A^{\min}$ and $A^{\max}$ and the arc set $\mathcal{S}$ --- determine achievable product portfolios and, hence, revenues in the objective function \eqref{eq:obj-revenue}.
 
 
 # Case study and computational experiment plan {#sec:experiments}
 
 The proposed MILP model is intended to support the design of agroforestry biomass supply chains for cleaner production in specific regional contexts. In a forthcoming case study, we focus on poplar-based alley-cropping systems in a temperate European setting, informed by empirical data from SRAFS trials in Southern Germany and SRC plantations in Central Europe [@Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF; @Testa2014_Poplar_Economics].
 
-We envisage the following steps and experimental scenarios for computational analysis:
+```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Green polygons: potential KUP sites. Orange symbols: pre-treatment facilities (circle~=~sawmill, triangle~=~logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth"}
 
-1. **Parameterisation of allometric yield profiles:** Use species- and site-specific allometric models and observed growth trajectories to construct age-dependent yield coefficients \(\eta_{pa}\) for chemical, pulp, and energy product classes at representative agroforestry sites. Where necessary, scenario ranges will be defined to capture uncertainty in MAI and CAI due to climate variability and management differences [@Huber2016_Allometric_SRAFS; @Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF].
+COL_SITE_F <- "#74c476"; COL_SITE_B <- "#2d6a2d"
+COL_SAW    <- "#e65c00"; COL_HUB    <- "#c05000"
+COL_P1     <- "#6a0dad"; COL_P2     <- "#08519c"; COL_P3     <- "#a50026"
 
-2. **Baseline optimisation:** Solve the MILP model \eqref{eq:objective}--\eqref{eq:capacity} for a baseline configuration with fixed prices, capacities, and policy settings, obtaining optimal establishment timing, harvest schedules, and supply chain structure (locations, flows, inventories).
+de_states <- ne_states(country = "Germany", returnclass = "sf") %>%
+  st_transform(4326)
 
-3. **Rotation length scenarios:** Vary the age-lag bounds \(A^{\min}\) and \(A^{\max}\) in \eqref{eq:age-lag-set} to represent alternative rotation strategies (e.g., 3--5 years vs. 8--10 years) and analyse their impacts on profitability, product mix, and land use. This will shed light on trade-offs between shorter rotations favouring energy chips and longer rotations enabling higher shares of material products [@Trnka2008_Poplar_SRF; @Testa2014_Poplar_Economics].
+rivers_eu <- ne_download(
+  scale = 10, type = "rivers_lake_centerlines",
+  category = "physical", returnclass = "sf"
+) %>%
+  st_transform(4326) %>%
+  st_crop(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8)
 
-4. **Product price and cascading scenarios:** Explore scenarios with different relative prices for chemical, pulp, and energy products, reflecting changes in market demand and policy incentives (e.g., bioenergy subsidies, green chemicals markets). Assess how the product cascade hierarchy and yield quality structure influence the marginal value of species and rotation decisions [@DeMeyer2015_OPTIMASS; @Lamers2015_Feedstock_Design].
+consumers_plt <- consumers %>%
+  mutate(
+    total_demand = demand_P1 + demand_P2 + demand_P3,
+    kategorie = case_when(
+      demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
+      demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
+      demand_P3 > 0 ~ "Energy / Biogas (P3)",
+      TRUE          ~ "Other"
+    ),
+    pt_size = pmin(4.5, pmax(1.5, 1.5 + log1p(total_demand) * 0.55))
+  )
 
-5. **Infrastructure and logistics scenarios:** Evaluate the effect of alternative storage and processing network configurations (e.g., decentralised vs. centralised hubs, different capacity levels, transport cost parameters) on the optimal spatial deployment of agroforestry sites and biomass flows [@DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS; @Lamers2015_Feedstock_Design].
+storages_plt <- storages %>%
+  mutate(
+    subtype = if_else(type == "Hub", "Logistics Hub", "Sawmill"),
+    pt_size = pmin(3.5, pmax(1.2, 1.2 + log1p(CAP_proc) * 0.38))
+  )
 
-6. **Sensitivity to allometric and growth uncertainty:** Conduct parametric sensitivity and, where computationally feasible, stochastic analyses to quantify the impact of uncertainty in allometric parameters and growth responses (e.g., under drought or management differences) on optimal decisions and system robustness [@Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF].
+stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326)
+cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326)
 
-7. **Cleaner production indicators:** For selected solutions, compute derived indicators such as biomass cascading index (share of biomass used for material products before energy), utilisation rates of higher-quality fractions, and, where coupled with LCA data, greenhouse gas emission savings relative to fossil benchmarks [@Espinoza2017_Biorefinery_SC_review; @Zahraee2020_BSC_review].
+ggplot() +
+  geom_sf(data = de_states,
+          fill = "grey96", colour = "grey55", linewidth = 0.35) +
+  geom_sf(data = rivers_eu,
+          colour = "#4292c6", linewidth = 0.45, alpha = 0.7) +
+  geom_sf(data = sites_sf,
+          fill = COL_SITE_F, colour = COL_SITE_B,
+          linewidth = 0.12, alpha = 0.45) +
+  geom_sf(data = stor_sf,
+          aes(colour = subtype, shape = subtype, size = pt_size),
+          stroke = 1.2, alpha = 0.92, show.legend = TRUE) +
+  scale_colour_manual(
+    name   = "Pre-treatment",
+    values = c("Sawmill" = COL_SAW, "Logistics Hub" = COL_HUB)
+  ) +
+  scale_shape_manual(
+    name   = "Pre-treatment",
+    values = c("Sawmill" = 16, "Logistics Hub" = 17)
+  ) +
+  ggnewscale::new_scale_fill() +
+  geom_sf(data  = cons_sf,
+          aes(fill = kategorie, size = pt_size),
+          shape = 22, colour = "white", stroke = 0.45,
+          alpha = 0.88, show.legend = TRUE) +
+  scale_fill_manual(
+    name   = "Consumer type",
+    values = c(
+      "Chemical / Pulp (P1)" = COL_P1,
+      "Pulp / Paper (P2)"    = COL_P2,
+      "Energy / Biogas (P3)" = COL_P3,
+      "Other"                = "grey60"
+    )
+  ) +
+  scale_size_continuous(range = c(1.5, 5), guide = "none") +
+  guides(
+    colour = guide_legend(order = 1, override.aes = list(size = 4, stroke = 1.5)),
+    shape  = guide_legend(order = 1, override.aes = list(size = 4, stroke = 1.5)),
+    fill   = guide_legend(order = 2, override.aes = list(size = 4, shape = 22, colour = "white")),
+    size   = "none"
+  ) +
+  coord_sf(xlim = c(10.6, 13.2), ylim = c(50.9, 52.8), expand = FALSE) +
+  labs(x = "Longitude", y = "Latitude") +
+  theme_minimal(base_size = 9) +
+  theme(
+    panel.grid      = element_line(colour = "grey88", linewidth = 0.25),
+    legend.position = "right",
+    legend.key.size = unit(0.45, "cm"),
+    legend.text     = element_text(size = 7),
+    legend.title    = element_text(size = 8, face = "bold"),
+    axis.text       = element_text(size = 7)
+  )
+```
 
-
-# Conclusions
-
-This paper outlines a research framework that couples allometric biomass growth models \eqref{eq:allometry}--\eqref{eq:component-share} with a MILP-based agroforestry biomass supply chain design model \eqref{eq:objective}--\eqref{eq:capacity} featuring age-lag constraints and product cascading. Building on empirical evidence from temperate SRAFS and SRC systems and established biomass supply chain models, the proposed approach aims to capture key interactions between stand-level growth dynamics and network-level design decisions that are central to the cleaner production potential of agroforestry [@Huber2018_SRAFS_growth; @DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS]. Future work will implement and calibrate the model for a regional case study, conduct the computational experiments sketched above, and extend the framework towards multi-objective optimisation including environmental indicators such as greenhouse gas emissions and biodiversity proxies.
