@@ -973,78 +973,66 @@ consumers %>%
   add_header_above(c(" " = 1, "Annual demand" = 3, "Gate price" = 3))
 ```
 
-```{r fig-consumer-demand, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Annual biomass demand by consumer and product grade. Bar length proportional to kt wood input per year (log-scale x-axis). Colours indicate product grade: violet P1 chemical/pulp, blue P2 sawlog/pulpwood, red P3 energy/pellets. Consumers sorted by total demand.", fig.width=6.5, fig.height=4.2, out.width="\\textwidth"}
+```{r fig-consumer-demand, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total biomass demand by consumer type and grade (P1 chemical, P2 pulp \\& paper, P3 energy/biogas). Bars show aggregated annual demand in kt wood input per year across all individual plants within each consumer type.", fig.width = 5.5, fig.height = 2.8, out.width="\\textwidth"}
 
 
-COL_P1 <- "#6a0dad"; COL_P2 <- "#08519c"; COL_P3 <- "#a50026"
+# Re-use consumers_typed from above
+# create unique types of consumers
 
-consumers <- consumers %>% 
-  mutate(name_pseudo = paste("consumer ", seq_len(nrow(consumers))) ) 
-
-demand_long <- consumers %>%
-  #mutate(name_pseudo = paste("consumer ", seq_len(nrow(consumers))) ) %>% 
-  #mutate(name_short = gsub("\\(.*\\)", "", name) %>% trimws()) %>%
-  select(name_pseudo, demand_P1, demand_P2, demand_P3) %>%
-  pivot_longer(
-    cols      = starts_with("demand_"),
-    names_to  = "product",
-    values_to = "demand_kt"
-  ) %>%
+consumers_typed <- consumers %>%
   mutate(
-    product_label = recode(product,
-      demand_P1 = "P1 – Chemical / Pulp",
-      demand_P2 = "P2 – Sawlog / Pulpwood",
-      demand_P3 = "P3 – Energy / Pellets"
-    ),
-    product_label = factor(product_label, levels = c(
-      "P1 – Chemical / Pulp",
-      "P2 – Sawlog / Pulpwood",
-      "P3 – Energy / Pellets"
-    ))
-  ) %>%
-  filter(demand_kt > 0)
-
-# Order consumers by descending total demand
-order_names <- consumers %>%
-  mutate(
-    total = demand_P1 + demand_P2 + demand_P3,
-  ) %>%
-  arrange(total) %>%
-  pull(name_pseudo)
-
-demand_long <- demand_long %>%
-  mutate(name_short = factor(name_pseudo, levels = order_names))
-
-ggplot(demand_long, aes(x = demand_kt, y = name_short, fill = product_label)) +
-  geom_col(position = position_dodge(width = 0.75), width = 0.65,
-           colour = "white", linewidth = 0.25) +
-  geom_text(aes(label = paste0(demand_kt, " kt")),
-            position = position_dodge(width = 0.75),
-            hjust = -0.08, size = 2.3, colour = "grey30") +
-  scale_x_continuous(
-    trans  = "log10",
-    labels = scales::comma,
-    expand = expansion(mult = c(0, 0.30)),
-    name   = "Annual demand (kt wood input / yr, log scale)"
-  ) +
-  scale_fill_manual(
-    name   = "Product grade",
-    values = c(
-      "P1 – Chemical / Pulp"    = COL_P1,
-      "P2 – Sawlog / Pulpwood"  = COL_P2,
-      "P3 – Energy / Pellets"   = COL_P3
+    type = case_when(
+      demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Industrial",
+      demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Paper & pulp",
+      demand_P3 > 0 ~ "Biogas",
+      TRUE          ~ "Other"
     )
+  )
+
+
+# Aggregate and pivot to long
+demand_agg <- consumers_typed %>%
+  group_by(type) %>%
+  summarise(
+    P1 = sum(demand_P1),
+    P2 = sum(demand_P2),
+    P3 = sum(demand_P3),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(cols = c(P1, P2, P3),
+               names_to  = "grade",
+               values_to = "demand_kt") %>%
+  filter(demand_kt > 0) %>%
+  mutate(
+    grade = factor(grade, levels = c("P1", "P2", "P3"),
+                   labels = c("P1 – Chemical", "P2 – Pulp", "P3 – Energy")),
+    type  = factor(type,
+                   levels = c("Industrial", "Paper & pulp", "Biogas"))
+  )
+
+GRADE_COLS <- c("P1 – Chemical" = "#1b7837",
+                "P2 – Pulp"     = "#4393c3",
+                "P3 – Energy"   = "#d6604d")
+
+ggplot(demand_agg, aes(x = type, y = demand_kt, fill = grade)) +
+  geom_col(position = "dodge", width = 0.65, colour = "white", linewidth = 0.2) +
+  geom_text(aes(label = round(demand_kt, 0)),
+            position = position_dodge(width = 0.65),
+            vjust = -0.35, size = 2.4, colour = "grey30") +
+  scale_fill_manual(values = GRADE_COLS, name = "Biomass grade") +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.15)),
+    name   = "Annual demand (kt wood input / yr)"
   ) +
-  labs(y = NULL) +
+  labs(x = NULL) +
   theme_minimal(base_size = 9) +
   theme(
-    legend.position   = "bottom",
-    legend.key.size   = unit(0.4, "cm"),
-    legend.text       = element_text(size = 7.5),
-    panel.grid.major.y = element_blank(),
+    panel.grid.major.x = element_blank(),
     panel.grid.minor   = element_blank(),
-    axis.text.y        = element_text(size = 7.5),
-    axis.text.x        = element_text(size = 7.5)
+    legend.position    = "bottom",
+    legend.key.size    = unit(0.35, "cm"),
+    legend.text        = element_text(size = 7),
+    axis.text.x        = element_text(size = 8)
   )
 ```
 
