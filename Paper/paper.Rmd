@@ -978,8 +978,11 @@ consumers %>%
 
 COL_P1 <- "#6a0dad"; COL_P2 <- "#08519c"; COL_P3 <- "#a50026"
 
+consumers <- consumers %>% 
+  mutate(name_pseudo = paste("consumer ", seq_len(nrow(consumers))) ) 
+
 demand_long <- consumers %>%
-  mutate(name_pseudo = paste("consumer ", seq_len(nrow(consumers))) ) %>% 
+  #mutate(name_pseudo = paste("consumer ", seq_len(nrow(consumers))) ) %>% 
   #mutate(name_short = gsub("\\(.*\\)", "", name) %>% trimws()) %>%
   select(name_pseudo, demand_P1, demand_P2, demand_P3) %>%
   pivot_longer(
@@ -1005,10 +1008,9 @@ demand_long <- consumers %>%
 order_names <- consumers %>%
   mutate(
     total = demand_P1 + demand_P2 + demand_P3,
-    name_short = gsub("\\(.*\\)", "", name) %>% trimws()
   ) %>%
   arrange(total) %>%
-  pull(name_short)
+  pull(name_pseudo)
 
 demand_long <- demand_long %>%
   mutate(name_short = factor(name_short, levels = order_names))
