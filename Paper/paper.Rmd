@@ -109,15 +109,27 @@ sites      <- afs_workspace$sites
 storages   <- afs_workspace$storages
 consumers  <- afs_workspace$consumers
 
+# Component Gompertz functions (parameters as defined above)
+B_AG_max3     <- function(t) gomp(t, A = 100, k = 0.32, t0 = 4.0)
+h_stem_f      <- function(t) gomp(t, A = 1.0,  k = 0.40, t0 = 4.0)
+h_branch_f    <- function(t) gomp(t, A = 0.7,  k = 0.25, t0 = 3.0)
+h_rest_f      <- function(t) gomp(t, A = 0.1,  k = 0.30, t0 = 2.0)
+
+B_AG_index <- function(t,p) {
+  B_AG_max3(t) * c(f_stem_g(t), f_branch_g(t), f_rest_g(t))[p]
+}
+
+f_stem_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hs/(hs+hb+hr) }
+f_branch_g <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hb/(hs+hb+hr) }
+f_rest_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hr/(hs+hb+hr) }
+
+
 # Yield table from Chapman-Richards (3 products)
-yields_by_age <- expand_grid(product = 1:3, age = 1:15) %>%
-  mutate(
-    B_total = B_cr(age,
-                   Bmax = c(80, 120, 160)[product],
-                   k    = c(0.18, 0.20, 0.22)[product],
-                   m    = c(1.1, 1.2, 1.3)[product]),
-    yield_ha = B_total * c(0.20, 0.35, 0.45)[product]
-  )
+yields_by_age <- expand_grid(product = 1:3, age = 1:15)
+yields_by_age$yield_ha <- apply(yields_by_age, 1, function(row) B_AG_index(row[2] , row[1]))
+
+  
+
 ```
 
 # Introduction
@@ -260,17 +272,6 @@ Empirical studies show that the stem fraction rises from roughly 55\% of AGB at 
 For Max~3 the stem helper is parameterised with a high asymptote (\(a_\mathrm{stem} = 1.0\)) and a relatively late inflection (\(\tau_{\mathrm{stem}} = 4.0\) years), whereas the branch uses a lower asymptote (\(a_\mathrm{branch} = 0.7\)) and an earlier inflection (\(\tau_{\mathrm{branch}} = 3.0\) years), and the residue helper saturates earliest (\(a_\mathrm{rest} = 0.1\), \(\tau_{\mathrm{rest}} = 2.0\) years). This parameterisation reproduces the observed shift towards stem dominance with age and is consistent with the empirical component fractions compiled across poplar agroforestry and SRC systems spanning ages 6--13 years, as illustrated in Figure \@ref(fig:max3-growth).
 
 ```{r max3-growth, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Modelled stand-level biomass components for poplar (Max~3) over stand age, represented as stacked Gompertz curves (shaded areas: stem green, branches orange, residues purple) and compared with empirical aboveground biomass observations from poplar agroforestry and SRC systems. Symbols denote cumulative component totals: stem (filled circles), stem+branches (triangles), total AGB (diamonds). Empirical data compiled from Jha (2018) and cited primary sources. Grey shading: typical rotation-age window (5--10 years).", fig.width=6.5, fig.height=5.0, out.width="\\textwidth"}
-
-
-# Component Gompertz functions (parameters as defined above)
-B_AG_max3     <- function(t) gomp(t, A = 100, k = 0.32, t0 = 4.0)
-h_stem_f      <- function(t) gomp(t, A = 1.0,  k = 0.40, t0 = 4.0)
-h_branch_f    <- function(t) gomp(t, A = 0.7,  k = 0.25, t0 = 3.0)
-h_rest_f      <- function(t) gomp(t, A = 0.1,  k = 0.30, t0 = 2.0)
-
-f_stem_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hs/(hs+hb+hr) }
-f_branch_g <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hb/(hs+hb+hr) }
-f_rest_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hr/(hs+hb+hr) }
 
 ages <- seq(0, 13, by = 0.1)
 
