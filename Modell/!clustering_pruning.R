@@ -15,6 +15,13 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(dbscan)   # install.packages("dbscan")
   library(cluster)  # for silhouette diagnostics
+  library(ggplot2)
+  library(patchwork)     # install.packages("patchwork")
+  library(leaflet)
+  library(leaflet.extras2)
+  library(htmltools)
+  library(RColorBrewer)
+  library(scales)
 })
 
 # ── Parameters (adjust to study region) ──────────────────────────────────────
@@ -160,18 +167,6 @@ cat(sprintf("  Total area preserved     : %.0f ha (%.1f%%)\n",
 # Colour conventions consistent with map_workspace.R / app_v10.r
 # ==============================================================================
 
-suppressPackageStartupMessages({
-  library(ggplot2)
-  library(dplyr)
-  library(sf)
-  library(patchwork)     # install.packages("patchwork")
-  library(leaflet)
-  library(leaflet.extras2)
-  library(htmltools)
-  library(RColorBrewer)
-  library(scales)
-})
-
 # ── Colour constants (consistent with map_workspace.R) ────────────────────────
 COL_ORIG_CORE    <- "#74c476"    # light green  — retained original sites
 COL_ORIG_OUTLIER <- "#fc9272"    # salmon red   — DBSCAN outliers (removed)
@@ -204,120 +199,6 @@ names(cluster_pal) <- as.character(seq_len(n_clusters))
 
 sites_inlier <- sites_inlier %>%
   mutate(cluster_col = cluster_pal[as.character(hac_cluster)])
-
-# --- Panel A: original sites (before clustering) ---
-p_before <- ggplot() +
-  geom_point(
-    data = sites_orig,
-    aes(x = lng, y = lat),
-    colour  = COL_ORIG_CORE, fill = COL_ORIG_CORE,
-    shape   = 21, size = 0.6, alpha = 0.5, stroke = 0
-  ) +
-  geom_point(
-    data = storages,
-    aes(x = lng, y = lat),
-    colour = COL_STORAGE, shape = 17, size = 2.5
-  ) +
-  coord_quickmap() +
-  labs(
-    title    = "Before: Original Sites",
-    subtitle = paste0(nrow(sites_orig), " Feldblöcke"),
-    x = NULL, y = NULL
-  ) +
-  theme_minimal(base_size = 10) +
-  theme(
-    panel.grid       = element_line(colour = "grey92"),
-    plot.title       = element_text(face = "bold"),
-    axis.text        = element_text(size = 7),
-    legend.position  = "none"
-  )
-
-# --- Panel B: after clustering —  original points coloured by cluster,
-#              super-site centroids overlaid, outliers shown in red ---
-p_after <- ggplot() +
-  # DBSCAN outliers
-  geom_point(
-    data  = sites_outlier,
-    aes(x = lng, y = lat),
-    colour = COL_ORIG_OUTLIER, shape = 4,
-    size = 1.0, alpha = 0.6, stroke = 0.4
-  ) +
-  # Cluster members coloured by HAC cluster
-  geom_point(
-    data = sites_inlier,
-    aes(x = lng, y = lat, colour = as.factor(hac_cluster)),
-    shape = 16, size = 0.7, alpha = 0.6
-  ) +
-  # Super-site centroids
-  geom_point(
-    data = super,
-    aes(x = lng, y = lat, size = area_ha),
-    colour = COL_SUPER_BORDER, fill = COL_SUPER_FILL,
-    shape = 21, stroke = 1.2, alpha = 0.9
-  ) +
-  # Super-site labels (cluster ID)
-  geom_text(
-    data = super %>% filter(n_sites >= 5),
-    aes(x = lng, y = lat, label = cluster_id),
-    size = 2, colour = "white", fontface = "bold",
-    vjust = 0.5, hjust = 0.5
-  ) +
-  # Storages
-  geom_point(
-    data = storages,
-    aes(x = lng, y = lat),
-    colour = COL_STORAGE, shape = 17, size = 2.5
-  ) +
-  scale_colour_manual(values = cluster_pal) +
-  scale_size_continuous(
-    name   = "Area (ha)",
-    range  = c(2, 8),
-    breaks = c(50, 200, 500, 1000)
-  ) +
-  coord_quickmap() +
-  labs(
-    title    = "After: Clustered Super-Sites",
-    subtitle = paste0(
-      nrow(super),     " super-sites  |  ",
-      n_outliers,      " outliers removed  |  ",
-      "radius ≤ ", HAC_MAX_RADIUS, " km"
-    ),
-    x = NULL, y = NULL
-  ) +
-  theme_minimal(base_size = 10) +
-  theme(
-    panel.grid      = element_line(colour = "grey92"),
-    plot.title      = element_text(face = "bold"),
-    axis.text       = element_text(size = 7),
-    legend.position = "right",
-    legend.key.size = unit(0.4, "cm")
-  ) +
-  guides(colour = "none")   # suppress cluster colour legend (too many levels)
-
-# --- Combine with patchwork and add annotation ---
-p_combined <- p_before + p_after +
-  plot_annotation(
-    title   = "AFS Site Clustering: DBSCAN + HAC Ward.D2",
-    caption = paste0(
-      "Stage 1 DBSCAN (eps=", DBSCAN_EPS_KM, " km, minPts=", DBSCAN_MIN_PTS,
-      "):  ", n_outliers, " outliers removed.  ",
-      "Stage 2 HAC (max radius ", HAC_MAX_RADIUS, " km):  ",
-      nrow(sites_orig), " → ", nrow(super), " sites  ",
-      "(reduction factor ", round(nrow(sites_orig) / nrow(super), 1), "x)."
-    ),
-    theme = theme(
-      plot.title   = element_text(face = "bold", size = 13),
-      plot.caption = element_text(size = 7, colour = "grey50")
-    )
-  )
-
-ggsave(
-  filename = "plot_clustering_comparison.png",
-  plot     = p_combined,
-  width    = 14, height = 7, dpi = 180, bg = "white"
-)
-cat("✓ Saved: plot_clustering_comparison.png\n")
-
 
 # ==============================================================================
 # (B) INTERACTIVE LEAFLET — layers for original, outliers, super-sites
@@ -360,7 +241,6 @@ cluster_map <- leaflet(options = leafletOptions(preferCanvas = TRUE)) %>%
   # --- Base tiles ---
   addProviderTiles("CartoDB.Positron",  group = "CartoDB (hell)") %>%
   addProviderTiles("OpenStreetMap.DE",  group = "OpenStreetMap DE") %>%
-  addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
   setView(lng = 11.85, lat = 51.55, zoom = 8) %>%
   addScaleBar(position = "bottomleft") %>%
   
