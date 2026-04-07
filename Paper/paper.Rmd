@@ -1013,7 +1013,7 @@ order_names <- consumers %>%
   pull(name_pseudo)
 
 demand_long <- demand_long %>%
-  mutate(name_short = factor(name_short, levels = order_names))
+  mutate(name_short = factor(name_pseudo, levels = order_names))
 
 ggplot(demand_long, aes(x = demand_kt, y = name_short, fill = product_label)) +
   geom_col(position = position_dodge(width = 0.75), width = 0.65,
