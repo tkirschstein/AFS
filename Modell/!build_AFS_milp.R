@@ -314,8 +314,8 @@ build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
         if (nrow(dem_row) == 0) next
         D_max_kpt <- dem_row$D_max[1]
         Xk <- Xjk_tuples[kk == kk_idx & tt == tt_idx & pp == p & pprod <= p]$col
-        if (length(X_cols) > 0) {
-          add_constraint(X_cols, rep(1, length(X_cols)), "<=", D_max_kpt)
+        if (length(Xk) > 0) {
+          add_constraint(Xk, rep(1, length(Xk)), "<=", D_max_kpt)
         }
       }
     }
