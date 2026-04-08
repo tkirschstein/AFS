@@ -72,15 +72,6 @@ library(ggplot2)
 library(tidyr)
 library(patchwork)
 
-# Chapman-Richards biomass function
-B_cr <- function(t, Bmax, k, m) {
-  Bmax * (1 - exp(-k * t))^m
-}
-
-# Gompertz growth function
-gomp <- function(t, A, k, t0) {
-  A * exp(-exp(-k * (t - t0)))
-}
 ```
 
 ```{r load-model-data, echo=FALSE, message=FALSE, warning=FALSE}
@@ -96,16 +87,33 @@ library(ggrepel)
 library(ggnewscale)
 library(rnaturalearth)
 library(rnaturalearthdata)
+library(Rcpp)
+library(RcppArmadillo)
 
 source("../Modell/!helper_func.r")
 source("../Modell/!helper_instance_builder_v8a.R")
-source("../Modell/build_agroforestry_lp_v10.R")
+source("../Modell/build_agroforestry_lp_v10_optimized.r")
+source("../Modell/build_agroforestry_lp_v10.r")
+source("../Modell/build_lp_rcpp_wrapper.R")
+#Rcpp::sourceCpp("../Modell/build_lp_rcpp.cpp")
+
+
+# Chapman-Richards biomass function
+B_cr <- function(t, Bmax, k, m) {
+  Bmax * (1 - exp(-k * t))^m
+}
+
+# Gompertz growth function
+gomp <- function(t, A, k, t0) {
+  A * exp(-exp(-k * (t - t0)))
+}
 
 #load("../Modell/afs_workspace.RData")
 load("afs_workspace_red.RData")
 
 sites_sf   <- afs_workspace$sites_sf
 sites      <- afs_workspace$sites
+sites_clustered      <- afs_workspace$sites_clustered
 storages   <- afs_workspace$storages
 consumers  <- afs_workspace$consumers
 
@@ -128,7 +136,43 @@ f_rest_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hr
 yields_by_age <- expand_grid(product = 1:3, age = 1:15)
 yields_by_age$yield_ha <- apply(yields_by_age, 1, function(row) B_AG_index(row[2] , row[1]))
 
-  
+sites_clustered <- afs_workspace$sites_clustered %>%
+  mutate(
+    C_est  = 2500,   # €/ha  establishment (Section 2.1 mid-range)
+    C_harv =  300    # €/ha  harvest cost  (Section 2.1 mid-range)
+  )
+
+data_obj <- list(
+  sites    = sites_clustered,
+  storages = afs_workspace$storages,
+  consumers = afs_workspace$consumers,
+  dist_ij  = afs_workspace$dist_ij_clust,
+  dist_jk  = afs_workspace$dist_jk
+)
+
+# ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
+params_obj <- list(
+  n_periods  = 40,
+  n_products = 3,
+  max_age    = 10L,    # A_max: LRAFS upper rotation bound
+  min_age    =  3L,    # A_min: SRAFS lower rotation bound
+  c_tr_raw   = 0.08,   # €/(t·km)  raw biomass  site → storage
+  c_tr_pre   = 0.06,   # €/(t·km)  chips        storage → consumer
+  c_opp      = 450     # €/(ha·yr) opportunity cost of arable land
+)
+
+# ── 4. CALL generate_instance_v8_final() ─────────────────────────────────────
+milp_instance <- generate_instance_v8_final(
+  data         = data_obj,
+  params       = params_obj,
+  yields_by_age = yields_by_age
+) 
+
+#build_agroforestry_lp_rcpp(milp_instance)
+
+result <- build_agroforestry_lp_sparse_v10_optimized(milp_instance)
+
+result <- build_agroforestry_lp_sparse_v10(milp_instance)
 
 ```
 
@@ -742,16 +786,16 @@ Constraints \eqref{eq:C1} limit each site to at most one establishment decision 
   \sum_{j \in \Jc} X_{ijpt}  &\leq Y_{ipt} && \forall\; i \in \Ic,\; p \in \Pc,\; t \in \Tc^{{harv}} \label{eq:C4} \\[2pt]
   %
   % --- C5: Inventory balance ---
-  S_{jpt}    = S_{jp,t-1} + &\sum_{i \in \Ic} X_{ijpt} - \sum_{k \in \Kc,\,(p,p') \in \Qc} X_{jkpp't}   && \forall\; j \in \Jc,\; p \in \Pc,\; t \in \Tc  \label{eq:C5} \\[2pt]
+  S_{jpt}    = S_{jp,t-1} + &\sum_{i \in \Ic} X_{ijpt} - \sum_{k \in \Kc,\,(p,p') \in \Qc} X_{jkpp't}   && \forall\; j \in \Jc,\; p \in \Pc,\; t \in \Tc^{harv}  \label{eq:C5} \\[2pt]
   %
   % --- C6: Storage capacity ---
   \sum_{p \in \Pc} S_{jpt}    &\leq \text{CAP}^{{stor}}_j    && \forall\; j \in \Jc,\; t \in \Tc     \label{eq:C6} \\[2pt]
   %
   % --- C7: Processing capacity ---
-  \sum_{i \in \Ic,\, p \in \Pc} X_{ijpt}  &\leq \text{CAP}^{{proc}}_j && \forall\; j \in \Jc,\; t \in \Tc \label{eq:C7} \\[2pt]
+  \sum_{i \in \Ic,\, p \in \Pc} X_{ijpt}  &\leq \text{CAP}^{{proc}}_j && \forall\; j \in \Jc,\; t \in \Tc^{harv} \label{eq:C7} \\[2pt]
   %
   % --- C8: Demand satisfaction with quality cascade ---
-  \sum_{j \in \Jc,\,(p',p) \in \Qc} X_{jkp'pt} &\leq D^{\max}_{kpt} && \forall\; k \in \Kc,\; p \in \Pc,\; t \in \Tc     \label{eq:C8} \\[2pt]
+  \sum_{j \in \Jc,\,(p',p) \in \Qc} X_{jkp'pt} &\leq D^{\max}_{kpt} && \forall\; k \in \Kc,\; p \in \Pc,\; t \in \Tc^{harv}     \label{eq:C8} \\[2pt]
   %
   % --- Domain: binary ---
   z_{ist} &\in \{0,1\} && \forall\; i \in \Ic,\; (s,t) \in \Sc \label{eq:D1} \\[2pt]

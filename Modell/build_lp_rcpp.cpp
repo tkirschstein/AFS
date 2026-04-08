@@ -38,6 +38,8 @@ List build_lp_rcpp(List instance) {
   double c_tr_raw = as<double>(instance["c_tr_raw"]);
   double c_tr_pre = as<double>(instance["c_tr_pre"]);
   
+  Rcpp::Rcout << "Initializing scalars\n";
+  
   // ── Extract vectors / matrices ───────────────────────────────────────────
   DataFrame sites_df   = as<DataFrame>(instance["sites"]);
   NumericVector area_ha = sites_df["area_ha"];
@@ -85,10 +87,10 @@ List build_lp_rcpp(List instance) {
     dem_lut[(dem_k[r]-1)*P*Tm + (dem_p[r]-1)*Tm + (dem_t[r]-1)] = dem_Dmax[r];
   }
   
-  Rcpp::Rcout << "Building sparse LP (Rcpp)...\n";
-  Rcpp::Rcout << "  ns=" << ns << "  nj=" << nj << "  nk=" << nk
-              << "  Tm=" << Tm << "  P=" << P << "\n";
-  
+  //Rcpp::Rcout << "Building sparse LP (Rcpp)...\n";
+  // Rcpp::Rcout << "  ns=" << ns << "  nj=" << nj << "  nk=" << nk
+  //             << "  Tm=" << Tm << "  P=" << P << "\n";
+  // 
   // ==========================================================================
   // STEP 1: VARIABLE INDEXING
   //   Layout (0-based column offsets):
@@ -146,11 +148,11 @@ List build_lp_rcpp(List instance) {
   int off_Xjk = off_S   + n_S;
   int n_vars  = off_Xjk + n_Xjk;
   
-  Rcpp::Rcout << "  n_vars=" << n_vars
-              << " (z:" << n_z << " Y:" << n_Y
-              << " Xij:" << n_Xij << " S:" << n_S
-              << " Xjk:" << n_Xjk << ")\n";
-  
+  // Rcpp::Rcout << "  n_vars=" << n_vars
+  //             << " (z:" << n_z << " Y:" << n_Y
+  //             << " Xij:" << n_Xij << " S:" << n_S
+  //             << " Xjk:" << n_Xjk << ")\n";
+  // 
   // ── Inline column index helpers ──────────────────────────────────────────
   // All indices 0-based internally; +1 when stored for R's 1-based triplet
   auto col_z = [&](int i, int arc) { return off_z + i * n_arcs + arc; };
@@ -257,7 +259,7 @@ List build_lp_rcpp(List instance) {
       rhs_v.push_back(1.0); sense_v.push_back("<="); row++;
     }
   }
-  Rcpp::Rcout << "  C1 done\n";
+  // Rcpp::Rcout << "  C1 done\n";
   
   // ── C2: Path connectivity: sum_{s<t} z(i,s,t) = sum_{u>t} z(i,t,u) ──────
   for (int i = 0; i < ns; i++) {
@@ -276,7 +278,7 @@ List build_lp_rcpp(List instance) {
       }
     }
   }
-  Rcpp::Rcout << "  C2 done\n";
+  // Rcpp::Rcout << "  C2 done\n";
   
   // ── C3a: Biomass yield: Y(i,p,t) <= sum_s yield*area*z(i,s,t) ───────────
   for (int i = 0; i < ns; i++)
@@ -300,7 +302,7 @@ List build_lp_rcpp(List instance) {
           row_v.pop_back(); col_v.pop_back(); val_v.pop_back();
         }
       }
-      Rcpp::Rcout << "  C3a done\n";
+      // Rcpp::Rcout << "  C3a done\n";
   
   // ── C4: Flow balance: sum_j Xij(i,j,p,t) <= Y(i,p,t) ───────────────────
   for (int i = 0; i < ns; i++)
@@ -311,7 +313,7 @@ List build_lp_rcpp(List instance) {
           push(row, col_Xij(i, j, p, th), 1.0);
         rhs_v.push_back(0.0); sense_v.push_back("<="); row++;
       }
-      Rcpp::Rcout << "  C4 done\n";
+      // Rcpp::Rcout << "  C4 done\n";
   
   // ── C6: Inventory balance: S(j,p,t) = S(j,p,t-1) + Xij_in - Xjk_out ────
   for (int j = 0; j < nj; j++)
@@ -339,7 +341,7 @@ List build_lp_rcpp(List instance) {
             }
             rhs_v.push_back(0.0); sense_v.push_back("=="); row++;
       }
-      Rcpp::Rcout << "  C6 done\n";
+      // Rcpp::Rcout << "  C6 done\n";
   
   // ── C7: Storage capacity: sum_p S(j,p,t) <= CAP_stor[j] ─────────────────
   for (int j = 0; j < nj; j++)
@@ -347,7 +349,7 @@ List build_lp_rcpp(List instance) {
       for (int p = 0; p < P; p++) push(row, col_S(j, p, t), 1.0);
       rhs_v.push_back(CAP_stor[j]); sense_v.push_back("<="); row++;
     }
-    Rcpp::Rcout << "  C7 done\n";
+    // Rcpp::Rcout << "  C7 done\n";
   
   // ── C8: Processing capacity: sum_{i,p} Xij(i,j,p,t) <= CAP_proc[j] ──────
   for (int j = 0; j < nj; j++)
@@ -357,7 +359,7 @@ List build_lp_rcpp(List instance) {
           push(row, col_Xij(i, j, p, th), 1.0);
       rhs_v.push_back(CAP_proc[j]); sense_v.push_back("<="); row++;
     }
-    Rcpp::Rcout << "  C8 done\n";
+    // Rcpp::Rcout << "  C8 done\n";
   
   // ── C9: Demand with cascade: sum_j Xjk(j,k,q,p,t) <= D_max(k,p,t) ───────
   for (int k = 0; k < nk; k++)
@@ -374,11 +376,11 @@ List build_lp_rcpp(List instance) {
           }
           rhs_v.push_back(Dmax); sense_v.push_back("<="); row++;
       }
-      Rcpp::Rcout << "  C9 done\n";
-  
-  Rcpp::Rcout << "  Total constraints: " << row
-              << ", nnz: " << row_v.size() << "\n";
-  
+  //     Rcpp::Rcout << "  C9 done\n";
+  // 
+  // Rcpp::Rcout << "  Total constraints: " << row
+  //             << ", nnz: " << row_v.size() << "\n";
+  // 
   // ==========================================================================
   // STEP 4: RETURN LIST FOR ROI::OP() in R
   // ==========================================================================

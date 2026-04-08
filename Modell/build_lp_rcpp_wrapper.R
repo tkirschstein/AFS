@@ -6,16 +6,17 @@ build_agroforestry_lp_rcpp <- function(instance) {
   cat("Calling Rcpp LP builder...\n")
   
   # Pre-compute yield_matrix once in R (clean interface boundary)
-  instance$yield_matrix <- local({
-    m <- matrix(0, nrow = instance$n_products, ncol = instance$n_periods)
-    yba <- instance$yields_by_age
-    for (p in seq_len(instance$n_products))
-      for (age in seq_len(instance$n_periods)) {
-        r <- yba[yba$product == p & yba$age == age, "yield_ha"]
-        if (length(r) > 0) m[p, age] <- r[1]
-      }
-    m
-  })
+  # instance$yield_matrix <- local({
+  #   m <- matrix(0, nrow = instance$n_products, ncol = instance$max_age)
+  #   yba <- instance$yields_by_age
+  #   for (p in seq_len(instance$n_products))
+  #     for (age in seq_len(instance$max_age)) {
+  #       r <- yba[yba$product == p & yba$age == age, "yield_ha"]
+  #       if (length(r) > 0) m[p, age] <- r[1]
+  #     }
+  #   m
+  # })
+  instance$yield_matrix <- matrix(instance$yields_by_age$yield_ha, nrow = instance$n_products, ncol = (max(instance$yields_by_age$age)-min(instance$yields_by_age$age)+1), byrow=T)  # flatten to 1D for Rcpp
   
   # Call C++ builder
   cpp_out <- build_lp_rcpp(instance)

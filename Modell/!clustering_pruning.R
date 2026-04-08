@@ -397,6 +397,12 @@ afs_workspace$site_cluster_assig <- sites_core %>%
   select(site_id, lat, lng, area, hac_cluster)
 
 
+# add storage cost column to storages (if column c_stor is not existing)
+if("c_stor" %in% colnames(afs_workspace$storages)) {
+  afs_workspace$storages <- afs_workspace$storages %>%
+    mutate(c_stor = 10)  # example: 10 €/t and year storage cost
+}
+
 # calculate new distance matrix with OSRM for the clustered sites
 
 dist_ij_clustered <- calculate_distance_matrix_osm(
