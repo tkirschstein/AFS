@@ -1,4 +1,4 @@
-build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
+build_AFS_milp <- function(instance) {
   if (!requireNamespace("data.table", quietly = TRUE)) {
     stop("Package 'data.table' is required. Install with: install.packages('data.table')")
   }
@@ -79,14 +79,14 @@ build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
   # Xij[ii,jj,pprod,tt]
   Xij_tuples <- as.data.table(expand.grid(ii = I, jj = J, pprod = Pset, tt = Tharv))
   Xij_tuples[, `:=`(ub = Inf,
-                    col = .I + n_z + n_Y)]
+                    col = .I + n_z)]
   n_Xij <- nrow(Xij_tuples)
   
   # S[jj,pprod,tt]
   S_tuples <- as.data.table(expand.grid(jj = J, pprod = Pset, tt = Tharv))
   S_tuples[, `:=`(
     ub  = instance$storages$CAP_stor[jj],
-    col = .I + n_z + n_Y + n_Xij
+    col = .I + n_z + n_Xij
   )]
   n_S <- nrow(S_tuples)
   
@@ -97,7 +97,7 @@ build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
   Xjk_tuples[, ub := Inf]
   Xjk_tuples[pp < pprod, ub := 0]
   Xjk_tuples <- Xjk_tuples[ub > 0]
-  Xjk_tuples[, col := .I + n_z + n_Y + n_Xij + n_S]
+  Xjk_tuples[, col := .I + n_z + n_Xij + n_S]
   n_Xjk <- nrow(Xjk_tuples)
   
   n_vars <- max(Xjk_tuples$col)
@@ -231,7 +231,7 @@ build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
   
   ## C3: Biomass yield 
   for (ii_idx in I) {
-    area_i <- area_ha[ii_idx]
+    area_i <- area_ha[as.character(ii_idx)]
     for (pp_idx in Pset) {
       for (tt_idx in Tharv) {
         X_row <- Xij_tuples[ii ==  ii_idx & pprod == pp_idx & tt == tt_idx]
@@ -241,7 +241,7 @@ build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
         if (nrow(z_arcs) > 0) {
           age_vec  <- tt_idx - z_arcs$s
           col_all  <- c(X_col, z_arcs$col)
-          coef_all <- c(1, -yield_matrix[pprod, age_vec] * area_i)
+          coef_all <- c(1, -yield_matrix[pp_idx, age_vec] * area_i)
           add_constraint(col_all, coef_all, "<=", 0)
         }
       }
@@ -249,7 +249,7 @@ build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
   }
   cat("  C3: Biomass yield\n")
   
-  ## C6: Inventory balance
+  ## C4: Inventory balance
   for (jj_idx in J) {
     for (p in Pset) {
       # t = Amin+1 (first harvest period)
@@ -263,7 +263,7 @@ build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
         add_constraint(col_all, coef_all, "==", 0)
       }
       # t >= Amin + 1
-      for (tt_idx in Tharv[Tharv >= Amin+1]) {
+      for (tt_idx in Tharv[Tharv > Amin+1]) {
         S_row_t   <- S_tuples[.(jj_idx, p, tt_idx), nomatch = 0]
         if (nrow(S_row_t) == 0) next
         S_col_t   <- S_row_t$col
@@ -276,9 +276,9 @@ build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
       }
     }
   }
-  cat("  C6: Inventory balance\n")
+  cat("  C4: Inventory balance\n")
   
-  ## C7: Storage capacity
+  ## C5: Storage capacity
   for (jj_idx in J) {
     for (tt_idx in Tharv) {
       S_cols <- S_tuples[jj == jj_idx & tt == tt_idx]$col
@@ -287,9 +287,9 @@ build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
       }
     }
   }
-  cat("  C7: Storage capacity\n")
+  cat("  C5: Storage capacity\n")
   
-  ## C8: Processing capacity
+  ## C6: Processing capacity
   for (jj_idx in J) {
     for (tt_idx in Tharv) {
       X_cols <- Xij_tuples[jj == jj_idx & tt == tt_idx]$col
@@ -299,9 +299,9 @@ build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
       }
     }
   }
-  cat("  C8: Processing capacity\n")
+  cat("  C6: Processing capacity\n")
   
-  ## C9: Demand with cascade
+  ## C7: Demand with cascade
   demand_dt <- as.data.table(instance$demand)
   setnames(demand_dt, c("consumer_id", "product", "period", "D_max"),
            c("kk", "pp", "tt", "D_max"))
@@ -310,7 +310,7 @@ build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
   for (kk_idx in K) {
     for (p in Pset) {  # demanded product
       for (tt_idx in Tharv) {
-        dem_row <- demand_dt[.(kk_idx, pprod, tt_idx), nomatch = 0]
+        dem_row <- demand_dt[.(kk_idx, p, tt_idx), nomatch = 0]
         if (nrow(dem_row) == 0) next
         D_max_kpt <- dem_row$D_max[1]
         Xk <- Xjk_tuples[kk == kk_idx & tt == tt_idx & pp == p & pprod <= p]$col
@@ -320,7 +320,7 @@ build_agroforestry_lp_sparse_v10_optimized <- function(instance) {
       }
     }
   }
-  cat("  C9: Demand satisfaction\n")
+  cat("  C7: Demand satisfaction\n")
   
   # Trim preallocated
   row_idx   <- row_idx[1:nnz_ptr]
