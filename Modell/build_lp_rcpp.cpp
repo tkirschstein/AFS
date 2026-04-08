@@ -4,406 +4,408 @@
 #include <RcppArmadillo.h>
 #include <vector>
 #include <string>
+#include <algorithm>
 using namespace Rcpp;
 
 // ============================================================================
-// HELPER: flat index lookup into pre-built hash maps
-//   Key encoding: (a,b,c,d) → a + A*(b + B*(c + C*d))
-// ============================================================================
-inline int idx3(int a, int b, int c, int B, int C) {
-  return a + B * (b + C * c);
-}
-inline int idx4(int a, int b, int c, int d, int B, int C, int D) {
-  return a + B * (b + C * (c + D * d));
-}
-
-// ============================================================================
-// MAIN FUNCTION — mirrors build_agroforestry_lp_sparse_v10 in pure C++
+// build_lp_rcpp.cpp
+// Rcpp LP builder — mirrors build_agroforestry_lp_sparse_v10_optimized() in
+// !build_AFS_milp.R exactly.
 //
-// @param instance  Named R list (same structure as in the R version)
-// @return          Named list: model components for ROI::OP()
+// Variable layout (0-based column offsets):
+//   [off_z  .. off_z  + n_z  - 1]  z[i, arc]       binary
+//   [off_Xij.. off_Xij + n_Xij-1]  Xij[i,j,p,th]   continuous
+//   [off_S  .. off_S  + n_S  - 1]  S[j,p,th]        continuous
+//   [off_Xjk.. off_Xjk + n_Xjk-1] Xjk[j,k,pi,th]  continuous
+//
+// NOTE: Variable Y has been removed. C3 directly constrains
+//       sum_j Xij(i,j,p,t) <= sum_{s>=1,s<t} eta_{p,t-s} * AREA_i * z(i,s,t)
+//
+// Constraints (labels match !build_AFS_milp.R):
+//   C1  Path establishment
+//   C2  Path connectivity
+//   C3  Biomass yield + shipping bound  (merged, <=)
+//   C6  Inventory balance               (== , only Tharv)
+//   C7  Storage capacity                (<= , only Tharv)
+//   C8  Processing capacity             (<= , only Tharv)
+//   C9  Demand with cascade             (<= )
+//
+// Authors: SmartAgroforst 2026
 // ============================================================================
+
 // [[Rcpp::export]]
 List build_lp_rcpp(List instance) {
-  
-  // ── Extract scalars ──────────────────────────────────────────────────────
-  int ns   = as<int>(instance["n_sites"]);
-  int nj   = as<int>(instance["n_storages"]);
-  int nk   = as<int>(instance["n_consumers"]);
-  int Tm   = as<int>(instance["n_periods"]);
-  int P    = as<int>(instance["n_products"]);
-  int Amax = as<int>(instance["max_age"]);
-  int Amin = as<int>(instance["min_age"]);
+
+  // ── Scalars ────────────────────────────────────────────────────────────────
+  int    ns      = as<int>(instance["n_sites"]);
+  int    nj      = as<int>(instance["n_storages"]);
+  int    nk      = as<int>(instance["n_consumers"]);
+  int    Tm      = as<int>(instance["n_periods"]);
+  int    P       = as<int>(instance["n_products"]);
+  int    Amax    = as<int>(instance["max_age"]);
+  int    Amin    = as<int>(instance["min_age"]);
   double Copp     = as<double>(instance["c_opp"]);
   double c_tr_raw = as<double>(instance["c_tr_raw"]);
   double c_tr_pre = as<double>(instance["c_tr_pre"]);
-  
-  Rcpp::Rcout << "Initializing scalars\n";
-  
-  // ── Extract vectors / matrices ───────────────────────────────────────────
-  DataFrame sites_df   = as<DataFrame>(instance["sites"]);
+
+  Rcpp::Rcout << "Building sparse LP (Rcpp v10-no-Y)...\n";
+
+  // ── Site / storage vectors ─────────────────────────────────────────────────
+  DataFrame sites_df  = as<DataFrame>(instance["sites"]);
   NumericVector area_ha = sites_df["area_ha"];
   NumericVector C_est   = sites_df["C_est"];
   NumericVector C_harv  = sites_df["C_harv"];
-  
-  DataFrame storages_df   = as<DataFrame>(instance["storages"]);
-  NumericVector CAP_stor  = storages_df["CAP_stor"];
-  NumericVector CAP_proc  = storages_df["CAP_proc"];
-  NumericVector c_stor    = storages_df["c_stor"];
-  
+
+  DataFrame storages_df = as<DataFrame>(instance["storages"]);
+  NumericVector CAP_stor = storages_df["CAP_stor"];
+  NumericVector CAP_proc = storages_df["CAP_proc"];
+  NumericVector c_stor   = storages_df["c_stor"];
+
   NumericMatrix d_ij = as<NumericMatrix>(instance["d_ij"]);  // [ns x nj]
   NumericMatrix d_jk = as<NumericMatrix>(instance["d_jk"]);  // [nj x nk]
-  
-  // ── Yield matrix [P x Tm] ────────────────────────────────────────────────
-  // Passed as a pre-computed matrix from R (avoids slow R loop in C++)
+
+  // ── Yield matrix [P x Tm] (1-based age → column age-1) ────────────────────
+  // Passed from R wrapper as matrix(nrow=P, ncol=Tm)
   NumericMatrix yield_matrix = as<NumericMatrix>(instance["yield_matrix"]);
-  NumericVector yield_max(P);
-  for (int p = 0; p < P; p++) {
-    double mx = 0.0;
-    for (int t = 0; t < Tm; t++) mx = std::max(mx, yield_matrix(p, t));
-    yield_max[p] = mx;
-  }
-  
-  // ── Consumer prices DataFrame [k, pp, price] ─────────────────────────────
-  DataFrame cp        = as<DataFrame>(instance["consumer_prices"]);
+
+  // ── Consumer prices look-up (k-1)*P + (pp-1) → price ─────────────────────
+  DataFrame cp       = as<DataFrame>(instance["consumer_prices"]);
   IntegerVector cp_k  = cp[0];
   IntegerVector cp_pp = cp[1];
   NumericVector cp_pr = cp[2];
-  // Build price lookup: (k-1)*P + (pp-1) → price
   NumericVector price_lut(nk * P, 0.0);
-  for (int r = 0; r < cp_k.size(); r++) {
+  for (int r = 0; r < cp_k.size(); r++)
     price_lut[(cp_k[r]-1) * P + (cp_pp[r]-1)] = cp_pr[r];
-  }
-  
-  // ── Demand DataFrame [consumer_id, product, period, D_max] ───────────────
-  DataFrame dem_df      = as<DataFrame>(instance["demand"]);
-  IntegerVector dem_k   = dem_df["consumer_id"];
-  IntegerVector dem_p   = dem_df["product"];
-  IntegerVector dem_t   = dem_df["period"];
-  NumericVector dem_Dmax= dem_df["D_max"];
-  // Build demand lookup: (k-1)*P*Tm + (p-1)*Tm + (t-1) → D_max
+
+  // ── Demand look-up (k-1)*P*Tm + (p-1)*Tm + (t-1) → D_max ────────────────
+  DataFrame dem_df     = as<DataFrame>(instance["demand"]);
+  IntegerVector dem_k  = dem_df["consumer_id"];
+  IntegerVector dem_p  = dem_df["product"];
+  IntegerVector dem_t  = dem_df["period"];
+  NumericVector dem_Dmax = dem_df["D_max"];
   NumericVector dem_lut(nk * P * Tm, -1.0);
-  for (int r = 0; r < dem_k.size(); r++) {
+  for (int r = 0; r < dem_k.size(); r++)
     dem_lut[(dem_k[r]-1)*P*Tm + (dem_p[r]-1)*Tm + (dem_t[r]-1)] = dem_Dmax[r];
-  }
-  
-  //Rcpp::Rcout << "Building sparse LP (Rcpp)...\n";
-  // Rcpp::Rcout << "  ns=" << ns << "  nj=" << nj << "  nk=" << nk
-  //             << "  Tm=" << Tm << "  P=" << P << "\n";
-  // 
+
   // ==========================================================================
   // STEP 1: VARIABLE INDEXING
-  //   Layout (0-based column offsets):
-  //     z_tuples : ns * n_arcs_per_site
-  //     Y_tuples : ns * P * Tharv
-  //     Xij      : ns * nj * P * Tharv
-  //     S        : nj * P * Tm
-  //     Xjk      : nj * nk * P * P * Tharv  (filtered: pp >= p)
   // ==========================================================================
-  
-  // ── Build valid arc list (s < t, arc length in [Amin,Amax]) ─────────────
-  // T_ext = 0..Tm+1
+
+  // ── Valid arcs (s,t) ───────────────────────────────────────────────────────
+  // Mirrors z_tuples construction in !build_AFS_milp.R:
+  //   s == 0 && t in 1..Tm                         → establishment arcs
+  //   s >= 1 && t == Tm+1                          → termination arcs
+  //   s >= 1 && t in 1..Tm && (t-s) in [Amin,Amax]→ harvest arcs
   struct Arc { int s, t; };
   std::vector<Arc> arcs;
-  arcs.reserve(Tm * Tm / 2);
+  arcs.reserve((Tm + 2) * (Amax - Amin + 2));
   for (int s = 0; s <= Tm + 1; s++) {
     for (int t = s + 1; t <= Tm + 1; t++) {
       int len = t - s;
-      // arc (0,t) with t in 1..Tm: establishment arcs
-      if (s == 0 && t >= 1 && t <= Tm) { arcs.push_back({s, t}); continue; }
-      // arc (s,Tm+1) with s >= 1: termination arcs
-      if (t == Tm + 1 && s >= 1)      { arcs.push_back({s, t}); continue; }
-      // harvest arcs: s >= 1, t in Tset, len in [Amin,Amax]
+      if (s == 0 && t >= 1 && t <= Tm) {
+        arcs.push_back({s, t}); continue;
+      }
+      if (t == Tm + 1 && s >= 1) {
+        arcs.push_back({s, t}); continue;
+      }
       if (s >= 1 && t >= 1 && t <= Tm && len >= Amin && len <= Amax) {
         arcs.push_back({s, t});
       }
     }
   }
-  int n_arcs = arcs.size();
-  
-  // Harvest periods: t in 1..Tm where t > max(1, Amin)
+  int n_arcs = (int)arcs.size();
+
+  // ── Harvest periods: Tset[Tset > max(1, Amin)] ────────────────────────────
   std::vector<int> Tharv;
   int t_min_harv = std::max(1, Amin) + 1;
   for (int t = t_min_harv; t <= Tm; t++) Tharv.push_back(t);
-  int nTh = Tharv.size();
-  
-  // ── Contiguous column offsets ────────────────────────────────────────────
+  int nTh = (int)Tharv.size();
+
+  // ── Variable counts ───────────────────────────────────────────────────────
+  // No Y variable — matches !build_AFS_milp.R
   int n_z   = ns * n_arcs;
-  int n_Y   = ns * P * nTh;
   int n_Xij = ns * nj * P * nTh;
-  int n_S   = nj * P * Tm;
-  
-  // Xjk: only pp >= p  →  count valid (p,pp) pairs
-  std::vector<std::pair<int,int>> pp_pairs;  // (p, pp) 0-based
+  int n_S   = nj * P * nTh;          // indexed over Tharv only (matches R)
+
+  // Xjk: only pp >= p (0-based: second >= first)
+  std::vector<std::pair<int,int>> pp_pairs;
   for (int p = 0; p < P; p++)
     for (int pp = p; pp < P; pp++)
       pp_pairs.push_back({p, pp});
-  int n_ppairs = pp_pairs.size();
+  int n_ppairs = (int)pp_pairs.size();
   int n_Xjk = nj * nk * n_ppairs * nTh;
-  
+
   int off_z   = 0;
-  int off_Y   = off_z   + n_z;
-  int off_Xij = off_Y   + n_Y;
+  int off_Xij = off_z   + n_z;
   int off_S   = off_Xij + n_Xij;
   int off_Xjk = off_S   + n_S;
   int n_vars  = off_Xjk + n_Xjk;
-  
-  // Rcpp::Rcout << "  n_vars=" << n_vars
-  //             << " (z:" << n_z << " Y:" << n_Y
-  //             << " Xij:" << n_Xij << " S:" << n_S
-  //             << " Xjk:" << n_Xjk << ")\n";
-  // 
-  // ── Inline column index helpers ──────────────────────────────────────────
-  // All indices 0-based internally; +1 when stored for R's 1-based triplet
-  auto col_z = [&](int i, int arc) { return off_z + i * n_arcs + arc; };
-  auto col_Y = [&](int i, int p, int th) {
-    return off_Y + i * (P * nTh) + p * nTh + th;
+
+  Rcpp::Rcout << "  n_vars=" << n_vars
+              << " (z:" << n_z
+              << " Xij:" << n_Xij
+              << " S:" << n_S
+              << " Xjk:" << n_Xjk << ")\n";
+
+  // ── Column index lambdas (0-based) ────────────────────────────────────────
+  auto col_z = [&](int i, int arc) {
+    return off_z + i * n_arcs + arc;
   };
   auto col_Xij = [&](int i, int j, int p, int th) {
-    return off_Xij + i * (nj * P * nTh) + j * (P * nTh) + p * nTh + th;
+    return off_Xij + i*(nj*P*nTh) + j*(P*nTh) + p*nTh + th;
   };
-  auto col_S = [&](int j, int p, int t) {
-    return off_S + j * (P * Tm) + p * Tm + t;
+  // S indexed over th (position in Tharv), not raw period
+  auto col_S = [&](int j, int p, int th) {
+    return off_S + j*(P*nTh) + p*nTh + th;
   };
-  auto col_Xjk = [&](int j, int k, int pairIdx, int th) {
-    return off_Xjk + j * (nk * n_ppairs * nTh)
-    + k * (n_ppairs * nTh)
-    + pairIdx * nTh + th;
+  auto col_Xjk = [&](int j, int k, int pi, int th) {
+    return off_Xjk + j*(nk*n_ppairs*nTh) + k*(n_ppairs*nTh) + pi*nTh + th;
   };
-  
+
+  // Helper: find th index for a given 1-based period; returns -1 if not in Tharv
+  auto find_th = [&](int t1) -> int {
+    for (int th = 0; th < nTh; th++)
+      if (Tharv[th] == t1) return th;
+    return -1;
+  };
+
   // ==========================================================================
-  // STEP 2: OBJECTIVE VECTOR  (pre-allocated)
+  // STEP 2: OBJECTIVE VECTOR
+  // Mirrors Step 2 of !build_AFS_milp.R exactly
   // ==========================================================================
   std::vector<double> c_vec(n_vars, 0.0);
-  
-  // Revenue: price[k,pp] for each Xjk
+
+  // Revenue: price[k, pp] on Xjk (pp = pp_pairs[pi].second, 0-based)
   for (int j = 0; j < nj; j++)
     for (int k = 0; k < nk; k++)
       for (int pi = 0; pi < n_ppairs; pi++) {
-        int pp = pp_pairs[pi].second;
+        int pp = pp_pairs[pi].second;  // 0-based product index
         double pr = price_lut[k * P + pp];
         for (int th = 0; th < nTh; th++)
           c_vec[col_Xjk(j, k, pi, th)] += pr;
       }
-      
-      // Establishment + opportunity cost on z(i, 0, t)
-      for (int a = 0; a < n_arcs; a++) {
-        if (arcs[a].s != 0) continue;
-        int t = arcs[a].t;
-        if (t < 1 || t > Tm) continue;
-        for (int i = 0; i < ns; i++) {
-          int col = col_z(i, a);
-          c_vec[col] -= C_est[i];
-          c_vec[col] -= Copp * area_ha[i] * (Tm - t);
-        }
-      }
-      
-      // Harvest cost on z(i, s>=1, t)
-      for (int a = 0; a < n_arcs; a++) {
-        if (arcs[a].s < 1 || arcs[a].t > Tm) continue;
-        for (int i = 0; i < ns; i++)
-          c_vec[col_z(i, a)] -= C_harv[i] * area_ha[i];
-      }
-      
-      // Transport site→hub: -c_tr_raw * d_ij[i,j] for each Xij
-      for (int i = 0; i < ns; i++)
-        for (int j = 0; j < nj; j++) {
-          double cost = c_tr_raw * d_ij(i, j);
-          for (int p = 0; p < P; p++)
-            for (int th = 0; th < nTh; th++)
-              c_vec[col_Xij(i, j, p, th)] -= cost;
-        }
-        
-        // Transport hub→consumer: -c_tr_pre * d_jk[j,k]
-        for (int j = 0; j < nj; j++)
-          for (int k = 0; k < nk; k++) {
-            double cost = c_tr_pre * d_jk(j, k);
-            for (int pi = 0; pi < n_ppairs; pi++)
-              for (int th = 0; th < nTh; th++)
-                c_vec[col_Xjk(j, k, pi, th)] -= cost;
-          }
-          
-          // Storage cost
-          for (int j = 0; j < nj; j++)
-            for (int p = 0; p < P; p++)
-              for (int t = 0; t < Tm; t++)
-                c_vec[col_S(j, p, t)] -= c_stor[j];
-  
+
+  // Establishment cost + opportunity cost: z(i, 0, t), t in 1..Tm
+  for (int a = 0; a < n_arcs; a++) {
+    if (arcs[a].s != 0) continue;
+    int t = arcs[a].t;
+    if (t < 1 || t > Tm) continue;
+    for (int i = 0; i < ns; i++) {
+      int c = col_z(i, a);
+      c_vec[c] -= C_est[i];                           // establishment cost
+      c_vec[c] -= Copp * area_ha[i] * (Tm - t);      // opportunity cost
+    }
+  }
+
+  // Harvest cost: z(i, s>=1, t in 1..Tm)
+  for (int a = 0; a < n_arcs; a++) {
+    if (arcs[a].s < 1 || arcs[a].t > Tm) continue;
+    for (int i = 0; i < ns; i++)
+      c_vec[col_z(i, a)] -= C_harv[i] * area_ha[i];
+  }
+
+  // Transport site → hub: -c_tr_raw * d_ij[i,j]
+  for (int i = 0; i < ns; i++)
+    for (int j = 0; j < nj; j++) {
+      double cost = c_tr_raw * d_ij(i, j);
+      for (int p = 0; p < P; p++)
+        for (int th = 0; th < nTh; th++)
+          c_vec[col_Xij(i, j, p, th)] -= cost;
+    }
+
+  // Transport hub → consumer: -c_tr_pre * d_jk[j,k]
+  for (int j = 0; j < nj; j++)
+    for (int k = 0; k < nk; k++) {
+      double cost = c_tr_pre * d_jk(j, k);
+      for (int pi = 0; pi < n_ppairs; pi++)
+        for (int th = 0; th < nTh; th++)
+          c_vec[col_Xjk(j, k, pi, th)] -= cost;
+    }
+
+  // Storage cost: -c_stor[j] per unit S(j,p,th)
+  for (int j = 0; j < nj; j++)
+    for (int p = 0; p < P; p++)
+      for (int th = 0; th < nTh; th++)
+        c_vec[col_S(j, p, th)] -= c_stor[j];
+
   // ==========================================================================
-  // STEP 3: CONSTRAINT ASSEMBLY  (pre-allocated STL vectors)
+  // STEP 3: CONSTRAINTS
   // ==========================================================================
-  // Generous pre-allocation: avoids any reallocation during fill
-  int est_nnz = n_z * 4 + n_Y * 3 + n_Xij * 2 + n_S * 4 + n_Xjk * 2;
+  int est_nnz = n_z * 4 + n_Xij * 3 + n_S * 4 + n_Xjk * 2;
   std::vector<int>    row_v; row_v.reserve(est_nnz);
   std::vector<int>    col_v; col_v.reserve(est_nnz);
   std::vector<double> val_v; val_v.reserve(est_nnz);
   std::vector<double> rhs_v;
   std::vector<std::string> sense_v;
-  int row = 0;  // 0-based; +1 when pushed to R
-  
+  int nrow = 0;  // constraint counter (0-based)
+
+  // push one nonzero (1-based indices for R slam)
   auto push = [&](int r, int c, double v) {
-    row_v.push_back(r + 1);   // 1-based for R
+    row_v.push_back(r + 1);
     col_v.push_back(c + 1);
     val_v.push_back(v);
   };
-  
-  // ── C1: Path establishment: sum_t z(i,0,t) <= 1 ─────────────────────────
+  auto add_con = [&](const std::string& sense, double rhs) {
+    sense_v.push_back(sense);
+    rhs_v.push_back(rhs);
+    nrow++;
+  };
+
+  // ── C1: Path establishment: sum_t z(i,0,t) <= 1 ──────────────────────────
   for (int i = 0; i < ns; i++) {
     bool any = false;
     for (int a = 0; a < n_arcs; a++) {
       if (arcs[a].s != 0 || arcs[a].t < 1 || arcs[a].t > Tm) continue;
-      push(row, col_z(i, a), 1.0);
+      push(nrow, col_z(i, a), 1.0);
       any = true;
     }
-    if (any) {
-      rhs_v.push_back(1.0); sense_v.push_back("<="); row++;
-    }
+    if (any) add_con("<=", 1.0);
   }
-  // Rcpp::Rcout << "  C1 done\n";
-  
-  // ── C2: Path connectivity: sum_{s<t} z(i,s,t) = sum_{u>t} z(i,t,u) ──────
+  Rcpp::Rcout << "  C1 done\n";
+
+  // ── C2: Path connectivity: sum_{s<t} z(i,s,t) = sum_{u>t} z(i,t,u) ───────
   for (int i = 0; i < ns; i++) {
     for (int t = 1; t <= Tm; t++) {
       bool any = false;
       for (int a = 0; a < n_arcs; a++) {
         if (arcs[a].t == t && arcs[a].s < t) {
-          push(row, col_z(i, a), +1.0); any = true;
-        }
-        if (arcs[a].s == t && arcs[a].t > t) {
-          push(row, col_z(i, a), -1.0); any = true;
+          push(nrow, col_z(i, a), +1.0); any = true;
+        } else if (arcs[a].s == t && arcs[a].t > t) {
+          push(nrow, col_z(i, a), -1.0); any = true;
         }
       }
-      if (any) {
-        rhs_v.push_back(0.0); sense_v.push_back("=="); row++;
+      if (any) add_con("==", 0.0);
+    }
+  }
+  Rcpp::Rcout << "  C2 done\n";
+
+  // ── C3: Combined yield + shipping bound (NO Y variable) ───────────────────
+  // Mirrors !build_AFS_milp.R C3 exactly:
+  //   sum_j Xij(i,j,p,t) - sum_{s>=1, s<t} eta_{p, t-s} * AREA_i * z(i,s,t) <= 0
+  // Age index: age = t - s  (1-based), yield_matrix is [P x Tm] (1-based cols)
+  for (int i = 0; i < ns; i++) {
+    for (int p = 0; p < P; p++) {
+      for (int th = 0; th < nTh; th++) {
+        int t = Tharv[th];
+        // Collect harvest arcs s>=1, s<t arriving at t
+        std::vector<int> harv_arcs;
+        for (int a = 0; a < n_arcs; a++) {
+          if (arcs[a].t == t && arcs[a].s >= 1 && arcs[a].s < t)
+            harv_arcs.push_back(a);
+        }
+        if (harv_arcs.empty()) continue;
+
+        // + sum_j Xij coefficients
+        for (int j = 0; j < nj; j++)
+          push(nrow, col_Xij(i, j, p, th), 1.0);
+
+        // - eta_{p, age} * area_ha * z coefficients
+        for (int a : harv_arcs) {
+          int age = t - arcs[a].s;        // 1-based age (1..Amax)
+          if (age < 1 || age > Tm) continue;
+          double coef = yield_matrix(p, age - 1) * area_ha[i];  // age-1 = 0-based col
+          if (coef > 0.0)
+            push(nrow, col_z(i, a), -coef);
+        }
+        add_con("<=", 0.0);
       }
     }
   }
-  // Rcpp::Rcout << "  C2 done\n";
-  
-  // ── C3a: Biomass yield: Y(i,p,t) <= sum_s yield*area*z(i,s,t) ───────────
-  for (int i = 0; i < ns; i++)
-    for (int p = 0; p < P; p++)
+  Rcpp::Rcout << "  C3 done\n";
+
+  // ── C6: Inventory balance ─────────────────────────────────────────────────
+  // S(j,p,th) = S(j,p,th-1) + sum_i Xij(i,j,p,th) - sum_k sum_{pp>=p} Xjk
+  // Loop only over Tharv (matches R); S boundary at th=0 is implicitly zero.
+  for (int j = 0; j < nj; j++) {
+    for (int p = 0; p < P; p++) {
       for (int th = 0; th < nTh; th++) {
-        int t = Tharv[th];
-        int Ycol = col_Y(i, p, th);
-        bool any = false;
-        push(row, Ycol, 1.0);
-        for (int a = 0; a < n_arcs; a++) {
-          if (arcs[a].t != t || arcs[a].s < 1 || arcs[a].s >= t) continue;
-          int age = t - arcs[a].s - 1;  // 0-based index into yield_matrix
-          if (age < 0 || age >= Tm) continue;
-          double coef = yield_matrix(p, age) * area_ha[i];
-          if (coef > 0.0) { push(row, col_z(i, a), -coef); any = true; }
-        }
-        if (any) {
-          rhs_v.push_back(0.0); sense_v.push_back("<="); row++;
-        } else {
-          // Remove the Y entry we pushed if no arcs found
-          row_v.pop_back(); col_v.pop_back(); val_v.pop_back();
-        }
+        // + S(j,p,th)
+        push(nrow, col_S(j, p, th), 1.0);
+        // - S(j,p,th-1)  if th > 0
+        if (th > 0)
+          push(nrow, col_S(j, p, th - 1), -1.0);
+        // - sum_i Xij(i,j,p,th)
+        for (int i = 0; i < ns; i++)
+          push(nrow, col_Xij(i, j, p, th), -1.0);
+        // + sum_k sum_{pi: pp_pairs[pi].first == p} Xjk
+        for (int k = 0; k < nk; k++)
+          for (int pi = 0; pi < n_ppairs; pi++) {
+            if (pp_pairs[pi].first != p) continue;
+            push(nrow, col_Xjk(j, k, pi, th), +1.0);
+          }
+        add_con("==", 0.0);
       }
-      // Rcpp::Rcout << "  C3a done\n";
-  
-  // ── C4: Flow balance: sum_j Xij(i,j,p,t) <= Y(i,p,t) ───────────────────
-  for (int i = 0; i < ns; i++)
-    for (int p = 0; p < P; p++)
-      for (int th = 0; th < nTh; th++) {
-        push(row, col_Y(i, p, th), -1.0);
-        for (int j = 0; j < nj; j++)
-          push(row, col_Xij(i, j, p, th), 1.0);
-        rhs_v.push_back(0.0); sense_v.push_back("<="); row++;
-      }
-      // Rcpp::Rcout << "  C4 done\n";
-  
-  // ── C6: Inventory balance: S(j,p,t) = S(j,p,t-1) + Xij_in - Xjk_out ────
-  for (int j = 0; j < nj; j++)
-    for (int p = 0; p < P; p++)
-      for (int t = 0; t < Tm; t++) {   // t is 0-based (period t+1)
-        int t1 = t + 1;                 // 1-based period
-        // find th index for t1
-        auto it = std::find(Tharv.begin(), Tharv.end(), t1);
-        int th = (it != Tharv.end()) ? (int)(it - Tharv.begin()) : -1;
-        
-        // S(j,p,t)
-        push(row, col_S(j, p, t), 1.0);
-        // -S(j,p,t-1) if t > 0
-        if (t > 0) push(row, col_S(j, p, t - 1), -1.0);
-        // -sum_i Xij(i,j,p,th)
-        if (th >= 0)
-          for (int i = 0; i < ns; i++)
-            push(row, col_Xij(i, j, p, th), -1.0);
-        // +sum_k sum_{pp>=p} Xjk(j,k,p,pp,th)
-        if (th >= 0)
-          for (int k = 0; k < nk; k++)
-            for (int pi = 0; pi < n_ppairs; pi++) {
-              if (pp_pairs[pi].first != p) continue;  // filter: p == first of pair
-              push(row, col_Xjk(j, k, pi, th), +1.0);
-            }
-            rhs_v.push_back(0.0); sense_v.push_back("=="); row++;
-      }
-      // Rcpp::Rcout << "  C6 done\n";
-  
-  // ── C7: Storage capacity: sum_p S(j,p,t) <= CAP_stor[j] ─────────────────
-  for (int j = 0; j < nj; j++)
-    for (int t = 0; t < Tm; t++) {
-      for (int p = 0; p < P; p++) push(row, col_S(j, p, t), 1.0);
-      rhs_v.push_back(CAP_stor[j]); sense_v.push_back("<="); row++;
     }
-    // Rcpp::Rcout << "  C7 done\n";
-  
-  // ── C8: Processing capacity: sum_{i,p} Xij(i,j,p,t) <= CAP_proc[j] ──────
-  for (int j = 0; j < nj; j++)
+  }
+  Rcpp::Rcout << "  C6 done\n";
+
+  // ── C7: Storage capacity: sum_p S(j,p,th) <= CAP_stor[j] ─────────────────
+  // Loop over Tharv only (matches R — S_tuples uses Tharv)
+  for (int j = 0; j < nj; j++) {
+    for (int th = 0; th < nTh; th++) {
+      for (int p = 0; p < P; p++)
+        push(nrow, col_S(j, p, th), 1.0);
+      add_con("<=", CAP_stor[j]);
+    }
+  }
+  Rcpp::Rcout << "  C7 done\n";
+
+  // ── C8: Processing capacity: sum_{i,p} Xij(i,j,p,th) <= CAP_proc[j] ──────
+  for (int j = 0; j < nj; j++) {
     for (int th = 0; th < nTh; th++) {
       for (int i = 0; i < ns; i++)
         for (int p = 0; p < P; p++)
-          push(row, col_Xij(i, j, p, th), 1.0);
-      rhs_v.push_back(CAP_proc[j]); sense_v.push_back("<="); row++;
+          push(nrow, col_Xij(i, j, p, th), 1.0);
+      add_con("<=", CAP_proc[j]);
     }
-    // Rcpp::Rcout << "  C8 done\n";
-  
-  // ── C9: Demand with cascade: sum_j Xjk(j,k,q,p,t) <= D_max(k,p,t) ───────
-  for (int k = 0; k < nk; k++)
-    for (int p = 0; p < P; p++)
+  }
+  Rcpp::Rcout << "  C8 done\n";
+
+  // ── C9: Demand with cascade ───────────────────────────────────────────────
+  // Paper C8: sum_{j, p' <= p} Xjk(j,k,p',p,t) <= D_max(k,p,t)
+  // In pp_pairs: pair (p', p) means source=p', delivered=p.
+  // Cascade: delivered product pp_pairs[pi].second must equal demanded product p;
+  //          source product pp_pairs[pi].first <= p is implicitly guaranteed
+  //          by the pp_pairs construction (first <= second).
+  for (int k = 0; k < nk; k++) {
+    for (int p = 0; p < P; p++) {
       for (int th = 0; th < nTh; th++) {
-        int t1 = Tharv[th];
+        int t1   = Tharv[th];
         double Dmax = dem_lut[k * P * Tm + p * Tm + (t1 - 1)];
-        if (Dmax < 0.0) continue;
+        if (Dmax < 0.0) continue;  // no demand record → skip
+        bool any = false;
         for (int j = 0; j < nj; j++)
           for (int pi = 0; pi < n_ppairs; pi++) {
-            // cascade: q (=pp_pairs[pi].first) <= p, delivered as product p
-            if (pp_pairs[pi].second != p) continue;
-            push(row, col_Xjk(j, k, pi, th), 1.0);
+            if (pp_pairs[pi].second != p) continue;  // delivered product must match
+            push(nrow, col_Xjk(j, k, pi, th), 1.0);
+            any = true;
           }
-          rhs_v.push_back(Dmax); sense_v.push_back("<="); row++;
+        if (any) add_con("<=", Dmax);
       }
-  //     Rcpp::Rcout << "  C9 done\n";
-  // 
-  // Rcpp::Rcout << "  Total constraints: " << row
-  //             << ", nnz: " << row_v.size() << "\n";
-  // 
+    }
+  }
+  Rcpp::Rcout << "  C9 done\n";
+  Rcpp::Rcout << "  Total constraints: " << nrow
+              << ", nnz: " << (int)row_v.size() << "\n";
+
   // ==========================================================================
-  // STEP 4: RETURN LIST FOR ROI::OP() in R
+  // STEP 4: BOUNDS AND TYPES
   // ==========================================================================
-  
-  // Upper bounds vector
   NumericVector ub(n_vars, R_PosInf);
   // z: binary → ub = 1
   for (int c = off_z; c < off_z + n_z; c++) ub[c] = 1.0;
-  // Y: area * yield_max per product
-  for (int i = 0; i < ns; i++)
-    for (int p = 0; p < P; p++)
-      for (int th = 0; th < nTh; th++)
-        ub[col_Y(i, p, th)] = area_ha[i] * yield_max[p];
-  // S: CAP_stor
+  // S: per-product CAP_stor upper bound
   for (int j = 0; j < nj; j++)
     for (int p = 0; p < P; p++)
-      for (int t = 0; t < Tm; t++)
-        ub[col_S(j, p, t)] = CAP_stor[j];
-  
-  // Variable types: "B" for z, "C" for rest
+      for (int th = 0; th < nTh; th++)
+        ub[col_S(j, p, th)] = CAP_stor[j];
+
   CharacterVector types(n_vars, "C");
   for (int c = off_z; c < off_z + n_z; c++) types[c] = "B";
-  
+
+  // ==========================================================================
+  // STEP 5: RETURN
+  // ==========================================================================
   return List::create(
     Named("row_idx")   = wrap(row_v),
     Named("col_idx")   = wrap(col_v),
@@ -414,9 +416,8 @@ List build_lp_rcpp(List instance) {
     Named("ub")        = ub,
     Named("types")     = types,
     Named("n_vars")    = n_vars,
-    Named("n_constrs") = row,
+    Named("n_constrs") = nrow,
     Named("n_z")       = n_z,
-    Named("n_Y")       = n_Y,
     Named("n_Xij")     = n_Xij,
     Named("n_S")       = n_S,
     Named("n_Xjk")     = n_Xjk

@@ -1,27 +1,36 @@
 # build_lp_rcpp_wrapper.R
-# Compiles and uses the Rcpp LP builder
-# Rcpp::sourceCpp("build_lp_rcpp.cpp")  # run once per session
+# Wrapper: compiles build_lp_rcpp.cpp and assembles the ROI OP object.
+# Run Rcpp::sourceCpp("build_lp_rcpp.cpp") once per session before calling this.
+#
+# Matches build_agroforestry_lp_sparse_v10_optimized() in !build_AFS_milp.R:
+#   - No Y variable
+#   - C3 combined yield+shipping bound (<=)
+#   - C6 inventory balance over Tharv only
+#   - C7/C8 over Tharv only
+#   - C9 demand cascade: delivered product filters pp_pairs[pi].second == p
 
 build_agroforestry_lp_rcpp <- function(instance) {
-  cat("Calling Rcpp LP builder...\n")
-  
-  # Pre-compute yield_matrix once in R (clean interface boundary)
-  # instance$yield_matrix <- local({
-  #   m <- matrix(0, nrow = instance$n_products, ncol = instance$max_age)
-  #   yba <- instance$yields_by_age
-  #   for (p in seq_len(instance$n_products))
-  #     for (age in seq_len(instance$max_age)) {
-  #       r <- yba[yba$product == p & yba$age == age, "yield_ha"]
-  #       if (length(r) > 0) m[p, age] <- r[1]
-  #     }
-  #   m
-  # })
-  instance$yield_matrix <- matrix(instance$yields_by_age$yield_ha, nrow = instance$n_products, ncol = (max(instance$yields_by_age$age)-min(instance$yields_by_age$age)+1), byrow=T)  # flatten to 1D for Rcpp
-  
-  # Call C++ builder
+  cat("Calling Rcpp LP builder (v10-no-Y)...\n")
+
+  # ── Pre-compute yield_matrix [P x Tm] for the C++ side ───────────────────
+  # yield_matrix[p, age-1] = eta_{p, age}  (0-based column = age - 1)
+  # instance$yields_by_age must have columns: product (1..P), age (1..Tm), yield_ha
+  P  <- instance$n_products
+  Tm <- instance$n_periods
+  ym <- matrix(0.0, nrow = P, ncol = Tm)
+  yba <- instance$yields_by_age
+  for (r in seq_len(nrow(yba))) {
+    p   <- yba$product[r]
+    age <- yba$age[r]
+    if (p >= 1 && p <= P && age >= 1 && age <= Tm)
+      ym[p, age] <- yba$yield_ha[r]
+  }
+  instance$yield_matrix <- ym
+
+  # ── Call C++ builder ──────────────────────────────────────────────────────
   cpp_out <- build_lp_rcpp(instance)
-  
-  # Assemble sparse constraint matrix
+
+  # ── Assemble sparse constraint matrix ────────────────────────────────────
   A <- slam::simple_triplet_matrix(
     i    = cpp_out$row_idx,
     j    = cpp_out$col_idx,
@@ -29,8 +38,8 @@ build_agroforestry_lp_rcpp <- function(instance) {
     nrow = cpp_out$n_constrs,
     ncol = cpp_out$n_vars
   )
-  
-  # Build ROI OP object
+
+  # ── Build ROI OP object ───────────────────────────────────────────────────
   model <- ROI::OP(
     objective   = ROI::L_objective(cpp_out$c_vec),
     constraints = ROI::L_constraint(
@@ -48,12 +57,13 @@ build_agroforestry_lp_rcpp <- function(instance) {
     ),
     types = cpp_out$types
   )
-  
+
   cat(sprintf("ROI model built: %d vars, %d constraints, %d nnz\n",
               cpp_out$n_vars, cpp_out$n_constrs, length(cpp_out$val)))
-  
+
   list(
-    model        = model,
-    instance_info = cpp_out[c("n_vars","n_constrs","n_z","n_Y","n_Xij","n_S","n_Xjk")]
+    model         = model,
+    instance_info = cpp_out[c("n_vars", "n_constrs",
+                               "n_z", "n_Xij", "n_S", "n_Xjk")]
   )
 }
