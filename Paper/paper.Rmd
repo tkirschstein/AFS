@@ -170,9 +170,9 @@ milp_instance <- generate_instance_v8_final(
 
 #build_agroforestry_lp_rcpp(milp_instance)
 
-result <- build_agroforestry_lp_sparse_v10_optimized(milp_instance)
+#result <- build_agroforestry_lp_sparse_v10_optimized(milp_instance)
 
-result <- build_agroforestry_lp_sparse_v10(milp_instance)
+#result <- build_agroforestry_lp_sparse_v10(milp_instance)
 
 ```
 
@@ -770,7 +770,7 @@ Here, $R_{kp}$ are product- and consumer-specific revenues (€/t). The opportun
 
 ## Constraints
 
-Constraints \eqref{eq:C1} limit each site to at most one establishment decision over the planning horizon. Constraints \eqref{eq:C2} enforce flow conservation in each period. If an activity in period $t \in \Tc$ takes place, there needs to be a preceeding activity (harvest or establishment) and a succeeding activity (harvest or termination). This way, \eqref{eq:C2} guarantee valid (possibly empty) activity paths over the complete time horizon for each site. Constraints \eqref{eq:C3} links the binary harvest-cycle variables to physical yield quantities via the age-dependent yield coefficients $\eta_{p(t-s)}$. These coefficients are pre-computed by evaluating the component-specific Gompertz functions \eqref{eq:biomass-partial} and \eqref{eq:component-share} at stand age $a = t - s$ and scaled by site area $\text{AREA}_i$. Thus, implicitly we assume consant yields per hectar for each site $i$. Note that this simplification can be dropped and site-specific yields $\eta_{ip(t-s)}$ could be introduced without increasing numerical complexity of the \problem.  Constraints \eqref{eq:C4}--\eqref{eq:C5} link harvest quantities to transport flows and ensure inventory balance at each facility, following the multi-period network-flow structure of OPTIMASS [@DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS]. Thereby, harvest quantities can be smaller than available AFS biomasses allowing partial harvesting. Constraints \eqref{eq:C6}--\eqref{eq:C7} enforce storage and processing capacity limits at each facility $j$. Constraints \eqref{eq:C8} implement product usage at multiple consumption sites $k$. Thereby, $(p',p) \in \Qc$ defines a product mapping allowing high-quality product $p'$ (e.g. stems) satisfying demand of a lower-quality products $p$ up to maximum demand $D^{\max}_{kpt}$. This way, the cascading principle is operationalized as a central economic rationale.
+Constraints \eqref{eq:C1} limit each site to at most one establishment decision over the planning horizon. Constraints \eqref{eq:C2} enforce flow conservation in each period. If an activity in period $t \in \Tc$ takes place, there needs to be a preceeding activity (harvest or establishment) and a succeeding activity (harvest or termination). This way, \eqref{eq:C2} guarantee valid (possibly empty) activity paths over the complete time horizon for each site. Constraints \eqref{eq:C3} links the binary harvest-cycle variables to physical yield quantities via the age-dependent yield coefficients $\eta_{p(t-s)}$. These coefficients are pre-computed by evaluating the component-specific Gompertz functions \eqref{eq:biomass-partial} and \eqref{eq:component-share} at stand age $a = t - s$ and scaled by site area $\text{AREA}_i$. Thus, implicitly we assume constant yields per hectar for each site $i$. Note that this simplification can be dropped and site-specific yields $\eta_{ip(t-s)}$ could be introduced without increasing numerical complexity of the \problem.  Constraints \eqref{eq:C4}--\eqref{eq:C5} link harvest quantities to transport flows and ensure inventory balance at each facility, following the multi-period network-flow structure of OPTIMASS [@DeMeyer2015_OPTIMASS; @DeMeyer2016_tOPTIMASS]. Thereby, harvest quantities can be smaller than available AFS biomasses allowing partial harvesting. Constraints \eqref{eq:C6}--\eqref{eq:C7} enforce storage and processing capacity limits at each facility $j$. Constraints \eqref{eq:C8} implement product usage at multiple consumption sites $k$. Thereby, $(p',p) \in \Qc$ defines a product mapping allowing high-quality product $p'$ (e.g. stems) satisfying demand of a lower-quality products $p$ up to maximum demand $D^{\max}_{kpt}$. This way, the cascading principle is operationalized as a central economic rationale.
 
 \begin{align}
   % --- C1: Establishment (at most once per site) ---
@@ -780,10 +780,10 @@ Constraints \eqref{eq:C1} limit each site to at most one establishment decision 
   \sum_{(s,t) \in \Sc} z_{ist} &= \sum_{(t,u) \in \Sc} z_{itu} && \forall\; i \in \Ic,\; t \in \Tc \label{eq:C2} \\[2pt]
   %
   % --- C3: Biomass yield from Gompertz coefficients ---
-  Y_{ipt}    &= \sum_{(s,t) \in \Sc^{{harv}}} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist} && \forall\; i \in \Ic,\; p \in \Pc,\; t \in \Tc^{{harv}}     \label{eq:C3} \\[2pt]
+  \sum_{j \in \Jc} X_{ijpt}    &\leq \sum_{(s,t) \in \Sc^{{harv}}} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist} && \forall\; i \in \Ic,\; p \in \Pc,\; t \in \Tc^{{harv}}     \label{eq:C3} \\[2pt]
   %
   % --- C4: Shipping linkage ---
-  \sum_{j \in \Jc} X_{ijpt}  &\leq Y_{ipt} && \forall\; i \in \Ic,\; p \in \Pc,\; t \in \Tc^{{harv}} \label{eq:C4} \\[2pt]
+  %\sum_{j \in \Jc} X_{ijpt}  &\leq Y_{ipt} && \forall\; i \in \Ic,\; p \in \Pc,\; t \in \Tc^{{harv}} \label{eq:C4} \\[2pt]
   %
   % --- C5: Inventory balance ---
   S_{jpt}    = S_{jp,t-1} + &\sum_{i \in \Ic} X_{ijpt} - \sum_{k \in \Kc,\,(p,p') \in \Qc} X_{jkpp't}   && \forall\; j \in \Jc,\; p \in \Pc,\; t \in \Tc^{harv}  \label{eq:C5} \\[2pt]
