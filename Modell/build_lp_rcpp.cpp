@@ -161,13 +161,7 @@ List build_lp_rcpp(List instance) {
   auto col_Xjk = [&](int j, int k, int pi, int th) {
     return off_Xjk + j*(nk*n_ppairs*nTh) + k*(n_ppairs*nTh) + pi*nTh + th;
   };
-
-  // Helper: find th index for a given 1-based period; returns -1 if not in Tharv
-  auto find_th = [&](int t1) -> int {
-    for (int th = 0; th < nTh; th++)
-      if (Tharv[th] == t1) return th;
-    return -1;
-  };
+  // NOTE: find_th removed — all Tharv loops use the direct th index.
 
   // ==========================================================================
   // STEP 2: OBJECTIVE VECTOR
