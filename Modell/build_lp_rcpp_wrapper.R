@@ -2,13 +2,32 @@
 # Wrapper: compiles build_lp_rcpp.cpp and assembles the ROI OP object.
 # Run Rcpp::sourceCpp("build_lp_rcpp.cpp") once per session before calling this.
 #
+# Instance must be produced by build_optimization_instance() in
+# !helper_instance_builder_v8a.R (or generate_instance_v8_final()).
+# Required fields:
+#   $n_sites, $n_storages, $n_consumers, $n_periods, $n_products, $max_age, $min_age
+#   $sites        — data.frame with: site_id, area_ha, C_est, C_harv, C_main, C_opp
+#   $storages     — data.frame with: storage_id, CAP_stor, CAP_proc, c_stor
+#   $consumer_prices — data.frame with: consumer_id, product, price
+#   $demand       — data.frame with: consumer_id, product, period, D_max
+#   $d_ij         — numeric matrix [n_sites x n_storages]
+#   $d_jk         — numeric matrix [n_storages x n_consumers]
+#   $yields_by_age — data.frame with: product (1..P), age (1..Tm), yield_ha
+#   $c_tr_raw, $c_tr_pre
 
 build_agroforestry_lp_rcpp <- function(instance) {
-  cat("Calling Rcpp LP builder (v10-no-Y)...\n")
+  cat("Calling Rcpp LP builder (v10-no-Y, matching !build_AFS_milp.R)...\n")
+
+  # ── Validate required site columns ───────────────────────────────────────
+  required_site_cols <- c("area_ha", "C_est", "C_harv", "C_main", "C_opp")
+  missing_cols <- setdiff(required_site_cols, colnames(instance$sites))
+  if (length(missing_cols) > 0)
+    stop(paste("sites df missing columns required by Rcpp builder:",
+               paste(missing_cols, collapse = ", ")))
 
   # ── Pre-compute yield_matrix [P x Tm] for the C++ side ───────────────────
-  # yield_matrix[p, age-1] = eta_{p, age}  (0-based column = age - 1)
-  # instance$yields_by_age must have columns: product (1..P), age (1..Tm), yield_ha
+  # yield_matrix[p, age] = eta_{p, age}  (1-based age → R matrix column = age)
+  # C++ reads yield_matrix(p, age-1) with 0-based row/col.
   P  <- instance$n_products
   Tm <- instance$n_periods
   ym <- matrix(0.0, nrow = P, ncol = Tm)
@@ -16,7 +35,7 @@ build_agroforestry_lp_rcpp <- function(instance) {
   for (r in seq_len(nrow(yba))) {
     p   <- yba$product[r]
     age <- yba$age[r]
-    if (p >= 1 && p <= P && age >= 1 && age <= Tm)
+    if (p >= 1L && p <= P && age >= 1L && age <= Tm)
       ym[p, age] <- yba$yield_ha[r]
   }
   instance$yield_matrix <- ym
