@@ -2,12 +2,6 @@
 # Wrapper: compiles build_lp_rcpp.cpp and assembles the ROI OP object.
 # Run Rcpp::sourceCpp("build_lp_rcpp.cpp") once per session before calling this.
 #
-# Matches build_agroforestry_lp_sparse_v10_optimized() in !build_AFS_milp.R:
-#   - No Y variable
-#   - C3 combined yield+shipping bound (<=)
-#   - C6 inventory balance over Tharv only
-#   - C7/C8 over Tharv only
-#   - C9 demand cascade: delivered product filters pp_pairs[pi].second == p
 
 build_agroforestry_lp_rcpp <- function(instance) {
   cat("Calling Rcpp LP builder (v10-no-Y)...\n")

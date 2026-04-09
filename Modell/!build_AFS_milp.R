@@ -18,7 +18,7 @@ build_AFS_milp <- function(instance) {
   P    <- instance$n_products
   Amax <- instance$max_age
   Amin <- instance$min_age
-  Copp <- instance$c_opp
+  #Copp <- instance$c_opp
   
   I        <- 1:ns
   J        <- 1:nj
@@ -135,8 +135,15 @@ build_AFS_milp <- function(instance) {
   # Opportunity cost: -C_opp * area_ha[ii] * (Tmax - t) * z[ii,0,t]
   z_opp <- z_tuples[s == 0 & t %in% Tset]
   if (nrow(z_opp) > 0) {
-    opp_cost <- Copp * area_ha[as.character(z_opp$ii)] * (Tm - z_opp$t)
+    opp_cost <- instance$sites$C_opp[z_opp$ii] * area_ha[as.character(z_opp$ii)] * (Tm - z_opp$t)
     c_vec[z_opp$col] <- c_vec[z_opp$col] - opp_cost
+  }
+  
+  # Maintenance cost: -C_main * area_ha[ii] * z[ii,s,t] * (t-s) for s>=1
+  z_main <- z_tuples[s >= 1 & t %in% Tset & t > s]
+  if (nrow(z_main) > 0) {
+    main_cost <- instance$sites$C_main[z_main$ii] * area_ha[as.character(z_main$ii)] * (z_main$t - z_main$s)
+    c_vec[z_main$col] <- c_vec[z_main$col] - main_cost
   }
   
   # Harvest cost: -C_harv * area_ha[ii] * z[ii,s,t] for s>=1
@@ -344,7 +351,7 @@ build_AFS_milp <- function(instance) {
     ncol = n_vars
   )
   
-  ub_vec <- c(z_tuples$ub, Y_tuples$ub, Xij_tuples$ub, S_tuples$ub, Xjk_tuples$ub)
+  ub_vec <- c(z_tuples$ub, Xij_tuples$ub, S_tuples$ub, Xjk_tuples$ub)
   
   model <- OP(
     objective   = L_objective(c_vec),
@@ -362,12 +369,8 @@ build_AFS_milp <- function(instance) {
       nobj = n_vars
     ),
     types    = c(rep("B", n_z),
-                 rep("C", n_Y + n_Xij + n_S + n_Xjk))
+                 rep("C", n_Xij + n_S + n_Xjk))
   )
-  
-  cat(sprintf("  Sparse matrix: %d x %d, %d nonzeros (%.2f%% density)\n",
-              nrow(A), ncol(A), nnzero(A),
-              100 * nnzero(A) / (nrow(A) * ncol(A))))
   
   list(
     model = model,

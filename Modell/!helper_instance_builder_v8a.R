@@ -100,63 +100,178 @@ calculate_distance_matrix_osm <- function(starts, destinations, max_entries = 10
 # ============================================================================
 
 build_optimization_instance <- function(data, params) {
+  
+  # check params completeness: n_periods, max_age,   min_age,  c_tr_raw,  c_tr_pre
+  required_params <- c("n_periods", "max_age", "min_age", "c_tr_raw", "c_tr_pre")
+  missing_params <- setdiff(required_params, names(params))
+  if (length(missing_params) > 0) {
+    stop(paste("Missing parameters:", paste(missing_params, collapse = ", "
+    )))
+  }
+  
   # Extract parameters
   n_periods <- params$n_periods
   max_age <- params$max_age
-  revenue_scale <- params$revenue_scale
+  min_age <- params$min_age
   c_tr_raw <- params$c_tr_raw
   c_tr_pre <- params$c_tr_pre
   
-  # Filter sites based on selection
-  selected_sites <- data$sites[data$sites$site_id %in% params$selected_sites, ]
+  # check data completeness: sites, storages, consumers, dist_ij, dist_jk, yields_by_age
+  required_data <- c("sites", "storages", "consumers", "dist_ij", "dist_jk","yields_by_age")
+  missing_data <- setdiff(required_data, names(data))
+  if (length(missing_data) > 0) {
+    stop(paste("Missing data components:", paste(missing_data, collapse = ", ")))
+  }
   
-  # Calculate distances
+  # extract data objects
   d_ij <- data$dist_ij
-  
   d_jk <- data$dist_jk
+  sites <- data$sites
+  storages <- data$storages
+  consumers <- data$consumers
+  yields_by_age <- data$yields_by_age
   
-  # Define product yields (simplified: 1 product with age-dependent yields)
-  # Format: product, age, yield_ha
-  yields_by_age <- data.frame(
-    product = rep(1, n_periods),
-    age = 1:n_periods,
-    yield_ha = c(0, 3, 8, 14, 20, 25, 28, 30, 31, 31, 30, 28, 25, 23, 20)[1:n_periods]
-  )
   
-  # Define demand (simple constant demand)
+  # check matching sizes and extract numbers of entities
+  n_sites <- nrow(sites)
+  n_storages <- nrow(storages)
+  n_consumers <- nrow(consumers)
+  n_products <- length(unique(yields_by_age$product))
+  
+  if (nrow(d_ij) != n_sites || ncol(d_ij) != n_storages) {
+    stop("Dimension mismatch: d_ij should be n_sites x n_storages")
+  }
+  if (nrow(d_jk) != n_storages || ncol(d_jk) != n_consumers) {
+    stop("Dimension mismatch: d_jk should be n_storages x n_consumers")
+  }
+  if (!all(c("product", "age", "yield_ha") %in% colnames(yields_by_age))) {
+    stop("yields_by_age must have columns: product, age, yield_ha")
+  }
+  
+  if (max(yields_by_age$age) > max_age) {
+    # set yields to 0 for ages > max_age
+    warning(paste("yields_by_age contains ages > max_age; setting yields to 0 for those ages"))
+    yields_by_age <- yields_by_age %>%  mutate(yield_ha = ifelse(age > max_age, 0, yield_ha))
+  }
+  
+   if (max(yields_by_age$product) > n_products) {
+    warning(paste("yields_by_age contains products > n_products; trimming to", n_products))
+    yields_by_age <- yields_by_age %>% filter(product <= n_products)
+  }  
+  
+  # check columns in sites: Should contain site_id, lat, lng, area_ha, C_est, C_harv, C_main, C_opp
+  required_site_cols <- c("site_id", "lat", "lng", "area_ha", "C_est", "C_harv", "C_main", "C_opp")
+  if (!all(required_site_cols %in% colnames(sites))) {
+    stop(paste("Sites data frame must contain columns:", paste(required_site_cols, collapse = ", ")))
+  }
+  
+  # check columns in storages: Should contain storage_id, CAP_stor, CAP_proc, c_stor
+  required_storage_cols <- c("storage_id", "CAP_stor", "CAP_proc", "c_stor")
+  if (!all(required_storage_cols %in% colnames(storages))) {
+    stop(paste("Storages data frame must contain columns:", paste(required_storage_cols, collapse = ",")))
+  }
+  
+  # check columns in consumers: Should contain consumer_id, demand_P1, demand_P2, demand_P3, P1, P2, P3
+  required_consumer_cols <- c("consumer_id", "demand_P1", "demand_P2", "demand_P3", "P1", "P2", "P3")
+  if (!all(required_consumer_cols %in% colnames(consumers))) {
+    stop(paste("Consumers data frame must contain columns:", paste(required_consumer_cols, collapse=","
+    )))
+  }    
+  
+  # ids to consecutive numbers (if not already)
+  sites <- sites %>% mutate(site_id = as.integer(factor(site_id)))
+  storages <- storages %>% mutate(storage_id = as.integer(factor(storage_id)))
+  consumers <- consumers %>% mutate(consumer_id = as.integer(factor(consumer_id)))
+  # distances should be numeric matrices with appropriate row/col names
+  if (!is.matrix(d_ij) || !is.numeric(d_ij)) {
+    stop("d_ij must be a numeric matrix")
+  }
+  if (!is.matrix(d_jk) || !is.numeric(d_jk)) {
+    stop("d_jk must be a numeric matrix")
+  }
+  # set row and col names of matrices to integers as ids
+  rownames(d_ij) <- as.character(1:n_sites)
+  colnames(d_ij) <- as.character(1:n_storages)
+  rownames(d_jk) <- as.character(1:n_storages)
+  colnames(d_jk) <- as.character(1:n_consumers)
+  
+  
+  # build time-exanded demand matrix based on consumers data (demand_P1 demand_P2 demand_P3) with columns consumer_id, product, period and demand
   demand <- expand.grid(
-    consumer_id = data$consumers$consumer_id,
-    product = 1,
+    consumer_id = consumers$consumer_id,
     period = 1:n_periods
   ) %>%
-    left_join(data$consumers[, c("consumer_id", "demand")], by = "consumer_id") %>%
-    mutate(D_max = demand / n_periods) %>%
-    select(consumer_id, product, period, D_max)
+    left_join(
+      consumers %>% 
+        select(consumer_id, demand_P1, demand_P2, demand_P3) %>%
+        pivot_longer(
+          cols = starts_with("demand_P"),
+          names_to = "product_col",
+          values_to = "D_max"
+        ) %>%
+        mutate(product = as.numeric(substring(product_col, nchar(product_col), nchar(product_col)))),
+       by = "consumer_id") %>%
+    select(consumer_id, product, period, D_max) 
+    #mutate(D_max = D_max / n_periods)  # distribute demand evenly across periods
   
-  # Create revenue scale vector
-  R_p <- rep(revenue_scale, 1)  # 1 product
+  # ========================================================================
+  # PRICES: Extract from consumer table (P1, P2, P3) if available
+  # ========================================================================
+  
+  # Check if consumer table has price columns
+  price_cols <- c("P1", "P2", "P3")
+  has_prices <- all(price_cols %in% colnames(consumers))
+  
+  consumer_prices <- NULL
+  if (has_prices) {
+    # Create price table: consumer_id x product x price
+    consumer_prices <- consumers %>%
+      select(consumer_id, all_of(price_cols)) %>%
+      pivot_longer(
+        cols = all_of(price_cols),
+        names_to = "price_col",
+        values_to = "price"
+      ) %>%
+      mutate(
+        product = as.numeric(gsub("P", "", price_col))
+      ) %>%
+      select(consumer_id, product, price)
+  } else {
+    # Fallback: uniform prices by product (optional, can be set later)
+    consumer_prices <- expand.grid(
+      consumer_id = consumers$consumer_id,
+      product = 1:n_products
+    ) %>%
+      mutate(price = 100)  # Default uniform price
+  }
+  
   
   # Build instance list
   list(
-    n_sites = nrow(selected_sites),
-    n_storages = nrow(data$storages),
-    n_consumers = nrow(data$consumers),
+    n_sites = n_sites,
+    n_storages = n_storages,
+    n_consumers = n_consumers,
     n_periods = n_periods,
-    n_products = 1,
+    n_products = n_products,
     max_age = max_age,
-    sites = selected_sites,
-    storages = data$storages,
-    consumers = data$consumers,
+    min_age = min_age,
+    sites = sites,
+    storages = storages,
+    consumers = consumers,
+    consumer_prices = consumer_prices,
     yields_by_age = yields_by_age,
     demand = demand,
     d_ij = d_ij,
     d_jk = d_jk,
-    R_p = R_p,
     c_tr_raw = c_tr_raw,
     c_tr_pre = c_tr_pre
   )
 }
 
+
+###############################################################################
+# OLD STUFF ###################################################################
+###############################################################################
 
 
 ## ============================================================

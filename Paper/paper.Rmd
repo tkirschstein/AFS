@@ -78,8 +78,7 @@ library(patchwork)
 library(sf)
 library(leaflet)
 library(osrm)
-library(ompr)
-library(ompr.roi)
+library(ROI)
 library(ROI.plugin.glpk)
 library(gurobi)
 library(ROI.plugin.gurobi)
@@ -92,10 +91,9 @@ library(RcppArmadillo)
 
 source("../Modell/!helper_func.r")
 source("../Modell/!helper_instance_builder_v8a.R")
-source("../Modell/build_agroforestry_lp_v10_optimized.r")
-source("../Modell/build_agroforestry_lp_v10.r")
+source("../Modell/!build_AFS_milp.r")
 source("../Modell/build_lp_rcpp_wrapper.R")
-#Rcpp::sourceCpp("../Modell/build_lp_rcpp.cpp")
+Rcpp::sourceCpp("../Modell/build_lp_rcpp.cpp")
 
 
 # Chapman-Richards biomass function
@@ -116,6 +114,19 @@ sites      <- afs_workspace$sites
 sites_clustered      <- afs_workspace$sites_clustered
 storages   <- afs_workspace$storages
 consumers  <- afs_workspace$consumers
+
+# scale down industrial demand quantities by dividing by 5
+consumers <- consumers %>%
+  mutate(demand_P1 = demand_P1 / 5)
+
+# drop small Biogas plants --> compute total demand and drop all consumer with D<2
+consumers <- consumers %>%
+  mutate(total_demand = demand_P1 + demand_P2 + demand_P3) %>%
+  filter(total_demand >= 1.5) %>%
+  select(-total_demand)
+
+
+dist_jk <- afs_workspace$dist_jk[,consumers$consumer_id]
 
 # Component Gompertz functions (parameters as defined above)
 B_AG_max3     <- function(t) gomp(t, A = 100, k = 0.32, t0 = 4.0)
@@ -139,40 +150,63 @@ yields_by_age$yield_ha <- apply(yields_by_age, 1, function(row) B_AG_index(row[2
 sites_clustered <- afs_workspace$sites_clustered %>%
   mutate(
     C_est  = 2500,   # €/ha  establishment (Section 2.1 mid-range)
-    C_harv =  300    # €/ha  harvest cost  (Section 2.1 mid-range)
+    C_harv =  150,    # €/ha  harvest cost  (Section 2.1 mid-range)
+    C_main = 10, #  €/ha  maintenance cost  (Section 2.1 mid-range)
+    C_opp = 450, #  €/ha  opportunity cost  (Section 2.1 mid-range)
   )
 
 data_obj <- list(
   sites    = sites_clustered,
-  storages = afs_workspace$storages,
-  consumers = afs_workspace$consumers,
+  storages = storages,
+  consumers = consumers,
   dist_ij  = afs_workspace$dist_ij_clust,
-  dist_jk  = afs_workspace$dist_jk
+  dist_jk  = dist_jk,
+  yields_by_age = yields_by_age
 )
 
 # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
 params_obj <- list(
   n_periods  = 40,
-  n_products = 3,
   max_age    = 10L,    # A_max: LRAFS upper rotation bound
   min_age    =  3L,    # A_min: SRAFS lower rotation bound
   c_tr_raw   = 0.08,   # €/(t·km)  raw biomass  site → storage
-  c_tr_pre   = 0.06,   # €/(t·km)  chips        storage → consumer
-  c_opp      = 450     # €/(ha·yr) opportunity cost of arable land
+  c_tr_pre   = 0.06   # €/(t·km)  chips        storage → consumer
 )
 
 # ── 4. CALL generate_instance_v8_final() ─────────────────────────────────────
-milp_instance <- generate_instance_v8_final(
+milp_instance <- build_optimization_instance(
   data         = data_obj,
-  params       = params_obj,
-  yields_by_age = yields_by_age
+  params       = params_obj
 ) 
 
-#build_agroforestry_lp_rcpp(milp_instance)
-
-#result <- build_agroforestry_lp_sparse_v10_optimized(milp_instance)
-
-#result <- build_agroforestry_lp_sparse_v10(milp_instance)
+# model <- build_AFS_milp(milp_instance)
+# 
+# model.cpp <- build_agroforestry_lp_rcpp(milp_instance)
+# 
+# #result <- build_agroforestry_lp_sparse_v10_optimized(milp_instance)
+# 
+# #result <- build_agroforestry_lp_sparse_v10(milp_instance)
+# 
+# 
+result <- ROI_solve(
+      model,
+      solver = "highs",
+      control = list(
+        TimeLimit = 60,
+        MIPGap = 0.05,
+        OutputFlag = 1
+      )
+    )
+# 
+# result <- ROI_solve(
+#       model.cpp$model,
+#       solver = "gurobi", 
+#       control = list(
+#         TimeLimit = 60,
+#         MIPGap = 0.05,
+#         OutputFlag = 1
+#       )
+#     )
 
 ```
 
