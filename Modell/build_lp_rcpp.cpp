@@ -21,6 +21,13 @@ using namespace Rcpp;
 // NOTE: Variable Y has been removed. C3 directly constrains
 //       sum_j Xij(i,j,p,t) <= sum_{s>=1,s<t} eta_{p,t-s} * AREA_i * z(i,s,t)
 //
+// Arc filter (mirrors z_tuple pruning in !build_AFS_milp.R):
+//   s == 0,  t in 1..Tm               → establishment arcs  (no age filter)
+//   s >= 1,  any t > s                → kept iff Amin <= (t-s) <= Amax
+//   This means termination arcs (t = Tm+1, s >= 1) are also subject to
+//   the [Amin, Amax] age check, exactly as in the R code:
+//     z_tuples[s > 0 & ((t-s) < Amin | (t-s) > Amax), ub := 0]
+//
 // Constraints (labels match !build_AFS_milp.R):
 //   C1  Path establishment       sum_t z(i,0,t) <= 1
 //   C2  Path connectivity        flow conservation at each node t
@@ -103,25 +110,37 @@ List build_lp_rcpp(List instance) {
   // STEP 1: VARIABLE INDEXING
   // ==========================================================================
 
-  // ── Valid arcs (s,t) ───────────────────────────────────────────────────────
-  // Mirrors z_tuples construction in !build_AFS_milp.R:
-  //   s == 0 && t in 1..Tm                              → establishment arcs
-  //   s >= 1 && t == Tm+1                               → termination arcs
-  //   s >= 1 && t in 1..Tm && (t-s) in [Amin,Amax]     → harvest arcs
+  // ── Valid arcs (s,t) — EXACTLY mirrors z_tuple pruning in !build_AFS_milp.R ──
+  //
+  // R code constructs ALL (s,t) pairs from T_ext = 0..(Tm+1) with s < t,
+  // then sets ub=0 (and drops) rows where:
+  //   s > 0  AND  ((t - s) < Amin  OR  (t - s) > Amax)
+  //
+  // This means:
+  //   s == 0          → KEEP for any t in 1..Tm  (establishment; no age check)
+  //   s >= 1, t > s   → KEEP iff Amin <= (t-s) <= Amax
+  //                     This includes termination arcs (t = Tm+1) — they are
+  //                     also subject to the age-range filter in R.
+  //
+  // Previous version incorrectly kept ALL (s>=1, t=Tm+1) arcs unconditionally,
+  // producing 32 spurious arcs per site (1,209 extra z variables for a
+  // 39-site/40-period/Amin=3/Amax=10 instance).
   struct Arc { int s, t; };
   std::vector<Arc> arcs;
   arcs.reserve((Tm + 2) * (Amax - Amin + 2));
+
   for (int s = 0; s <= Tm + 1; s++) {
     for (int t = s + 1; t <= Tm + 1; t++) {
-      int len = t - s;
-      if (s == 0 && t >= 1 && t <= Tm) {
-        arcs.push_back({s, t}); continue;
-      }
-      if (t == Tm + 1 && s >= 1) {
-        arcs.push_back({s, t}); continue;
-      }
-      if (s >= 1 && t >= 1 && t <= Tm && len >= Amin && len <= Amax) {
-        arcs.push_back({s, t});
+      if (s == 0) {
+        // Establishment arcs: s=0, t in 1..Tm — no age check (matches R)
+        if (t >= 1 && t <= Tm)
+          arcs.push_back({s, t});
+      } else {
+        // All arcs with s >= 1 (harvest AND termination):
+        // apply the same Amin/Amax filter as R
+        int len = t - s;
+        if (len >= Amin && len <= Amax)
+          arcs.push_back({s, t});
       }
     }
   }
