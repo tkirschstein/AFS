@@ -22,11 +22,14 @@ using namespace Rcpp;
 //       sum_j Xij(i,j,p,t) <= sum_{s>=1,s<t} eta_{p,t-s} * AREA_i * z(i,s,t)
 //
 // Arc filter (mirrors z_tuple pruning in !build_AFS_milp.R):
-//   s == 0,  t in 1..Tm               → establishment arcs  (no age filter)
-//   s >= 1,  any t > s                → kept iff Amin <= (t-s) <= Amax
-//   This means termination arcs (t = Tm+1, s >= 1) are also subject to
-//   the [Amin, Amax] age check, exactly as in the R code:
-//     z_tuples[s > 0 & ((t-s) < Amin | (t-s) > Amax), ub := 0]
+//   s == 0,  t in 1..(Tm+1)         → establishment / never-plant arcs  (no age filter)
+//   s >= 1,  any t > s              → kept iff Amin <= (t-s) <= Amax
+//                                     This includes termination arcs (t = Tm+1)
+//
+// IMPORTANT: R builds T_ext = 0:(Tm+1) and constructs ALL pairs (s,t) with s<t,
+// then drops arcs where s > 0 AND ((t-s) < Amin OR (t-s) > Amax).
+// Arcs with s == 0 are NEVER filtered regardless of t, so (0, Tm+1) — the
+// "never-plant" arc — is retained in R and must also be retained here.
 //
 // Constraints (labels match !build_AFS_milp.R):
 //   C1  Path establishment       sum_t z(i,0,t) <= 1
@@ -112,19 +115,18 @@ List build_lp_rcpp(List instance) {
 
   // ── Valid arcs (s,t) — EXACTLY mirrors z_tuple pruning in !build_AFS_milp.R ──
   //
-  // R code constructs ALL (s,t) pairs from T_ext = 0..(Tm+1) with s < t,
+  // R code constructs ALL pairs (s,t) from T_ext = 0..(Tm+1) with s < t,
   // then sets ub=0 (and drops) rows where:
   //   s > 0  AND  ((t - s) < Amin  OR  (t - s) > Amax)
   //
   // This means:
-  //   s == 0          → KEEP for any t in 1..Tm  (establishment; no age check)
-  //   s >= 1, t > s   → KEEP iff Amin <= (t-s) <= Amax
-  //                     This includes termination arcs (t = Tm+1) — they are
-  //                     also subject to the age-range filter in R.
+  //   s == 0, t in 1..(Tm+1) → KEEP all (including the "never-plant" arc (0, Tm+1))
+  //   s >= 1, t > s           → KEEP iff Amin <= (t-s) <= Amax
+  //                             This includes termination arcs (t = Tm+1)
   //
-  // Previous version incorrectly kept ALL (s>=1, t=Tm+1) arcs unconditionally,
-  // producing 32 spurious arcs per site (1,209 extra z variables for a
-  // 39-site/40-period/Amin=3/Amax=10 instance).
+  // FIX (v2): The previous guard `t <= Tm` for s==0 arcs incorrectly excluded
+  // the arc (0, Tm+1), producing 1 missing arc per site (39 fewer z variables
+  // for a 39-site instance). Changed to `t <= Tm + 1` to include (0, Tm+1).
   struct Arc { int s, t; };
   std::vector<Arc> arcs;
   arcs.reserve((Tm + 2) * (Amax - Amin + 2));
@@ -132,8 +134,10 @@ List build_lp_rcpp(List instance) {
   for (int s = 0; s <= Tm + 1; s++) {
     for (int t = s + 1; t <= Tm + 1; t++) {
       if (s == 0) {
-        // Establishment arcs: s=0, t in 1..Tm — no age check (matches R)
-        if (t >= 1 && t <= Tm)
+        // Establishment arcs: s=0, t in 1..(Tm+1) — no age check (matches R).
+        // t = Tm+1 is the "never-plant" arc: site flows from node 0 directly to
+        // the terminal node without any plantation, preserving path feasibility.
+        if (t >= 1 && t <= Tm + 1)
           arcs.push_back({s, t});
       } else {
         // All arcs with s >= 1 (harvest AND termination):
@@ -280,10 +284,11 @@ List build_lp_rcpp(List instance) {
   };
 
   // ── C1: Path establishment: sum_t z(i,0,t) <= 1  (one plantation per site)
+  // Include t = Tm+1 (never-plant arc) so that doing nothing also satisfies C1.
   for (int i = 0; i < ns; i++) {
     bool any = false;
     for (int a = 0; a < n_arcs; a++) {
-      if (arcs[a].s != 0 || arcs[a].t < 1 || arcs[a].t > Tm) continue;
+      if (arcs[a].s != 0) continue;
       push(nrow, col_z(i, a), 1.0);
       any = true;
     }
