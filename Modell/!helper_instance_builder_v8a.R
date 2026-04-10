@@ -269,455 +269,124 @@ build_optimization_instance <- function(data, params) {
 }
 
 
-###############################################################################
-# OLD STUFF ###################################################################
-###############################################################################
+# ============================================================================
+# Solve function
+# ============================================================================
 
-
-## ============================================================
-## Instance generators for V8 and V9
-## ============================================================
-
-generate_instance_v8 <- function(data, params, seed = 123) {
-  set.seed(seed)
-  
-  n_periods <- params$n_periods
-  max_age <- params$max_age
-  revenue_scale <- params$revenue_scale
-  c_tr_raw <- params$c_tr_raw
-  c_tr_pre <- params$c_tr_pre
-  
-  # Filter sites based on selection
-  #selected_sites <- data$sites[data$sites$site_id %in% params$selected_sites, ]
-  
-  n_sites    <- nrow(data$sites)
-  n_storages <- nrow(data$storages)
-  n_consumers <-  nrow(data$consumers)
-  n_periods  <- params$n_periods
-  n_products <- params$n_products
-  max_age    = params$max_age
+solve_agroforestry_sparse <- function(instance,
+                                      time_limit = 600,
+                                      mip_gap = 0.05,
+                                      verbose = TRUE, 
+                                      solver = "highs") {
   
   
-  sites <- data$sites
+  # Build LP
+  built <- build_AFS_milp(instance)
   
-  storages <- data$storages
-    
-  consumers <- data$consumers
+  # Solve with Gurobi via ROI
   
-  # Distances site→storage
-  d_ij <- data$dist_ij
-  
-  
-  # Distances storage→consumer
-  d_jk <- data$dist_jk
-  
-  # Product revenues (p=1 chemical, 2 pulp, 3 energy)
-  R_p <- c(
-    runif(1, 150, 250),  # chem
-    runif(1, 100, 180),  # pulp
-    runif(1, 60, 120)    # energy
-  ) * revenue_scale
-  
-  
-  # Yield table: η_{p,a}, a = 1..max_age
-  yields_by_age <- expand_grid(
-    product = 1:n_products,
-    age = 1:max_age
-  ) %>%
-    mutate(
-      # crude shape: low at age 1, peak around 5–8, then decline
-      base = case_when(
-        age <= 3 ~ runif(n(), 0, 0),
-        age <= 6 ~ runif(n(), 2, 4),
-        age <= 9 ~ runif(n(), 10, 15),
-        age <= max_age ~ runif(n(), 8, 10),
-        age > max_age ~ 0,
-        TRUE ~ runif(n(), 4, 10)
-      ),
-      # scale by product
-      yield_ha = base * case_when(
-        product == 1 ~ runif(n(), 0.8, 1.2),
-        product == 2 ~ runif(n(), 1.0, 1.5),
-        TRUE         ~ runif(n(), 1.5, 2.0)
+  if(solver == "gurobi"){
+    result <- ROI_solve(
+      built$model,
+      solver = "gurobi", 
+      control = list(
+        TimeLimit = time_limit,
+        MIPGap = mip_gap,
+        OutputFlag = ifelse(verbose, 1, 0)
       )
     )
-  
-  # Demand: max demand per consumer, product, period
-  demand <- expand_grid(
-    consumer_id = consumers$consumer_id,
-    product = 1:n_products,
-    period = 1:n_periods
-  ) %>%
-    mutate(
-      D_max = runif(n(), 200, 800)   # t/yr
+  }
+  if(solver == "highs"){
+    result <- ROI_solve(
+      built$model,
+      solver = "highs",
+      control = list(
+        time_limit  = as.numeric(time_limit),
+        mip_rel_gap  = as.numeric(mip_gap),
+        log_to_console  = ifelse(verbose, TRUE, FALSE)
+      )
     )
+  }
   
+  
+  
+  # convert results
+  solution <- lapply(built$var_maps, function(x) {
+    tmp <- data.frame(x, 
+                      value = result$solution[x$col])
+    tmp %>% select(-col)
+  })
+  
+  # Return complete result
   list(
-    n_sites    = n_sites,
-    n_storages = n_storages,
-    n_consumers = n_consumers,
-    n_periods  = n_periods,
-    n_products = n_products,
-    max_age    = max_age,
-    sites      = sites,
-    storages   = storages,
-    consumers  = consumers,
-    d_ij       = d_ij,
-    d_jk       = d_jk,
-    R_p        = R_p,
-    c_tr_raw   = c_tr_raw,
-    c_tr_pre   = c_tr_pre,
-    yields_by_age = yields_by_age,
-    demand     = demand
+    result = result,
+    objective = result$objval,
+    solution = solution,
+    status = result$status,
+    var_maps = built$var_maps
+    #instance_info = built$instance_info,
+    #yield_matrix = built$yield_matrix
   )
 }
 
 
-generate_instance_v8_extended <- function(data, params, yields_by_age ) {
+#######################################################################
+# Extract solutions
+#######################################################################
+extract_result <- function(opt_result){
   
-  # Extract parameters
-  n_periods <- params$n_periods
-  max_age <- params$max_age
-  c_tr_raw <- params$c_tr_raw
-  c_tr_pre <- params$c_tr_pre
-  n_products <- params$n_products
+  z_solution <- opt_result$solution$z
   
-  # Extract data components
-  selected_sites <- data$sites
-  storages <- data$storages
-  consumers <- data$consumers
+  # filter for z variables with value > 0.5 and drop col column
+  z_solution_filtered <- z_solution %>%
+    filter(value > 0.5) %>%
+    arrange(i, s, t)
   
-  n_sites <- nrow(selected_sites)
-  n_storages <- nrow(storages)
-  n_consumers <- nrow(consumers)
+  # sites with AFS
   
-  # Get distances
-  d_ij <- data$dist_ij  # site to storage
-  d_jk <- data$dist_jk  # storage to consumer
+  sites_est <- unique(z_solution_filtered$i)
   
-  # ========================================================================
-  # YIELDS TABLE: Use provided yields_by_age or default to internal generation
-  # ========================================================================
+  # storage quantities
+  S_solution <- opt_result$solution$S
   
-  if (is.null(yields_by_age)) {
-    # Fallback: generate default yields (original behavior)
-    yields_by_age <- expand.grid(
-      product = 1:n_products,
-      age = 1:max_age
-    ) %>%
-      mutate(
-        yield_ha = case_when(
-          age <= 3 ~ runif(n(), 0, 2),
-          age <= 6 ~ runif(n(), 2, 4),
-          age <= 9 ~ runif(n(), 10, 15),
-          age <= max_age ~ runif(n(), 8, 10),
-          TRUE ~ runif(n(), 4, 10)
-        )
-      ) %>%
-      mutate(
-        yield_ha = case_when(
-          product == 1 ~ yield_ha * runif(n(), 0.8, 1.2),
-          product == 2 ~ yield_ha * runif(n(), 1.0, 1.5),
-          TRUE ~ yield_ha * runif(n(), 1.5, 2.0)
-        )
-      )
-  } else {
-    # Use provided yields_by_age table
-    # Ensure it has the right columns: product, age, yield_ha
-    if (!all(c("product", "age", "yield_ha") %in% colnames(yields_by_age))) {
-      stop("yields_by_age must have columns: product, age, yield_ha")
-    }
-    
-    # Verify consistency with max_age and n_products
-    if (max(yields_by_age$age) > max_age) {
-      warning(paste("yields_by_age contains ages > max_age; trimming to", max_age))
-      yields_by_age <- yields_by_age %>% filter(age <= max_age)
-    }
-    
-    if (max(yields_by_age$product) > n_products) {
-      warning(paste("yields_by_age contains products > n_products; trimming to", n_products))
-      yields_by_age <- yields_by_age %>% filter(product <= n_products)
-    }
+  S_solution_filtered <- S_solution %>% 
+    filter(value > 0.01) %>%
+    arrange(j, t, p)
+  
+  # Flows
+  xij <- opt_result$solution$Xij
+  
+  xij_filtered <- xij %>% 
+    filter(value > 0.01) %>% 
+    arrange(i,j,t,p)
+  
+  xjk <- opt_result$solution$Xjk
+  
+  xjk_filtered <- xjk %>% 
+    filter(value > 0.01) %>% 
+    arrange(j,k,t,p)
+  
+  # Demand fulfillment
+  if("Dkpt" %in% names(opt_result$solution)){
+    Dkpt_solution <- opt_result$solution$Dkpt
+    Dkpt_solution <- Dkpt_solution %>% 
+      filter(value > 0.01) %>% 
+      arrange(k,p,t)
+  }else{
+    Dkpt_solution <- NULL
   }
   
-  # ========================================================================
-  # DEMAND: Expand grid for all consumer x product x period combinations
-  # ========================================================================
   
-  demand <- expand.grid(
-    consumer_id = consumers$consumer_id,
-    product = 1:n_products,
-    period = 1:n_periods
-  ) %>%
-    left_join(consumers %>% select(consumer_id, demand), by = "consumer_id") %>%
-    mutate(D_max = demand) %>%
-    select(consumer_id, product, period, D_max)
   
-  # ========================================================================
-  # PRICES: Extract from consumer table (P1, P2, P3) if available
-  # ========================================================================
-  
-  # Check if consumer table has price columns
-  price_cols <- c("P1", "P2", "P3")
-  has_prices <- all(price_cols %in% colnames(consumers))
-  
-  consumer_prices <- NULL
-  if (has_prices) {
-    # Create price table: consumer_id x product x price
-    consumer_prices <- consumers %>%
-      select(consumer_id, all_of(price_cols)) %>%
-      pivot_longer(
-        cols = all_of(price_cols),
-        names_to = "price_col",
-        values_to = "price"
-      ) %>%
-      mutate(
-        product = as.numeric(gsub("P", "", price_col))
-      ) %>%
-      select(consumer_id, product, price)
-  } else {
-    # Fallback: uniform prices by product (optional, can be set later)
-    consumer_prices <- expand.grid(
-      consumer_id = consumers$consumer_id,
-      product = 1:n_products
-    ) %>%
-      mutate(price = 100)  # Default uniform price
-  }
-  
-  # ========================================================================
-  # REVENUE VECTOR: Average prices by product (or use defaults)
-  # ========================================================================
-  
-  if (has_prices) {
-    # Use average consumer prices for revenue vector
-    R_p <- consumer_prices %>%
-      group_by(product) %>%
-      summarise(avg_price = mean(price, na.rm = TRUE), .groups = "drop") %>%
-      arrange(product) %>%
-      pull(avg_price)
-  } else {
-    # Default: set generic prices
-    R_p <- c(150, 100, 60)  # Chemical, Pulp, Energy
-  }
-  
-  # ========================================================================
-  # BUILD INSTANCE LIST
-  # ========================================================================
-  
-  instance <- list(
-    n_sites = n_sites,
-    n_storages = n_storages,
-    n_consumers = n_consumers,
-    n_periods = n_periods,
-    n_products = n_products,
-    max_age = max_age,
-    
-    # Entity data
-    sites = selected_sites,
-    storages = storages,
-    consumers = consumers,
-    
-    # Distance matrices
-    d_ij = d_ij,
-    d_jk = d_jk,
-    
-    # Yields and demands
-    yields_by_age = yields_by_age,
-    demand = demand,
-    
-    # Prices
-    consumer_prices = consumer_prices,
-    R_p = R_p,
-    
-    # Transport costs
-    c_tr_raw = c_tr_raw,
-    c_tr_pre = c_tr_pre
+  # return results
+  list(
+    sites_est = sites_est, 
+    z = z_solution_filtered,
+    S = S_solution_filtered,
+    Xij = xij_filtered,
+    Xjk = xjk_filtered,
+    Dkpt_solution = Dkpt_solution
   )
   
-  return(instance)
+  
 }
-
-
-# consumer and product specific demands and prices
-generate_instance_v8_final <- function(data, params, yields_by_age ) {
-  
-  # Extract parameters
-  n_periods <- params$n_periods
-  max_age <- params$max_age
-  min_age <- params$min_age
-  c_tr_raw <- params$c_tr_raw
-  c_tr_pre <- params$c_tr_pre
-  c_opp <- params$c_opp
-  n_products <- params$n_products
-  
-  # Extract data components
-  selected_sites <- data$sites
-  storages <- data$storages
-  consumers <- data$consumers
-  
-  n_sites <- nrow(selected_sites)
-  n_storages <- nrow(storages)
-  n_consumers <- nrow(consumers)
-  
-  # Get distances
-  d_ij <- data$dist_ij  # site to storage
-  d_jk <- data$dist_jk  # storage to consumer
-  
-  # ========================================================================
-  # YIELDS TABLE: Use provided yields_by_age or default to internal generation
-  # ========================================================================
-  
-  if (is.null(yields_by_age)) {
-    # Fallback: generate default yields (original behavior)
-    yields_by_age <- expand.grid(
-      product = 1:n_products,
-      age = 1:max_age
-    ) %>%
-      mutate(
-        yield_ha = case_when(
-          age <= 3 ~ runif(n(), 0, 2),
-          age <= 6 ~ runif(n(), 2, 4),
-          age <= 9 ~ runif(n(), 10, 15),
-          age <= max_age ~ runif(n(), 8, 10),
-          TRUE ~ runif(n(), 4, 10)
-        )
-      ) %>%
-      mutate(
-        yield_ha = case_when(
-          product == 1 ~ yield_ha * runif(n(), 0.8, 1.2),
-          product == 2 ~ yield_ha * runif(n(), 1.0, 1.5),
-          TRUE ~ yield_ha * runif(n(), 1.5, 2.0)
-        )
-      )
-  } else {
-    # Use provided yields_by_age table
-    # Ensure it has the right columns: product, age, yield_ha
-    if (!all(c("product", "age", "yield_ha") %in% colnames(yields_by_age))) {
-      stop("yields_by_age must have columns: product, age, yield_ha")
-    }
-    
-    # Verify consistency with max_age and n_products
-    if (max(yields_by_age$age) > max_age) {
-      warning(paste("yields_by_age contains ages > max_age; trimming to", max_age))
-      yields_by_age <- yields_by_age %>% filter(age <= max_age)
-    }
-    
-    if (max(yields_by_age$product) > n_products) {
-      warning(paste("yields_by_age contains products > n_products; trimming to", n_products))
-      yields_by_age <- yields_by_age %>% filter(product <= n_products)
-    }
-  }
-  
-  # ========================================================================
-  # DEMAND: Expand grid for all consumer x product x period combinations
-  # ========================================================================
-  demand_cols <- c("demand_P1", "demand_P2", "demand_P3")
-  
-  tmp.demand <- consumers %>%
-    select(consumer_id, all_of(demand_cols)) %>%
-    pivot_longer(
-      cols = all_of(demand_cols),
-      names_to = "demand_col",
-      values_to = "D_max"
-    ) %>%
-    mutate( 
-      product = as.numeric(substring(demand_col, first =nchar(demand_col),  last = nchar(demand_col))) )
-  
-  demand <- expand.grid(
-    consumer_id = consumers$consumer_id,
-    product = 1:n_products,
-    period = 1:n_periods
-  ) %>%
-    left_join(
-      tmp.demand  , by = c("consumer_id","product")
-    )  %>%
-    select(consumer_id, product, period, D_max)
-  
-  # ========================================================================
-  # PRICES: Extract from consumer table (P1, P2, P3) if available
-  # ========================================================================
-  
-  # Check if consumer table has price columns
-  price_cols <- c("P1", "P2", "P3")
-  has_prices <- all(price_cols %in% colnames(consumers))
-  
-  consumer_prices <- NULL
-  if (has_prices) {
-    # Create price table: consumer_id x product x price
-    consumer_prices <- consumers %>%
-      select(consumer_id, all_of(price_cols)) %>%
-      pivot_longer(
-        cols = all_of(price_cols),
-        names_to = "price_col",
-        values_to = "price"
-      ) %>%
-      mutate(
-        product = as.numeric(gsub("P", "", price_col))
-      ) %>%
-      select(consumer_id, product, price)
-  } else {
-    # Fallback: uniform prices by product (optional, can be set later)
-    consumer_prices <- expand.grid(
-      consumer_id = consumers$consumer_id,
-      product = 1:n_products
-    ) %>%
-      mutate(price = 100)  # Default uniform price
-  }
-  
-  # ========================================================================
-  # REVENUE VECTOR: Average prices by product (or use defaults)
-  # ========================================================================
-  
-  if (has_prices) {
-    # Use average consumer prices for revenue vector
-    R_p <- consumer_prices %>%
-      group_by(product) %>%
-      summarise(avg_price = mean(price, na.rm = TRUE), .groups = "drop") %>%
-      arrange(product) %>%
-      pull(avg_price)
-  } else {
-    # Default: set generic prices
-    R_p <- c(150, 100, 60)  # Chemical, Pulp, Energy
-  }
-  
-  # ========================================================================
-  # BUILD INSTANCE LIST
-  # ========================================================================
-  
-  instance <- list(
-    n_sites = n_sites,
-    n_storages = n_storages,
-    n_consumers = n_consumers,
-    n_periods = n_periods,
-    n_products = n_products,
-    max_age = max_age,
-    min_age = min_age,
-    
-    # Entity data
-    sites = selected_sites,
-    storages = storages,
-    consumers = consumers,
-    
-    # Distance matrices
-    d_ij = d_ij,
-    d_jk = d_jk,
-    
-    # Yields and demands
-    yields_by_age = yields_by_age,
-    demand = demand,
-    
-    # Prices
-    consumer_prices = consumer_prices,
-    R_p = R_p,
-    
-    # Transport costs
-    c_tr_raw = c_tr_raw,
-    c_tr_pre = c_tr_pre,
-    
-    # opportunity cost (optional, can be set later)
-     c_opp = c_opp
-  )
-  
-  return(instance)
-}
-

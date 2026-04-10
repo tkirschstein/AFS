@@ -181,22 +181,22 @@ milp_instance <- build_optimization_instance(
 
 # model <- build_AFS_milp(milp_instance)
 # 
-# model.cpp <- build_agroforestry_lp_rcpp(milp_instance)
+model.cpp <- build_agroforestry_lp_rcpp(milp_instance)
 # 
-# #result <- build_agroforestry_lp_sparse_v10_optimized(milp_instance)
+
+
+
 # 
-# #result <- build_agroforestry_lp_sparse_v10(milp_instance)
 # 
-# 
-result <- ROI_solve(
-      model,
-      solver = "highs",
-      control = list(
-        TimeLimit = 60,
-        MIPGap = 0.05,
-        OutputFlag = 1
-      )
-    )
+# result <- ROI_solve(
+#       model$model,
+#       solver = "gurobi", 
+#       control = list(
+#         TimeLimit = 60,
+#         MIPGap = 0.05,
+#         OutputFlag = 1
+#       )
+#     )
 # 
 # result <- ROI_solve(
 #       model.cpp$model,
@@ -207,6 +207,17 @@ result <- ROI_solve(
 #         OutputFlag = 1
 #       )
 #     )
+
+
+result <- ROI_solve(
+      model.cpp$model,
+      solver = "highs",
+      control = list(
+        time_limit  = 60,
+        mip_rel_gap  = .05,
+        log_to_console  = TRUE
+      )
+    )
 
 ```
 
