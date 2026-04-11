@@ -340,31 +340,31 @@ extract_result <- function(opt_result){
   # filter for z variables with value > 0.5 and drop col column
   z_solution_filtered <- z_solution %>%
     filter(value > 0.5) %>%
-    arrange(i, s, t)
+    arrange(ii, s, t)
   
   # sites with AFS
   
-  sites_est <- unique(z_solution_filtered$i)
+  sites_est <- unique(z_solution_filtered$ii)
   
   # storage quantities
   S_solution <- opt_result$solution$S
   
   S_solution_filtered <- S_solution %>% 
     filter(value > 0.01) %>%
-    arrange(j, t, p)
+    arrange(jj, tt, pprod)
   
   # Flows
   xij <- opt_result$solution$Xij
   
   xij_filtered <- xij %>% 
     filter(value > 0.01) %>% 
-    arrange(i,j,t,p)
+    arrange(ii,jj,tt,pprod)
   
   xjk <- opt_result$solution$Xjk
   
   xjk_filtered <- xjk %>% 
     filter(value > 0.01) %>% 
-    arrange(j,k,t,p)
+    arrange(jj,kk,tt,pprod, pp)
   
   # Demand fulfillment
   if("Dkpt" %in% names(opt_result$solution)){
