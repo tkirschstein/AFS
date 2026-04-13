@@ -1284,19 +1284,25 @@ site_harvest <- site_harvest %>%
   mutate(total_vol = p1 + p2 + p3) %>%
   filter(total_vol > 0)
 
-#st_as_sf(milp_instance$sites, coords = c("lng", "lat"), crs = 4326) %>% st_transform(crs_map)  |>
 
 sites_pie <- milp_instance$sites |>
+  st_as_sf(coords = c("lng", "lat"), crs = 4326) %>% 
+  st_transform(crs_map) %>%
   #select(site_id) |>
   inner_join(site_harvest, by = "site_id")
 
 
 vol_med    <- median(sites_pie$total_vol[sites_pie$total_vol > 0])
 sites_pie  <- sites_pie %>%
-  mutate( r = .06 * sqrt(total_vol / vol_med) ) # radius proportional to total production
+  mutate( r = 6000 * sqrt(total_vol / vol_med) ) # radius proportional to total production
 
 
-
+# get projected x/y from the sf object
+coord_df <- sites_pie  %>% 
+  st_coordinates() %>%
+  as.data.frame()
+sites_pie$x <- coord_df[, "X"]
+sites_pie$y <- coord_df[, "Y"]
 
 
 # ── Join hac_cluster from site_cluster_assig onto sites_sf ───────────────────
@@ -1394,7 +1400,7 @@ ggplot() +
   # scatterpie::geom_scatterpie needs a data.frame (not sf) with x, y, r columns
   geom_scatterpie(
     data        = as.data.frame(sites_pie),
-    aes(x = lng, y = lat, r = r),   # r in longitude-degrees → same unit as x-axis
+    aes(x = x, y = y, r = r),   # r in longitude-degrees → same unit as x-axis
     cols        = c("p1", "p2", "p3"),
     donut_radius = 0.5,
     colour      = NA,
