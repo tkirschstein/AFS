@@ -93,6 +93,10 @@ source("../Modell/!helper_func.r")
 source("../Modell/!helper_instance_builder_v8a.R")
 source("../Modell/!build_AFS_milp.r")
 source("../Modell/build_lp_rcpp_wrapper.R")
+source("../Modell/gurobi_adapter.R")
+source("../Modell/gurobi_warmstart.R")
+source("../Modell/gurobi_feascheck.R")
+source("../Modell/extract_result.R")
 Rcpp::sourceCpp("../Modell/build_lp_rcpp.cpp")
 
 
@@ -147,13 +151,21 @@ f_rest_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hr
 yields_by_age <- expand_grid(product = 1:3, age = 1:15)
 yields_by_age$yield_ha <- apply(yields_by_age, 1, function(row) B_AG_index(row[2] , row[1]))
 
+yields_by_age$yield_ha <- yields_by_age$yield_ha / 3 # scale to share of AFS to total size of Feldblock
+
 sites_clustered <- afs_workspace$sites_clustered %>%
   mutate(
-    C_est  = 2500,   # €/ha  establishment (Section 2.1 mid-range)
-    C_harv =  150,    # €/ha  harvest cost  (Section 2.1 mid-range)
-    C_main = 10, #  €/ha  maintenance cost  (Section 2.1 mid-range)
-    C_opp = 450, #  €/ha  opportunity cost  (Section 2.1 mid-range)
+    C_est  = 2500/30000,   # €/ha  establishment (Section 2.1 mid-range)
+    C_harv =  150/30000,    # €/ha  harvest cost  (Section 2.1 mid-range)
+    C_main = 10/10000, #  €/ha  maintenance cost  (Section 2.1 mid-range)
+    C_opp = 450/1000000, #  €/ha  opportunity cost  (Section 2.1 mid-range)
   )
+
+# change storage costs
+storages$c_stor <- storages$c_stor/100
+# change capacities
+storages$CAP_stor <- storages$CAP_stor * 100000
+storages$CAP_proc <- storages$CAP_proc * 100000
 
 data_obj <- list(
   sites    = sites_clustered,
@@ -166,11 +178,11 @@ data_obj <- list(
 
 # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
 params_obj <- list(
-  n_periods  = 40,
+  n_periods  = 35,
   max_age    = 10L,    # A_max: LRAFS upper rotation bound
-  min_age    =  3L,    # A_min: SRAFS lower rotation bound
-  c_tr_raw   = 0.08,   # €/(t·km)  raw biomass  site → storage
-  c_tr_pre   = 0.06   # €/(t·km)  chips        storage → consumer
+  min_age    =  5L,    # A_min: SRAFS lower rotation bound
+  c_tr_raw   = 0.08/1000,   # €/(t·km)  raw biomass  site → storage
+  c_tr_pre   = 0.06/1000   # €/(t·km)  chips        storage → consumer
 )
 
 # ── 4. CALL generate_instance_v8_final() ─────────────────────────────────────
@@ -179,45 +191,59 @@ milp_instance <- build_optimization_instance(
   params       = params_obj
 ) 
 
-# model <- build_AFS_milp(milp_instance)
+model <- build_agroforestry_lp_rcpp(milp_instance)
+
+result <- solve_lp_with_gurobi(
+  model,
+  start  = x0,
+  params = list(
+    TimeLimit = 600, 
+    MIPFocus = 1, 
+    MIPGap = 0.01,
+    Cuts = 3)
+)
+
+saveRDS(model, "lp_r.rds")
+saveRDS(res, "lp_r_result.rds")
+
+#model <- readRDS("lp_r.RDS")
+#result <- readRDS("lp_r_result.rds")
+
 # 
-model.cpp <- build_agroforestry_lp_rcpp(milp_instance)
+# # 2. Inspect the LP
+# lp <- build_lp_rcpp(instance)
+# summarise_lp(lp)
 # 
+# # 3. Validate trivial start (should be feasible)
+# x0 <- trivial_zero_start(lp)
+# check_start_feasibility(lp, x0)
+# 
+# # 4. Check C3 linkage on any prior solution
+# check_c3_linkage(lp, x0)
+# 
+# # 5. Solve natively with Gurobi
+# 
+# # 6. Re-use solution as start for a refined solve
+# x1  <- start_from_solution(res)
+# res2 <- solve_lp_with_gurobi(lp, start = x1,
+#                               params = list(
+#                                 MIPFocus = 2, 
+#                                 MIPGap = 0.001,
+#                                 Cuts = 3))
 
 
+# Extract + print KPI summary
+ext <- extract_result(res2, instance)
+print(ext)
 
-# 
-# 
-# result <- ROI_solve(
-#       model$model,
-#       solver = "gurobi", 
-#       control = list(
-#         TimeLimit = 60,
-#         MIPGap = 0.05,
-#         OutputFlag = 1
-#       )
-#     )
-# 
-# result <- ROI_solve(
-#       model.cpp$model,
-#       solver = "gurobi", 
-#       control = list(
-#         TimeLimit = 60,
-#         MIPGap = 0.05,
-#         OutputFlag = 1
-#       )
-#     )
+# Validate decoded solution
+chk <- validate_extracted(ext)
+if (!chk$pass) View(chk$violations$V2_inventory_balance)
 
+# Analysis examples
+ext$z   |> filter(arc_type == "harvest") |> count(site_id, t)
+ext$Xjk |> group_by(consumer_id, period) |> summarise(vol = sum(value))
 
-result <- ROI_solve(
-      model.cpp$model,
-      solver = "highs",
-      control = list(
-        time_limit  = 60,
-        mip_rel_gap  = .05,
-        log_to_console  = TRUE
-      )
-    )
 
 ```
 

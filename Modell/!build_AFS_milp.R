@@ -243,14 +243,18 @@ build_AFS_milp <- function(instance) {
       for (tt_idx in Tharv) {
         X_row <- Xij_tuples[ii ==  ii_idx & pprod == pp_idx & tt == tt_idx]
         if (nrow(X_row) == 0) next
-        X_col  <- X_row$col
+        X_col <- X_row$col
         z_arcs <- z_tuples[ii == ii_idx & t == tt_idx & s >= 1 & s < tt_idx]
+        
         if (nrow(z_arcs) > 0) {
           age_vec  <- tt_idx - z_arcs$s
           col_all  <- c(X_col, z_arcs$col)
-          coef_all <- c(1, -yield_matrix[pp_idx, age_vec] * area_i)
-          add_constraint(col_all, coef_all, "<=", 0)
+          coef_all <- c(rep(1, length(X_col)), -yield_matrix[pp_idx, age_vec] * area_i)
+        } else {
+          col_all  <- X_col
+          coef_all <- rep(1, length(X_col))
         }
+        add_constraint(col_all, coef_all, "<=", 0)
       }
     }
   }
