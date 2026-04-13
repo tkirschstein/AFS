@@ -1238,157 +1238,147 @@ params_df %>%
 
 ```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Optimal agroforestry supply chain network. Green filled circles: super-sites with established AFS (sized by total harvested area); grey circles: non-selected super-sites. Pie charts at each active consumer show the average period-level demand coverage by biomass product (stem~=~P1, branches~=~P2, residues~=~P3). Orange squares: storage/pre-treatment hubs with active inflows. Arcs: aggregated biomass flows (width $\\propto$ total volume).", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth"}
 
-# ── Colour palette (consistent with clustering map) ──────────────────────────
-COL_SITE_ACT  <- "#1b9e77"    # active AFS site
-COL_SITE_NONE <- "#bdbdbd"    # never-planted super-site
-COL_HUB       <- "#e65c00"    # storage hub
-COL_CONSUMER  <- "#6a3d9a"    # consumer
-P_COLS <- c("1" = "#1b9e77", "2" = "#d95f02", "3" = "#7570b3")
-P_LABS <- c("1" = "Stem", "2" = "Branches", "3" = "Residues")
 
-# ── Background map ────────────────────────────────────────────────────────────
-de_sf <- ne_states(country = "Germany", returnclass = "sf")
+# ── 1. Background map ─────────────────────────────────────────────────────────
+de <- ne_countries(scale = "medium", returnclass = "sf", country = "Germany")
+st_de <- ne_states(country = "Germany", returnclass = "sf")
 
-# ── Active sites (establishments in ext$z) ───────────────────────────────────
-est_sites <- ext$z %>%
-  filter(arc_type == "establishment") %>%
-  distinct(site_id, area_ha)
-
-sites_clustered <- afs_workspace$sites_clustered
-# if column "area" is exists, rename it to area_ha
-if("area" %in% colnames(sites_clustered)) {
-  sites_clustered <- sites_clustered %>%
-    rename(area_ha = area)
-}
-
-
-sites_map <- sites_clustered %>%
-  mutate(site_id = row_number()) %>%
-  left_join(est_sites, by = "site_id") %>%
-  mutate(
-    active    = !is.na(area_ha.y),
-    area_plot = coalesce(area_ha.y, 0)
+# ── 2. Aggregate harvest volumes per site over all periods ────────────────────
+# ext$Y: columns site_id, product_id, t, value (tonnes)
+site_harvest <- ext$Xij %>%
+  group_by(site_id, product) %>%
+  summarise(vol = sum(value, na.rm = TRUE), .groups = "drop") %>%
+  tidyr::pivot_wider(
+    names_from  = product,
+    values_from = vol,
+    values_fill = 0,
+    names_prefix = "p"
   )
 
-# ── Hub activity: any inflow > 0 ─────────────────────────────────────────────
-active_hubs <- ext$Xij %>%
-  group_by(hub_id) %>%
-  summarise(total_in = sum(value), .groups = "drop") %>%
-  filter(total_in > 0)
+# Ensure all three product columns exist
+for (col in c("p1", "p2", "p3")) {
+  if (!col %in% names(site_harvest)) site_harvest[[col]] <- 0
+}
 
-hubs_map <- storages %>%
-  mutate(hub_id = row_number()) %>%
-  left_join(active_hubs, by = "hub_id") %>%
-  mutate(active = !is.na(total_in))
+site_harvest <- site_harvest %>%
+  mutate(total_vol = p1 + p2 + p3) %>%
+  filter(total_vol > 0)
 
-# ── Consumer demand-coverage pie data ────────────────────────────────────────
-# Average per-period delivery per consumer × del_product
-n_periods_active <- length(unique(ext$Xjk$period))
+# Join with site coordinates
+sites_pie <- sites_clustered %>%
+  select(site_id, lat, lng) %>%
+  inner_join(site_harvest, by = "site_id")
 
-pie_data <- ext$Xjk %>%
-  group_by(consumer_id, del_product) %>%
-  summarise(mean_vol = sum(value) / max(n_periods_active, 1), .groups = "drop") %>%
-  mutate(product = as.character(del_product)) %>%
-  pivot_wider(id_cols = consumer_id,
-              names_from  = product,
-              values_from = mean_vol,
-              values_fill = 0) %>%
-  right_join(
-    consumers %>% mutate(consumer_id = row_number()) %>%
-      select(consumer_id, lat, lng),
-    by = "consumer_id"
-  ) %>%
-  mutate(across(c(`1`, `2`, `3`), ~replace_na(.x, 0))) %>%
-  filter(`1` + `2` + `3` > 0) %>%     # only consumers receiving deliveries
-  mutate(radius = 0.18)                # pie radius in degree units
+# ── 3. Pie radius: fixed physical size (≈ 25 km → degrees lat, aspect-corrected)
+# 1 degree lat ≈ 111 km; 1 degree lng ≈ 111 * cos(mean_lat) km
+mean_lat   <- mean(sites_pie$lat, na.rm = TRUE)
+km_per_deg_lat <- 111.0
+km_per_deg_lng <- 111.0 * cos(mean_lat * pi / 180)
 
-# ── Aggregated flows site→hub (for arc width) ────────────────────────────────
-flows_ij <- ext$Xij %>%
-  group_by(site_id, hub_id) %>%
-  summarise(total = sum(value), .groups = "drop") %>%
-  left_join(sites_map  %>% select(site_id, lat_i = lat, lng_i = lng),
-            by = "site_id") %>%
-  left_join(hubs_map   %>% select(hub_id,  lat_j = lat, lng_j = lng),
-            by = "hub_id") %>%
-  filter(total > 0)
+# Base radius in degrees lat (physical size: 25 km)
+r_base_lat <- 5 / km_per_deg_lat          # ≈ 0.225°
+r_base_lng <- 5 / km_per_deg_lng          # wider in lng to compensate aspect
 
-# ── Aggregated flows hub→consumer ────────────────────────────────────────────
-flows_jk <- ext$Xjk %>%
-  group_by(hub_id, consumer_id) %>%
-  summarise(total = sum(value), .groups = "drop") %>%
-  left_join(hubs_map %>% select(hub_id,      lat_j = lat, lng_j = lng),
-            by = "hub_id") %>%
-  left_join(consumers %>% mutate(consumer_id = row_number()) %>%
-              select(consumer_id, lat_k = lat, lng_k = lng),
-            by = "consumer_id") %>%
-  filter(total > 0)
+# Scale radius by sqrt(total_vol) relative to the median site
+vol_med    <- median(sites_pie$total_vol[sites_pie$total_vol > 0])
+sites_pie  <- sites_pie %>%
+  mutate(
+    r_lat = r_base_lat * sqrt(total_vol / vol_med),
+    r_lng = r_base_lng * sqrt(total_vol / vol_med)   # same physical km → different deg
+  )
 
-# ── Build plot ────────────────────────────────────────────────────────────────
-lw <- function(x) 0.3 + 2.5 * x / max(x, 1)   # arc line-width helper
+# ── 4. Storage and consumer point data ───────────────────────────────────────
+stor_sf <- storages %>%
+  select(storage_id, lat, lng) %>%
+  st_as_sf(coords = c("lng", "lat"), crs = 4326)
 
-p_map <- ggplot() +
-  geom_sf(data = de_sf, fill = "#f5f5f0", colour = "#cccccc", linewidth = 0.3) +
+cons_sf <- consumers %>%
+  select(consumer_id, lat, lng) %>%
+  st_as_sf(coords = c("lng", "lat"), crs = 4326)
 
-  # flows site → hub
-  geom_segment(data = flows_ij,
-               aes(x = lng_i, y = lat_i, xend = lng_j, yend = lat_j,
-                   linewidth = total),
-               colour = "#74c476", alpha = 0.40, lineend = "round",
-               show.legend = FALSE) +
-  scale_linewidth_continuous(range = c(0.3, 2.5)) +
+# ── 5. Map extent (bounding box of all elements + buffer) ────────────────────
+all_lngs <- c(sites_pie$lng, storages$lng, consumers$lng)
+all_lats <- c(sites_pie$lat, storages$lat, consumers$lat)
+buf_lng  <- diff(range(all_lngs)) * 0.12
+buf_lat  <- diff(range(all_lats)) * 0.12
 
-  # flows hub → consumer
-  geom_segment(data = flows_jk,
-               aes(x = lng_j, y = lat_j, xend = lng_k, yend = lat_k,
-                   linewidth = total),
-               colour = COL_HUB, alpha = 0.40, lineend = "round",
-               show.legend = FALSE) +
+xlim <- range(all_lngs) + c(-buf_lng, buf_lng)
+ylim <- range(all_lats) + c(-buf_lat, buf_lat)
 
-  # non-active super-sites
-  geom_point(data = sites_map %>% filter(!active),
-             aes(x = lng, y = lat),
-             shape = 21, fill = COL_SITE_NONE, colour = "white",
-             size = 1.2, alpha = 0.5) +
+# Aspect ratio for coord_sf — ensures pies are circular in the printed figure
+# (ggplot device aspect = fig.height / fig.width = 6/7 ≈ 0.857)
+asp_device <- 6 / 7
+asp_map    <- diff(ylim) / diff(xlim) * (km_per_deg_lat / km_per_deg_lng)
+# scatterpie radius must be in *x-axis units*; use r_lng directly
 
-  # active AFS super-sites (size ∝ sqrt area)
-  geom_point(data = sites_map %>% filter(active),
-             aes(x = lng, y = lat, size = sqrt(area_plot)),
-             shape = 21, fill = COL_SITE_ACT, colour = "#00441b",
-             stroke = 0.6, alpha = 0.85) +
-  scale_size_continuous(name = expression(sqrt("Area (ha)")),
-                        range = c(1.5, 7), guide = "none") +
+# ── 6. Plot ──────────────────────────────────────────────────────────────────
+pal_products <- c(
+  p1 = "#1b9e77",   # stem     – green
+  p2 = "#d95f02",   # branches – orange
+  p3 = "#7570b3"    # residues – purple
+)
 
-  # storage hubs
-  geom_point(data = hubs_map %>% filter(active),
-             aes(x = lng, y = lat),
-             shape = 22, fill = COL_HUB, colour = "#6b2400",
-             size = 4, stroke = 0.8) +
+ggplot() +
+  # Background
+  geom_sf(data = st_de,
+          fill = "grey96", colour = "grey70", linewidth = 0.25) +
+  geom_sf(data = de,
+          fill = NA, colour = "grey40", linewidth = 0.5) +
 
-  # demand-coverage pies per consumer
-  scatterpie::geom_scatterpie(
-    data     = pie_data,
-    aes(x = lng, y = lat, r = radius, group = consumer_id),
-    cols     = c("1", "2", "3"),
-    colour   = "white", linewidth = 0.3, alpha = 0.90
+  # Storage facilities
+  geom_sf(data = stor_sf,
+          shape = 17, size = 2.5, colour = "#2166ac", alpha = 0.9) +
+
+  # Consumer sites
+  geom_sf(data = cons_sf,
+          shape = 15, size = 2.0, colour = "#b2182b", alpha = 0.9) +
+
+  # Pie charts for production sites
+  # scatterpie::geom_scatterpie needs a data.frame (not sf) with x, y, r columns
+  geom_scatterpie(
+    data        = as.data.frame(sites_pie),
+    aes(x = lng, y = lat, r = r_lng),   # r in longitude-degrees → same unit as x-axis
+    cols        = c("p1", "p2", "p3"),
+    colour      = NA,
+    alpha       = 0.85
   ) +
-  scale_fill_manual(name   = "Product",
-                    values = P_COLS,
-                    labels = P_LABS) +
 
-  # bounding box to study region
-  coord_sf(xlim = range(sites_map$lng) + c(-0.5, 0.5),
-           ylim = range(sites_map$lat) + c(-0.3, 0.3),
-           expand = FALSE) +
+  scale_fill_manual(
+    name   = "Biomass type",
+    values = pal_products,
+    labels = c("p1" = "Stem", "p2" = "Branches", "p3" = "Residues")
+  ) +
+
+  # Map extent — coord_sf enforces true aspect ratio so lng-radius pies are circular
+  coord_sf(
+    xlim   = xlim,
+    ylim   = ylim,
+    expand = FALSE,
+    # datum = NA suppresses graticule but keeps correct projection
+    datum  = sf::st_crs(4326)
+  ) +
+
+  # Annotation legend for non-fill shapes
+  annotate("point", x = xlim + 0.05*diff(xlim), y = ylim + 0.12*diff(ylim),
+           shape = 17, size = 2.5, colour = "#2166ac") +
+  annotate("text",  x = xlim + 0.09*diff(xlim), y = ylim + 0.12*diff(ylim),
+           label = "Storage", hjust = 0, size = 2.5) +
+  annotate("point", x = xlim + 0.05*diff(xlim), y = ylim + 0.07*diff(ylim),
+           shape = 15, size = 2.0, colour = "#b2182b") +
+  annotate("text",  x = xlim + 0.09*diff(xlim), y = ylim + 0.07*diff(ylim),
+           label = "Consumer", hjust = 0, size = 2.5) +
+
   labs(x = NULL, y = NULL) +
   theme_minimal(base_size = 9) +
   theme(
-    legend.position   = "right",
-    legend.key.size   = unit(0.35, "cm"),
-    panel.grid.major  = element_line(colour = "#e0e0e0", linewidth = 0.2),
-    axis.text         = element_text(size = 7)
+    legend.position   = "bottom",
+    legend.key.size   = unit(0.4, "cm"),
+    legend.text       = element_text(size = 7),
+    legend.title      = element_text(size = 8, face = "bold"),
+    panel.grid        = element_line(colour = "grey85", linewidth = 0.2),
+    axis.text         = element_text(size = 6),
+    plot.margin       = margin(2, 2, 2, 2, "mm")
   )
-
-p_map
 ```
 
 ```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total production quantity of biomass types and its industrial usage over planning horizon (in tons).", fig.width=7, fig.height=5.5, dev="pdf", out.width="\\textwidth"}
