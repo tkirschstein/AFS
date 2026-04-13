@@ -58,37 +58,49 @@ csl: elsevier-harvard.csl
 
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(
-  echo = FALSE,
-  message = FALSE,
-  warning = FALSE,
-  fig.align = "center",
-  fig.path = "figures/"
+  echo        = FALSE,
+  message     = FALSE,
+  warning     = FALSE,
+  fig.align   = "center",
+  fig.path    = "figures/",
+  # --- additions ---
+  cache       = FALSE,          # set TRUE per-chunk for heavy computations
+  out.width   = "\\textwidth",  # consistent figure width for elsevier 1p
+  dev         = "pdf"           # vector output for LaTeX/XeLaTeX pipeline
 )
 
-library(magick)
-library(dplyr)
-library(plotly)
-library(ggplot2)
-library(tidyr)
-library(patchwork)
+# Suppress noisy package startup messages globally
+suppressPackageStartupMessages({
+  library(magick)
+  library(dplyr)
+  library(plotly)
+  library(ggplot2)
+  library(tidyr)
+  library(patchwork)
+  library(knitr)
+  library(kableExtra)
+  library(sf)
+  library(stringr)
+  library(leaflet)
+  library(osrm)
+  library(ROI)
+  library(ROI.plugin.glpk)
+  library(gurobi)
+  library(ROI.plugin.gurobi)
+  library(ggrepel)
+  library(ggnewscale)
+  library(rnaturalearth)
+  library(rnaturalearthdata)
+  library(Rcpp)
+  library(RcppArmadillo)
+  library(scatterpie)
+})
+options(kableExtra.latex.load_packages = FALSE)
+options(knitr.table.format = "latex")
 
 ```
 
-```{r load-model-data, echo=FALSE, message=FALSE, warning=FALSE}
-library(sf)
-library(leaflet)
-library(osrm)
-library(ROI)
-library(ROI.plugin.glpk)
-library(gurobi)
-library(ROI.plugin.gurobi)
-library(ggrepel)
-library(ggnewscale)
-library(rnaturalearth)
-library(rnaturalearthdata)
-library(Rcpp)
-library(RcppArmadillo)
-
+```{r load-model-data, echo=FALSE, message=FALSE, warning=FALSE, cache=T}
 source("../Modell/!helper_func.r")
 source("../Modell/!helper_instance_builder_v8a.R")
 source("../Modell/!build_AFS_milp.r")
@@ -147,67 +159,73 @@ f_branch_g <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hb
 f_rest_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hr/(hs+hb+hr) }
 
 
-# Yield table from Chapman-Richards (3 products)
-yields_by_age <- expand_grid(product = 1:3, age = 1:15)
-yields_by_age$yield_ha <- apply(yields_by_age, 1, function(row) B_AG_index(row[2] , row[1]))
+# # Yield table from Chapman-Richards (3 products)
+# yields_by_age <- expand_grid(product = 1:3, age = 1:15)
+# yields_by_age$yield_ha <- apply(yields_by_age, 1, function(row) B_AG_index(row[2] , row[1]))
+# 
+# yields_by_age$yield_ha <- yields_by_age$yield_ha / 3 # scale to share of AFS to total size of Feldblock
+# 
+# sites_clustered <- afs_workspace$sites_clustered %>%
+#   mutate(
+#     C_est  = 2500,   # €/ha  establishment (Section 2.1 mid-range)
+#     C_harv =  150,    # €/ha  harvest cost  (Section 2.1 mid-range)
+#     C_main = 10, #  €/ha  maintenance cost  (Section 2.1 mid-range)
+#     C_opp = 450/10, #  €/ha  opportunity cost  (Section 2.1 mid-range)
+#   ) #%>%   # change column name area_ha to area if necessary  rename(area_ha = area)
+# 
+# 
+# # change storage costs
+# storages$c_stor <- storages$c_stor
+# # change capacities
+# storages$CAP_stor <- storages$CAP_stor * 100000
+# storages$CAP_proc <- storages$CAP_proc * 100000
+# 
+# data_obj <- list(
+#   sites    = sites_clustered,
+#   storages = storages,
+#   consumers = consumers,
+#   dist_ij  = afs_workspace$dist_ij_clust,
+#   #dist_ij  = afs_workspace$dist_ij,
+#   dist_jk  = dist_jk,
+#   yields_by_age = yields_by_age
+# )
+# 
+# # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
+# params_obj <- list(
+#   n_periods  = 40,
+#   max_age    = 15L,    # A_max: LRAFS upper rotation bound
+#   min_age    =  3L,    # A_min: SRAFS lower rotation bound
+#   c_tr_raw   = 0.08,   # €/(t·km)  raw biomass  site → storage
+#   c_tr_pre   = 0.06   # €/(t·km)  chips        storage → consumer
+# )
+# 
+# # ── 4. generate instance ─────────────────────────────────────
+#  milp_instance <- build_optimization_instance(
+#    data         = data_obj,
+#    params       = params_obj
+#  ) 
+# 
+# model <- build_agroforestry_lp_rcpp(milp_instance)
+# 
+# result <- solve_lp_with_gurobi(
+#   model,
+#   start  = trivial_zero_start(model),
+#   params = list(
+#     TimeLimit = 600, 
+#     MIPFocus = 1, 
+#     MIPGap = 0.01,
+#     Cuts = 3)
+# )
+# 
+# saveRDS(model, "lp_r.rds")
+# saveRDS(res, "lp_r_result.rds")
+# saveRDS(milp_instance, "lp_instance_data.rds")
 
-yields_by_age$yield_ha <- yields_by_age$yield_ha / 3 # scale to share of AFS to total size of Feldblock
+model <- readRDS("lp_r.RDS")
+result <- readRDS("lp_r_result.rds")
+milp_instance <- readRDS("lp_instance_data.rds")
 
-sites_clustered <- afs_workspace$sites_clustered %>%
-  mutate(
-    C_est  = 2500/30000,   # €/ha  establishment (Section 2.1 mid-range)
-    C_harv =  150/30000,    # €/ha  harvest cost  (Section 2.1 mid-range)
-    C_main = 10/10000, #  €/ha  maintenance cost  (Section 2.1 mid-range)
-    C_opp = 450/1000000, #  €/ha  opportunity cost  (Section 2.1 mid-range)
-  )
-
-# change storage costs
-storages$c_stor <- storages$c_stor/100
-# change capacities
-storages$CAP_stor <- storages$CAP_stor * 100000
-storages$CAP_proc <- storages$CAP_proc * 100000
-
-data_obj <- list(
-  sites    = sites_clustered,
-  storages = storages,
-  consumers = consumers,
-  dist_ij  = afs_workspace$dist_ij_clust,
-  dist_jk  = dist_jk,
-  yields_by_age = yields_by_age
-)
-
-# ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
-params_obj <- list(
-  n_periods  = 35,
-  max_age    = 10L,    # A_max: LRAFS upper rotation bound
-  min_age    =  5L,    # A_min: SRAFS lower rotation bound
-  c_tr_raw   = 0.08/1000,   # €/(t·km)  raw biomass  site → storage
-  c_tr_pre   = 0.06/1000   # €/(t·km)  chips        storage → consumer
-)
-
-# ── 4. CALL generate_instance_v8_final() ─────────────────────────────────────
-milp_instance <- build_optimization_instance(
-  data         = data_obj,
-  params       = params_obj
-) 
-
-model <- build_agroforestry_lp_rcpp(milp_instance)
-
-result <- solve_lp_with_gurobi(
-  model,
-  start  = x0,
-  params = list(
-    TimeLimit = 600, 
-    MIPFocus = 1, 
-    MIPGap = 0.01,
-    Cuts = 3)
-)
-
-saveRDS(model, "lp_r.rds")
-saveRDS(res, "lp_r_result.rds")
-
-#model <- readRDS("lp_r.RDS")
-#result <- readRDS("lp_r_result.rds")
+ext <- extract_result(result, milp_instance)
 
 # 
 # # 2. Inspect the LP
@@ -230,20 +248,20 @@ saveRDS(res, "lp_r_result.rds")
 #                                 MIPFocus = 2, 
 #                                 MIPGap = 0.001,
 #                                 Cuts = 3))
+# 
+# 
+# # Extract + print KPI summary
 
-
-# Extract + print KPI summary
-ext <- extract_result(res2, instance)
-print(ext)
-
-# Validate decoded solution
-chk <- validate_extracted(ext)
-if (!chk$pass) View(chk$violations$V2_inventory_balance)
-
-# Analysis examples
-ext$z   |> filter(arc_type == "harvest") |> count(site_id, t)
-ext$Xjk |> group_by(consumer_id, period) |> summarise(vol = sum(value))
-
+# print(ext)
+# 
+# # Validate decoded solution
+# chk <- validate_extracted(ext)
+# if (!chk$pass) View(chk$violations$V2_inventory_balance)
+# 
+# # Analysis examples
+# ext$z   |> filter(arc_type == "harvest") |> count(site_id, t)
+# ext$Xjk |> group_by(consumer_id, period) |> summarise(vol = sum(value))
+# 
 
 ```
 
@@ -1207,4 +1225,313 @@ params_df %>%
   pack_rows("Biomass dynamics", 6, 7) %>%
   pack_rows("Cost parameters", 8, 10) %>%
   pack_rows("Revenue parameters", 11, 13)
+```
+
+
+## Optimization results
+
+
+```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Optimal agroforestry supply chain network. Green filled circles: super-sites with established AFS (sized by total harvested area); grey circles: non-selected super-sites. Pie charts at each active consumer show the average period-level demand coverage by biomass product (stem~=~P1, branches~=~P2, residues~=~P3). Orange squares: storage/pre-treatment hubs with active inflows. Arcs: aggregated biomass flows (width $\\propto$ total volume).", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth"}
+
+# ── Colour palette (consistent with clustering map) ──────────────────────────
+COL_SITE_ACT  <- "#1b9e77"    # active AFS site
+COL_SITE_NONE <- "#bdbdbd"    # never-planted super-site
+COL_HUB       <- "#e65c00"    # storage hub
+COL_CONSUMER  <- "#6a3d9a"    # consumer
+P_COLS <- c("1" = "#1b9e77", "2" = "#d95f02", "3" = "#7570b3")
+P_LABS <- c("1" = "Stem", "2" = "Branches", "3" = "Residues")
+
+# ── Background map ────────────────────────────────────────────────────────────
+de_sf <- ne_states(country = "Germany", returnclass = "sf")
+
+# ── Active sites (establishments in ext$z) ───────────────────────────────────
+est_sites <- ext$z %>%
+  filter(arc_type == "establishment") %>%
+  distinct(site_id, area_ha)
+
+sites_clustered <- afs_workspace$sites_clustered
+# if column "area" is exists, rename it to area_ha
+if("area" %in% colnames(sites_clustered)) {
+  sites_clustered <- sites_clustered %>%
+    rename(area_ha = area)
+}
+
+
+sites_map <- sites_clustered %>%
+  mutate(site_id = row_number()) %>%
+  left_join(est_sites, by = "site_id") %>%
+  mutate(
+    active    = !is.na(area_ha.y),
+    area_plot = coalesce(area_ha.y, 0)
+  )
+
+# ── Hub activity: any inflow > 0 ─────────────────────────────────────────────
+active_hubs <- ext$Xij %>%
+  group_by(hub_id) %>%
+  summarise(total_in = sum(value), .groups = "drop") %>%
+  filter(total_in > 0)
+
+hubs_map <- storages %>%
+  mutate(hub_id = row_number()) %>%
+  left_join(active_hubs, by = "hub_id") %>%
+  mutate(active = !is.na(total_in))
+
+# ── Consumer demand-coverage pie data ────────────────────────────────────────
+# Average per-period delivery per consumer × del_product
+n_periods_active <- length(unique(ext$Xjk$period))
+
+pie_data <- ext$Xjk %>%
+  group_by(consumer_id, del_product) %>%
+  summarise(mean_vol = sum(value) / max(n_periods_active, 1), .groups = "drop") %>%
+  mutate(product = as.character(del_product)) %>%
+  pivot_wider(id_cols = consumer_id,
+              names_from  = product,
+              values_from = mean_vol,
+              values_fill = 0) %>%
+  right_join(
+    consumers %>% mutate(consumer_id = row_number()) %>%
+      select(consumer_id, lat, lng),
+    by = "consumer_id"
+  ) %>%
+  mutate(across(c(`1`, `2`, `3`), ~replace_na(.x, 0))) %>%
+  filter(`1` + `2` + `3` > 0) %>%     # only consumers receiving deliveries
+  mutate(radius = 0.18)                # pie radius in degree units
+
+# ── Aggregated flows site→hub (for arc width) ────────────────────────────────
+flows_ij <- ext$Xij %>%
+  group_by(site_id, hub_id) %>%
+  summarise(total = sum(value), .groups = "drop") %>%
+  left_join(sites_map  %>% select(site_id, lat_i = lat, lng_i = lng),
+            by = "site_id") %>%
+  left_join(hubs_map   %>% select(hub_id,  lat_j = lat, lng_j = lng),
+            by = "hub_id") %>%
+  filter(total > 0)
+
+# ── Aggregated flows hub→consumer ────────────────────────────────────────────
+flows_jk <- ext$Xjk %>%
+  group_by(hub_id, consumer_id) %>%
+  summarise(total = sum(value), .groups = "drop") %>%
+  left_join(hubs_map %>% select(hub_id,      lat_j = lat, lng_j = lng),
+            by = "hub_id") %>%
+  left_join(consumers %>% mutate(consumer_id = row_number()) %>%
+              select(consumer_id, lat_k = lat, lng_k = lng),
+            by = "consumer_id") %>%
+  filter(total > 0)
+
+# ── Build plot ────────────────────────────────────────────────────────────────
+lw <- function(x) 0.3 + 2.5 * x / max(x, 1)   # arc line-width helper
+
+p_map <- ggplot() +
+  geom_sf(data = de_sf, fill = "#f5f5f0", colour = "#cccccc", linewidth = 0.3) +
+
+  # flows site → hub
+  geom_segment(data = flows_ij,
+               aes(x = lng_i, y = lat_i, xend = lng_j, yend = lat_j,
+                   linewidth = total),
+               colour = "#74c476", alpha = 0.40, lineend = "round",
+               show.legend = FALSE) +
+  scale_linewidth_continuous(range = c(0.3, 2.5)) +
+
+  # flows hub → consumer
+  geom_segment(data = flows_jk,
+               aes(x = lng_j, y = lat_j, xend = lng_k, yend = lat_k,
+                   linewidth = total),
+               colour = COL_HUB, alpha = 0.40, lineend = "round",
+               show.legend = FALSE) +
+
+  # non-active super-sites
+  geom_point(data = sites_map %>% filter(!active),
+             aes(x = lng, y = lat),
+             shape = 21, fill = COL_SITE_NONE, colour = "white",
+             size = 1.2, alpha = 0.5) +
+
+  # active AFS super-sites (size ∝ sqrt area)
+  geom_point(data = sites_map %>% filter(active),
+             aes(x = lng, y = lat, size = sqrt(area_plot)),
+             shape = 21, fill = COL_SITE_ACT, colour = "#00441b",
+             stroke = 0.6, alpha = 0.85) +
+  scale_size_continuous(name = expression(sqrt("Area (ha)")),
+                        range = c(1.5, 7), guide = "none") +
+
+  # storage hubs
+  geom_point(data = hubs_map %>% filter(active),
+             aes(x = lng, y = lat),
+             shape = 22, fill = COL_HUB, colour = "#6b2400",
+             size = 4, stroke = 0.8) +
+
+  # demand-coverage pies per consumer
+  scatterpie::geom_scatterpie(
+    data     = pie_data,
+    aes(x = lng, y = lat, r = radius, group = consumer_id),
+    cols     = c("1", "2", "3"),
+    colour   = "white", linewidth = 0.3, alpha = 0.90
+  ) +
+  scale_fill_manual(name   = "Product",
+                    values = P_COLS,
+                    labels = P_LABS) +
+
+  # bounding box to study region
+  coord_sf(xlim = range(sites_map$lng) + c(-0.5, 0.5),
+           ylim = range(sites_map$lat) + c(-0.3, 0.3),
+           expand = FALSE) +
+  labs(x = NULL, y = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(
+    legend.position   = "right",
+    legend.key.size   = unit(0.35, "cm"),
+    panel.grid.major  = element_line(colour = "#e0e0e0", linewidth = 0.2),
+    axis.text         = element_text(size = 7)
+  )
+
+p_map
+```
+
+```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Optimal harvest cycle schedule across all established AFS sites. Each horizontal bar spans one growth cycle from establishment (or last harvest) to next harvest. Bar shade encodes stand age at harvest; sites are grouped and sorted by first establishment period.", fig.width=7, fig.height=5.5, dev="pdf", out.width="\\textwidth"}
+
+harvest_cycles <- ext$z %>%
+  filter(arc_type %in% c("establishment", "harvest")) %>%
+  arrange(site_id, s) %>%
+  mutate(
+    cycle_start = s,
+    cycle_end   = t,
+    age_at_harv = age_len
+  )
+
+# Site ordering: by first establishment period
+site_order <- harvest_cycles %>%
+  filter(arc_type == "establishment") %>%
+  arrange(s) %>%
+  pull(site_id)
+
+# Keep only established sites; label as sequential index for plot clarity
+harvest_plot <- harvest_cycles %>%
+  filter(site_id %in% site_order) %>%
+  mutate(site_rank = match(site_id, site_order))
+
+ggplot(harvest_plot,
+       aes(xmin = cycle_start, xmax = cycle_end,
+           ymin = site_rank - 0.42, ymax = site_rank + 0.42,
+           fill = age_at_harv)) +
+  geom_rect(colour = "white", linewidth = 0.25) +
+  scale_fill_distiller(
+    name    = "Age at\nharvest (yr)",
+    palette = "YlGn",
+    direction = 1,
+    limits  = c(milp_instance$min_age, milp_instance$max_age)
+  ) +
+  scale_x_continuous(name = "Planning period (year)",
+                     breaks = seq(1, milp_instance$n_periods, by = 2)) +
+  scale_y_continuous(name = "AFS site (ranked by est. period)",
+                     breaks = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    legend.position    = "right",
+    legend.key.height  = unit(0.8, "cm")
+  )
+```
+
+
+```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Total biomass delivered to consumers by product type over the planning horizon. Stacked areas show period-level volumes of stem (P1), branches (P2), and residues (P3) flowing from storage hubs to all consumers. Dashed line: total harvested raw biomass shipped from sites to hubs.", fig.width=6.5, fig.height=4, dev="pdf", out.width="\\textwidth"}
+
+prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
+
+# Deliveries aggregated by period × del_product
+delivery_ts <- ext$Xjk %>%
+  group_by(period, product = factor(del_product)) %>%
+  summarise(volume = sum(value), .groups = "drop")
+
+# Raw biomass shipped (Xij) aggregated by period — shown as dashed reference
+shipped_ts <- ext$Xij %>%
+  group_by(period) %>%
+  summarise(shipped = sum(value), .groups = "drop")
+
+ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
+  geom_area(position = "stack", alpha = 0.80, colour = "white", linewidth = 0.2) +
+  geom_line(data = shipped_ts,
+            aes(x = period, y = shipped),
+            inherit.aes = FALSE,
+            colour = "#636363", linetype = "dashed", linewidth = 0.7) +
+  scale_fill_manual(
+    name   = "Product",
+    values = c("1" = "#1b9e77", "2" = "#d95f02", "3" = "#7570b3"),
+    labels = prod_labels
+  ) +
+  scale_x_continuous(name = "Planning period (year)",
+                     breaks = seq(1, milp_instance$n_periods, by = 2)) +
+  scale_y_continuous(name = "Volume (t dry matter)",
+                     labels = scales::comma) +
+  annotate("text", x = max(shipped_ts$period) - 1,
+           y = max(shipped_ts$shipped) * 0.95,
+           label = "Raw shipped\n(site→hub)", size = 2.5,
+           colour = "#636363", hjust = 1) +
+  theme_minimal(base_size = 9) +
+  theme(legend.position = "right",
+        panel.grid.minor = element_blank())
+```
+
+
+```{r fig-results-inventory, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="End-of-period inventory levels at storage/pre-treatment hubs, disaggregated by product type. Each panel corresponds to one active hub.", fig.width=7, fig.height=3.5, dev="pdf", out.width="\\textwidth"}
+
+inv_ts <- ext$S %>%
+  mutate(product = factor(product, labels = c("Stem", "Branches", "Residues")[seq_len(max(product))])) %>%
+  left_join(
+    storages %>% mutate(hub_id = row_number()) %>% select(hub_id, hub_name = name),
+    by = "hub_id"
+  ) %>%
+  filter(!is.na(value), value > 0)
+
+ggplot(inv_ts, aes(x = period, y = value, fill = product)) +
+  geom_area(position = "stack", alpha = 0.78, colour = "white", linewidth = 0.2) +
+  facet_wrap(~hub_name, scales = "free_y") +
+  scale_fill_manual(
+    name   = "Product",
+    values = c("Stem" = "#1b9e77", "Branches" = "#d95f02", "Residues" = "#7570b3")
+  ) +
+  scale_x_continuous(breaks = seq(1, milp_instance$n_periods, by = 4)) +
+  scale_y_continuous(name = "Inventory (t)", labels = scales::comma) +
+  labs(x = "Planning period (year)") +
+  theme_minimal(base_size = 8) +
+  theme(legend.position = "bottom",
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(face = "bold", size = 7))
+```
+
+```{r tab-results-demand-coverage, echo=FALSE, message=FALSE, warning=FALSE}
+
+# Compute demand coverage per consumer × product over all periods
+demand_ref <- consumers %>%
+  mutate(consumer_id = row_number()) %>%
+  pivot_longer(cols = starts_with("demand_P"),
+               names_to  = "product_label",
+               values_to = "demand_per_period") %>%
+  mutate(del_product = as.integer(str_extract(product_label, "\\d+"))) %>%
+  select(consumer_id, name, del_product, demand_per_period)
+
+coverage_tbl <- ext$Xjk %>%
+  group_by(consumer_id, del_product) %>%
+  summarise(total_del = sum(value), .groups = "drop") %>%
+  mutate(avg_del = total_del / n_periods_active) %>%
+  left_join(demand_ref, by = c("consumer_id", "del_product")) %>%
+  mutate(
+    coverage_pct = round(100 * avg_del / pmax(demand_per_period, 1e-6), 1),
+    avg_del      = round(avg_del, 1)
+  ) %>%
+  select(Consumer = name,
+         `Product` = del_product,
+         `Avg. delivery\n(t/yr)` = avg_del,
+         `Coverage\n(\\%)` = coverage_pct) %>%
+  mutate(Product = recode(Product,
+    `1` = "Stem", `2` = "Branches", `3` = "Residues"))
+
+kable(coverage_tbl,
+      format   = "latex", booktabs = TRUE, escape = FALSE,
+      caption  = "Average annual demand coverage per consumer and product type.",
+      label    = "tab-results-demand-coverage") %>%
+  kable_styling(font_size = 8,
+                latex_options = c("hold_position", "scale_down")) %>%
+  column_spec(1, width = "3.5cm") %>%
+  column_spec(2, width = "2cm") %>%
+  column_spec(3:4, width = "2.2cm")
 ```
