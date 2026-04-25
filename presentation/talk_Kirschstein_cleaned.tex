@@ -1,4 +1,4 @@
-\documentclass[10pt]{beamer}
+\documentclass[10pt,aspectratio=169]{beamer}
 
 % Sprache
 \usepackage[ngerman]{babel}
@@ -208,7 +208,8 @@
 \frame[plain,label=title]{
   \titlepage
   % Fraunhofer IKTS Logo prominent auf der Titelfolie (unten rechts)
-  \begin{textblock}{4}(5.5,7.5)
+  % Textblock-Position angepasst fuer 16:9-Format (Breite: 160mm -> x=12.5 fuer rechten Rand)
+  \begin{textblock}{4}(12.5,7.5)
     \includegraphics[height=14ex]{fig/ikts_logo}
   \end{textblock}
 }
