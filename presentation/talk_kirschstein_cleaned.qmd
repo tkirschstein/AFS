@@ -21,96 +21,75 @@ format:
 lang: de
 ---
 
-## {.title-slide}
-
-:::: {.columns}
-::: {.column width="100%" style="text-align:center; padding-top: 1.5rem;"}
-![](fig/ikts_logo.png){height=60px style="margin-bottom:1.5rem;"}
-
-### Planung von Agroforst-Wertschöpfungsketten
-
----
-
-**Thomas Kirschstein**  
-Fraunhofer IKTS · Martin-Luther-Universität Halle-Wittenberg
-:::
-::::
-
-
 # Einleitung
 
 ## Motivation
 
-- **Agroforst** kombiniert Gehölze (Bäume, Sträucher) mit landwirtschaftlichen Kulturen oder Vieh auf *derselben Fläche*
+-   **Agroforst** kombiniert Gehölze (Bäume, Sträucher) mit landwirtschaftlichen Kulturen oder Vieh auf *derselben Fläche*
 
-- **Vielfältige Produkte:** Holz, Früchte, Nüsse, Biomasse, Nahrungsmittel, Futtermittel
+-   **Vielfältige Produkte:** Holz, Früchte, Nüsse, Biomasse, Nahrungsmittel, Futtermittel
 
-- **Herausforderung:** Planung effizienter Wertschöpfungsketten unter Berücksichtigung *langer Produktionszyklen*
-
+-   **Herausforderung:** Planung effizienter Wertschöpfungsketten unter Berücksichtigung *langer Produktionszyklen*
 
 # Wertschöpfungskette
 
 ## Struktur der Agroforst-Wertschöpfungskette
 
-:::: {.columns}
-
+::::: columns
 ::: {.column width="50%"}
 **Produktionsseite:**
 
-- Standortauswahl & Flächennutzung
-- Baumarten- & Kulturwahl
-- Ernte- & Pflegemaßnahmen
+-   Standortauswahl & Flächennutzung
+-   Baumarten- & Kulturwahl
+-   Ernte- & Pflegemaßnahmen
 :::
 
 ::: {.column width="50%"}
 **Logistik & Vermarktung:**
 
-- Transport & Lagerung
-- Verarbeitungsstufen
-- Absatzkanäle (regional, überregional)
+-   Transport & Lagerung
+-   Verarbeitungsstufen
+-   Absatzkanäle (regional, überregional)
 :::
+:::::
 
-::::
-
-::: {.callout-note}
+::: callout-note
 ## Integrationsbedarf
+
 Integrierte Planung erfordert systemweite Betrachtung von **Produktion ↔ Logistik ↔ Markt**
 :::
-
 
 # Optimierungsmodell
 
 ## MILP-Formulierung
 
-:::: {.columns}
-
-::: {.column width="50%"}
-::: {.callout-note}
+::::::: columns
+:::: {.column width="50%"}
+::: callout-note
 ## Notation
 
 | Symbol | Bedeutung |
-|--------|----------|
+|--------------------------------|----------------------------------------|
 | $\mathcal{F}$ | Menge der Flächen |
 | $\mathcal{P}$ | Menge der Produkte |
 | $\mathcal{T}$ | Planungshorizont |
 | $x_{f,p,t} \in \{0,1\}$ | 1, wenn Fläche $f$ in Periode $t$ mit Produkt $p$ bebaut |
 | $c_{f,p,t}$ | Kosten der Bepflanzung |
 :::
-:::
+::::
 
-::: {.column width="50%"}
-::: {.callout-note}
+:::: {.column width="50%"}
+::: callout-note
 ## Zielfunktion
+
 $$
 \min \sum_{f \in \mathcal{F}} \sum_{p \in \mathcal{P}} \sum_{t \in \mathcal{T}} x_{f,p,t} \cdot c_{f,p,t}
 $$
 :::
 
 Ganzzahlige Entscheidungsvariablen ermöglichen die **exakte Flächen-Produkt-Zuordnung** über den gesamten Planungshorizont.
-:::
-
 ::::
-
+:::::::
 
 # Zusammenfassung
 
@@ -124,28 +103,18 @@ Ganzzahlige Entscheidungsvariablen ermöglichen die **exakte Flächen-Produkt-Zu
 
 . . .
 
-::: {.callout-important}
+::: callout-important
 ## Offene Forschungsfragen
 
-- **Skalierbarkeit** bei großen Instanzen
-- **Integration von Unsicherheiten** (Erträge, Preise, Klima)
-- **Mehrzielige Optimierung** (ökonomisch & ökologisch)
+-   **Skalierbarkeit** bei großen Instanzen
+-   **Integration von Unsicherheiten** (Erträge, Preise, Klima)
+-   **Mehrzielige Optimierung** (ökonomisch & ökologisch)
 :::
-
 
 ## Abschließend… {.center}
 
-:::: {.columns}
-::: {.column width="100%" style="text-align:center; padding-top:2rem;"}
-![](fig/ikts_logo.png){height=52px style="margin-bottom:1.5rem;"}
 
 # Fragen?
-
-**Thomas Kirschstein**  
-Fraunhofer IKTS · MLU Halle-Wittenberg
-:::
-::::
-
 
 ## Literatur {.appendix}
 
