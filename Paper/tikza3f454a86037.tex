@@ -1,0 +1,67 @@
+\documentclass[
+%% TIKZ_CLASSOPTION %%
+tikz
+]{standalone}
+\usepackage{amsmath}
+\usetikzlibrary{matrix}
+%% EXTRA_TIKZ_PREAMBLE_CODE %%
+\usetikzlibrary{arrows.meta,bending,positioning}
+\begin{document}
+%% TIKZ_CODE %%
+\begin{tikzpicture}[
+  x=1.55cm, y=1cm,
+  node/.style    ={circle, draw, fill=#1, text=white,
+                   font=\small\bfseries, inner sep=2pt, minimum size=18pt},
+  inactive/.style={node=gray!25, text=gray!50},
+  pathnode/.style={node=green!40!black},
+  n0style/.style ={node=blue!70!black},
+  n9style/.style ={node=red!70!black},
+  patharc/.style ={-{Stealth[length=5pt]}, green!40!black, very thick},
+  est/.style     ={patharc, blue!70!black, dashed},
+  term/.style    ={patharc, red!70!black},
+]
+
+%% ---- Nodes ----
+\node[n0style]   (n0) at (0,0) {$0$};
+\foreach \i in {2,3,4,6,7} {
+  \node[inactive] (n\i) at (\i,0) {$\i$};
+}
+\foreach \i in {1,5,8} {
+  \node[pathnode]  (n\i) at (\i,0) {$\i$};
+}
+\node[n9style]   (n9) at (9,0) {$T\!+\!1$};
+
+%% ---- Path arcs ----
+\draw[est]     (n0) -- (n1);
+\draw[patharc] (n1) to[out=60, in=120, looseness=0.42] (n5);
+\draw[patharc] (n5) to[out=55, in=125, looseness=0.55] (n8);
+\draw[term]    (n8) -- (n9);
+
+%% ---- Arc labels ----
+\node[font=\footnotesize, text=blue!70!black]   at (0.5, 0.28) {est.};
+\node[font=\footnotesize, text=green!40!black]  at (3.0, 0.6) {$t-s=4$};
+\node[font=\footnotesize, text=green!40!black]  at (6.5, 0.55) {$t-s=3$};
+\node[font=\footnotesize, text=red!70!black]    at (8.5, 0.28) {term.};
+
+%% ---- Legend ----
+\node[anchor=north west] at (0.0,-0.78) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[est]     (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Establishment arc $(0,t)$};
+  \end{tikzpicture}};
+\node[anchor=north west] at (4.2,-0.78) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[patharc] (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Harvest arc $(s,t)$};
+  \end{tikzpicture}};
+\node[anchor=north west] at (7.6,-0.78) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[term]    (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Termination arc $(s,T{+}1)$};
+  \end{tikzpicture}};
+
+\end{tikzpicture}
+\end{document}

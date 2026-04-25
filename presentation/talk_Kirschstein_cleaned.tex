@@ -68,26 +68,6 @@
 % =========================================================
 \definecolor{FhGreen}{HTML}{179C7D}
 
-\newcommand{\FraunhoferIKTSlogo}[1][8ex]{%
-  \begin{tikzpicture}[baseline=(current bounding box.center)]
-    % Skalierungsfaktor abhaengig von gewuenschter Hoehe
-    \pgfmathsetmacro{\sc}{0.38}
-    % Grünes Quadrat (Fraunhofer-Signet)
-    \fill[FhGreen] (0,0) rectangle (\sc,\sc);
-    % Weisser Streifen horizontal (oberes Drittel)
-    \fill[white] (0,0.67*\sc) rectangle (\sc,\sc);
-    % Weisser Streifen vertikal (rechtes Drittel)
-    \fill[white] (0.67*\sc,0) rectangle (\sc,\sc);
-    % Grünes Rechteck oben rechts (Fraunhofer-F)
-    \fill[FhGreen] (0.67*\sc,0.67*\sc) rectangle (\sc,\sc);
-    % Schriftzug "Fraunhofer" bold
-    \node[anchor=west, font=\sffamily\bfseries\tiny, text=FhGreen]
-      at (\sc+0.04,0.72*\sc) {Fraunhofer};
-    % Schriftzug "IKTS" kleiner
-    \node[anchor=west, font=\sffamily\small\bfseries, text=FhGreen]
-      at (\sc+0.04,0.28*\sc) {IKTS};
-  \end{tikzpicture}%
-}
 
 % Math-Befehle
 \newcommand{\Y}{\mathbf{Y}}
