@@ -116,7 +116,6 @@ source("../Modell/gurobi_feascheck.R")
 source("../Modell/extract_result.R")
 Rcpp::sourceCpp("../Modell/build_lp_rcpp.cpp")
 
-
 # Chapman-Richards biomass function
 B_cr <- function(t, Bmax, k, m) {
   Bmax * (1 - exp(-k * t))^m
@@ -913,116 +912,125 @@ where $M^{sl}(a)$ follows from \eqref{eq:total-stand-biomass} and $f_p(a)$ follo
 
 The proposed MILP model is intended to support the design of agroforestry biomass supply chains for cleaner production in specific regional contexts. In a forthcoming case study, we focus on poplar-based alley-cropping systems in a temperate European setting, informed by empirical data from SRAFS trials in Southern Germany and SRC plantations in Central Europe [@Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF; @Testa2014_Poplar_Economics].
 
-```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Green polygons: potential KUP sites. Orange symbols: pre-treatment facilities (circle~=~sawmill, triangle~=~logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth"}
+```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Coloured polygons: potential KUP/AFS sites grouped by HAC super-site (colours encode cluster membership; no legend). Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth"}
 
-# ── Colour palette constants ─────────────────────────────────────────────────
-COL_SAW  <- "#e65c00"; COL_HUB  <- "#c05000"
-COL_P1   <- "#6a0dad"; COL_P2   <- "#08519c"; COL_P3   <- "#a50026"
+crs_map <- 25833
 
-# ── Base-map layers ───────────────────────────────────────────────────────────
+# ── Colour palette constants (identical to fig-results-sc-map) ────────────────
+COL_SAW <- "#e65c00"
+COL_HUB <- "#c05000"
+COL_P1  <- "#6a0dad"
+COL_P2  <- "#08519c"
+COL_P3  <- "#a50026"
+
+# ── Map extent: defined in WGS84, transformed to projected CRS ───────────────
+bbox_wgs84 <- st_as_sfc(
+  st_bbox(c(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8),
+          crs = st_crs(4326))
+)
+bbox_map <- st_transform(bbox_wgs84, crs_map)
+bbox_num <- st_bbox(bbox_map)
+
+# ── Base-map layers ────────────────────────────────────────────────────────────
 de_states <- ne_states(country = "Germany", returnclass = "sf") %>%
-  st_transform(4326)
+  st_transform(crs_map) %>%
+  st_intersection(bbox_map)
 
 rivers_eu <- ne_download(
-  scale = 10, type = "rivers_lake_centerlines",
-  category = "physical", returnclass = "sf"
+  scale    = 10,
+  type     = "rivers_lake_centerlines",
+  category = "physical",
+  returnclass = "sf"
 ) %>%
-  st_transform(4326) %>%
-  st_crop(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8)
+  st_transform(crs_map) %>%
+  st_intersection(bbox_map)
 
-# ── Join hac_cluster from site_cluster_assig onto sites_sf ───────────────────
-# afs_workspace$site_cluster_assig: columns include site_id and hac_cluster
+# ── Cluster colour palette (no legend printed) ────────────────────────────────
 cluster_assig <- afs_workspace$site_cluster_assig %>%
   select(site_id, hac_cluster) %>%
-  mutate(hac_cluster = as.factor(hac_cluster))   # discrete colour scale
+  mutate(hac_cluster = as.factor(hac_cluster))
 
-sites_sf_clust <- sites_sf %>%
-  mutate(site_id = seq_len(nrow(sites_sf))) %>%  # ensure site_id matches row order)
-  left_join(cluster_assig, by = "site_id")
-
-# Number of clusters → build a qualitative colour palette that scales with K
 n_clusters <- length(unique(cluster_assig$hac_cluster))
 
-# Use ColorBrewer "Set3" up to 12; for larger K fall back to viridis
-if (n_clusters <= 12) {
-  cluster_pal <- setNames(
-    colorRampPalette(RColorBrewer::brewer.pal(min(n_clusters, 12), "Set3"))(n_clusters),
-    levels(cluster_assig$hac_cluster)
-  )
-} else {
-  cluster_pal <- setNames(
-    scales::viridis_pal(option = "turbo")(n_clusters),
-    levels(cluster_assig$hac_cluster)
-  )
-}
+cluster_pal <- setNames(
+  if (n_clusters <= 12) {
+    colorRampPalette(RColorBrewer::brewer.pal(min(n_clusters, 12), "Set3"))(n_clusters)
+  } else {
+    scales::viridis_pal(option = "turbo")(n_clusters)
+  },
+  levels(cluster_assig$hac_cluster)
+)
 
-# ── Consumers & storages ──────────────────────────────────────────────────────
+# ── Site polygons: join cluster assignment, project ───────────────────────────
+sites_sf_clust <- sites_sf %>%
+  mutate(site_id = seq_len(nrow(sites_sf))) %>%
+  left_join(cluster_assig, by = "site_id") %>%
+  st_transform(crs_map)
+
+# ── Consumers & storages ───────────────────────────────────────────────────────
 consumers_plt <- consumers %>%
   mutate(
     total_demand = demand_P1 + demand_P2 + demand_P3,
     kategorie = case_when(
       demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
       demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
-      demand_P3 > 0 ~ "Energy / Biogas (P3)",
-      TRUE          ~ "Other"
+      demand_P3 > 0                                                     ~ "Energy / Biogas (P3)",
+      TRUE                                                              ~ "Other"
     ),
     pt_size = pmin(4.5, pmax(1.5, 1.5 + log1p(total_demand) * 0.55))
   )
 
 storages_plt <- storages %>%
   mutate(
-    subtype = if_else(type == "Hub", "Logistics Hub", "Sawmill"),
-    pt_size = pmin(3.5, pmax(1.2, 1.2 + log1p(CAP_proc) * 0.38))
+    #subtype = if_else(type == "Hub", "Logistics Hub", "Sawmill"),
+    subtype = if_else(type == "Hub", "Hub", "Hub"),
+    pt_size = 3.5
   )
 
-stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326)
-cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326)
+stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326) %>%
+  st_transform(crs_map)
 
-# ── Map ───────────────────────────────────────────────────────────────────────
+cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326) %>%
+  st_transform(crs_map)
+
+# ── Plot ───────────────────────────────────────────────────────────────────────
 ggplot() +
+
   # Base map
   geom_sf(data = de_states,
           fill = "grey96", colour = "grey55", linewidth = 0.35) +
   geom_sf(data = rivers_eu,
           colour = "#4292c6", linewidth = 0.45, alpha = 0.7) +
 
-  # ── Feldblöcke coloured by HAC cluster ──────────────────────────────────────
-  geom_sf(data  = sites_sf_clust,
-          aes(fill = hac_cluster),
-          colour  = "grey30",
+  # KUP site polygons coloured by cluster — legend suppressed via guide = "none"
+  geom_sf(data      = sites_sf_clust,
+          aes(fill  = hac_cluster),
+          colour    = "grey30",
           linewidth = 0.05,
-          alpha   = 0.65,
-          show.legend = F) +
+          alpha     = 0.65,
+          show.legend = FALSE) +
   scale_fill_manual(
-    name   = "HAC super-site",
     values = cluster_pal,
-    guide  = guide_legend(
-      ncol           = ceiling(sqrt(n_clusters)),
-      override.aes   = list(colour = "grey30", linewidth = 0.3, alpha = 0.85),
-      title.position = "top",
-      keywidth       = unit(0.35, "cm"),
-      keyheight      = unit(0.35, "cm"),
-      label.theme    = element_text(size = 5)
-    )
+    guide  = "none"          # colours visible on map; no legend entry printed
   ) +
 
-  # ── Pre-treatment facilities ─────────────────────────────────────────────────
+  # Pre-treatment facilities — new colour + shape scale after cluster fill
   ggnewscale::new_scale_colour() +
   ggnewscale::new_scale("shape") +
+  ggnewscale::new_scale_fill() +
   geom_sf(data = stor_sf,
           aes(colour = subtype, shape = subtype, size = pt_size),
-          stroke = 1.2, alpha = 0.92, show.legend = TRUE) +
+          stroke = 1.2, alpha = 0.92, show.legend = F) +
   scale_colour_manual(
     name   = "Pre-treatment",
-    values = c("Sawmill" = COL_SAW, "Logistics Hub" = COL_HUB)
+    values = c("Sawmill" = COL_SAW, "Hub" = COL_HUB)
   ) +
-  scale_shape_manual(
-    name   = "Pre-treatment",
-    values = c("Sawmill" = 16, "Logistics Hub" = 17)
-  ) +
+  # scale_shape_manual(
+  #   name   = "Pre-treatment",
+  #   values = c("Sawmill" = 16, "Logistics Hub" = 17)
+  # ) +
 
-  # ── Consumer sites ───────────────────────────────────────────────────────────
-  ggnewscale::new_scale_fill() +
+  # Consumer sites — fill scale registered after new_scale_fill() above
   geom_sf(data  = cons_sf,
           aes(fill = kategorie, size = pt_size),
           shape = 22, colour = "white", stroke = 0.45,
@@ -1037,21 +1045,23 @@ ggplot() +
     )
   ) +
 
-  # ── Shared size scale & legend order ─────────────────────────────────────────
   scale_size_continuous(range = c(1.5, 5), guide = "none") +
   guides(
     fill   = guide_legend(order = 1,
-                          override.aes = list(colour = "grey30",
-                                              linewidth = 0.3, alpha = 0.85)),
+                          override.aes = list(size = 3.5, stroke = 0.4,
+                                              colour = "white")),
     colour = guide_legend(order = 2,
                           override.aes = list(size = 4, stroke = 1.5)),
     shape  = guide_legend(order = 2,
-                          override.aes = list(size = 4, stroke = 1.5)),
-    size   = "none"
+                          override.aes = list(size = 4, stroke = 1.5))
   ) +
 
-  coord_sf(xlim = c(10.6, 13.2), ylim = c(50.9, 52.8), expand = FALSE) +
-  labs(x = "Longitude", y = "Latitude") +
+  coord_sf(
+    xlim   = c(bbox_num["xmin"], bbox_num["xmax"]),
+    ylim   = c(bbox_num["ymin"], bbox_num["ymax"]),
+    expand = FALSE
+  ) +
+  labs(x = NULL, y = NULL) +
   theme_minimal(base_size = 9) +
   theme(
     panel.grid      = element_line(colour = "grey88", linewidth = 0.25),
@@ -1062,8 +1072,6 @@ ggplot() +
     axis.text       = element_text(size = 7)
   )
 ```
-
-
 ## Study Region and Supply Chain Configuration
 
 The proposed \problem model is instantiated on a real-world biomass supply chain located in the tri-state region of Saxony-Anhalt, northern Thuringia, and northern Saxony, Germany (Figure \@ref(fig:fig-supply-chain-network)).

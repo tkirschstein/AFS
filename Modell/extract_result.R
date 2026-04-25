@@ -359,10 +359,10 @@ extract_result <- function(res, instance, tol = 1e-6) {
 
   idx <- build_index_tables(instance)
 
-  cat("[extract_result] Decoding z  ...\n");  z   <- extract_z(res,   idx, tol = 0.5)
-  cat("[extract_result] Decoding Xij...\n");  Xij <- extract_Xij(res, idx, tol)
-  cat("[extract_result] Decoding S  ...\n");  S   <- extract_S(res,   idx, tol)
-  cat("[extract_result] Decoding Xjk...\n");  Xjk <- extract_Xjk(res, idx, tol)
+  z   <- extract_z(res,   idx, tol = 0.5)
+  Xij <- extract_Xij(res, idx, tol)
+  S   <- extract_S(res,   idx, tol)
+  Xjk <- extract_Xjk(res, idx, tol)
 
   # ── Derived KPIs ───────────────────────────────────────────────────────────
   n_planted     <- z %>% dplyr::filter(arc_type == "establishment") %>%

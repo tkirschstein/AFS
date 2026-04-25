@@ -1,0 +1,25 @@
+	%\line(1, 0){450}
+	%
+	\begin{algorithmic}[1]
+		\Procedure{LS}{$T$, $AddRule$}
+		%    \State randomly choose $l$ subsets of $\Xc^*_{k-1}$ with size $d+1$
+		%    \Statex{\hspace{.6cm}$\triangleright \,$ initial subsets $\underline\Xc^j$ (with $j=1,\ldots,l$)}
+		\Repeat {\hfill \small \hspace{.6cm}$\triangleright \,$ enlarge tour by successively adding beneficial requests}
+		\State $T' \leftarrow$\textsc{AddReq($T$, $AddRule$)} {\hfill \small \hspace{.6cm}$\triangleright \,$ select request(s) by applying rule}
+		\If{$Z(T') < Z(T)$ }
+		\State $T \leftarrow T'$ {\hfill \small \hspace{.6cm}$\triangleright \,$ update tour}
+		\EndIf
+		\Until{no improvement found}
+		%
+		\Repeat {\hfill \small \hspace{.6cm}$\triangleright \,$ successively check for beneficial deletion of requests}
+		\State $T' \leftarrow$\textsc{DelReq}($T$, 'greedy') {\hfill \small \hspace{.6cm}$\triangleright \,$ build new tour $T'$ by deleting a request}
+		\If{$Z(T') < Z(T)$ }
+		\State $T \leftarrow T'$ {\hfill \small \hspace{.6cm}$\triangleright \,$ update tour}
+		\EndIf
+		\Until{no improvement found}
+		\State $T \leftarrow$\textsc{LK($T$)} {\hfill \small \hspace{.6cm}$\triangleright \,$ check for improvements by route optimization}
+		\State 	\Return $T$ 
+		\EndProcedure
+	\end{algorithmic}
+	%
+	%\line(1, 0){450}
