@@ -113,6 +113,22 @@ $$B_{AG,p}(t) = B_{AG}(t) \cdot \frac{h_p(t)}{h_1(t)+h_2(t)+h_3(t)}$$
 - Parameters calibrated from SRAFS field trials in Southern Germany [@Huber2018_SRAFS_growth]
 - Age-specific yield coefficients $\eta_{p,a}$ pre-computed and embedded in the MILP (constraints C3)
 
+## Gompertz Growth Curves — Poplar Max 3
+
+:::: {.columns}
+::: {.column width="55%"}
+![Aboveground biomass components (stems, branches, residues) by stand age for poplar clone Max 3 under SRAFS conditions. Parameterisation: $a^\infty = 100$ t/ha, $\tilde{b}^1 = 0.32$, $\tau = 4.0$ yr.](../Paper/figures/max3-growth-1.png){fig-align="center" width="100%"}
+:::
+::: {.column width="45%"}
+**Key observations:**
+
+- Stem share rises from ~55 % at age 4 to >75 % at age 10
+- Growth peak (inflection) at ~age 4
+- Total AGB at age 10: ~65 t dry matter/ha
+- Component fractions $f_p(t)$ determine yield coefficients $\eta_{p,a}$ in constraint C3
+:::
+::::
+
 ## Biomass Supply Chain Literature
 
 | Aspect | State of the art | This paper |
@@ -158,6 +174,32 @@ $$B_{AG,p}(t) = B_{AG}(t) \cdot \frac{h_p(t)}{h_1(t)+h_2(t)+h_3(t)}$$
 | $R_{kp}$ | Revenue (€/t) at consumer $k$ |
 | $d_{ij}, d_{jk}$ | Transport distances (km) |
 
+:::
+::::
+
+## Supply Chain Network Structure
+
+![Three-echelon supply chain network: AFS sites $\mathcal{I}$ (sources) → storage/processing nodes $\mathcal{J}$ → industrial consumers $\mathcal{K}$ (sinks). Arcs represent raw biomass transport (site → storage) and pre-treated biomass flows (storage → consumer).](../Paper/figures/fig-supply-chain-network-1.pdf){fig-align="center" width="90%"}
+
+## Age-Lag Arc Structure $\mathcal{S}$
+
+:::: {.columns}
+::: {.column width="50%"}
+![Arc network $\mathcal{S}$: establishment arcs $\mathcal{S}^{est}$, harvest arcs $\mathcal{S}^{harv}$ (feasible only for $A_{min} \leq t-s \leq A_{max}$), and termination arcs $\mathcal{S}^{term}$.](../Paper/figures/fig-set-S-tikz-1.pdf){fig-align="center" width="100%"}
+:::
+::: {.column width="50%"}
+![Arc network $\mathcal{S}$ (alternative view): consecutive harvest arcs enforce path-consistent rotation sequences across the planning horizon $\mathcal{T}$.](../Paper/figures/fig-set-S-tikz2-1.pdf){fig-align="center" width="100%"}
+:::
+::::
+
+## Age-Lag Path Examples
+
+:::: {.columns}
+::: {.column width="50%"}
+![Example path 1: establishment at $t=0$, first harvest at $t=5$ (age 5), second harvest at $t=9$ (age 4), termination at $t=12$. All arcs satisfy $A_{min}=3$, $A_{max}=15$.](../Paper/figures/fig-set-S-path-1.pdf){fig-align="center" width="100%"}
+:::
+::: {.column width="50%"}
+![Example path 2: alternative rotation pattern with earlier first harvest. Path-connectivity constraint C2 ensures no orphaned harvest decisions.](../Paper/figures/fig-set-S-path2-1.pdf){fig-align="center" width="100%"}
 :::
 ::::
 
@@ -243,18 +285,28 @@ $(p',p) \in \mathcal{Q}$ allows a **higher-quality product** $p'$ (e.g. stems) t
 :::
 ::::
 
+## Site Clustering
+
+![Clustering comparison: INVEKOS SRC field parcels (left) clustered into representative site groups via DBSCAN + Ward.D2 HAC (right). Cluster centroids define site locations $i \in \mathcal{I}$; intra-cluster transport distances are captured in $d_{ij}$.](../Paper/plot_clustering_comparison.png){fig-align="center" width="90%"}
+
+## Supply Chain Network — Saxony-Anhalt
+
+![Supply chain network for the Saxony-Anhalt case study: AFS site clusters (green), storage/processing nodes (orange), and industrial consumers (blue). Arc widths indicate optimised biomass flow volumes. Key consumers include Mercer Stendal GmbH (pulp) and UPM Biochemicals Leuna (chemicals).](../Paper/figures/fig-results-sc-map-1.pdf){fig-align="center" width="85%"}
+
 ## Consumer Demand & Product Classification
 
+:::: {.columns}
+::: {.column width="55%"}
+![Consumer demand profile by product type (P1 stems, P2 branches, P3 residues) across industrial consumers $k \in \mathcal{K}$. Demand values scaled to 1/5 of raw register values; consumers with total demand < 1.5 units excluded.](../Paper/figures/fig-consumer-demand-1.pdf){fig-align="center" width="100%"}
+:::
+::: {.column width="45%"}
 | Product | Type | Primary use | Cascade target |
 |---|---|---|---|
 | P1 — Stems | High quality | Sawlogs, pulp, engineered wood | Can supply P2, P3 demand |
 | P2 — Branches | Medium quality | Chips, biomass boards | Can supply P3 demand |
 | P3 — Residues/twigs | Low quality | Energy (combustion, biogas) | End of cascade |
-
-::: {.callout-note}
-## Scale adjustment
-Industrial consumer demand scaled to 1/5 of raw register values; small consumers with total demand < 1.5 units excluded to reflect realistic procurement thresholds.
 :::
+::::
 
 ## MILP Model Parameters
 
@@ -273,26 +325,13 @@ Industrial consumer demand scaled to 1/5 of raw register values; small consumers
 
 # Optimization Results
 
-## Supply Chain Network
+## Supply Chain Network — Optimal Configuration
 
-- Solved with **Gurobi** (TimeLimit: 600 s, MIPFocus: 1, Cuts: 3, MIPGap: 1 %)
-- Results extracted via `extract_result()` and validated against constraint set
-
-::: {.callout-note}
-## Key result dimensions
-- $z_{ist}$: which sites are established, when harvested, at what rotation age
-- $X_{ijpt}$: biomass flows site → storage by product type
-- $X_{jkp'pt}$: processed flows storage → consumers with quality cascade
-- $S_{jpt}$: inventory levels at storage nodes over time
-:::
-
-*(See `Paper/figures/` for supply chain network map and flow visualizations)*
+![Optimal supply chain network map: established AFS sites (green dots, size proportional to harvested area), active storage nodes (orange), and served consumers (blue). Arcs show biomass flows aggregated over the planning horizon; arc width proportional to total volume.](../Paper/figures/fig-results-sc-map-1.pdf){fig-align="center" width="88%"}
 
 ## Harvest & Rotation Patterns
 
-- Optimal rotation lengths and harvest timing vary by site cluster and product price scenario
-- Age-lag constraints (C2/C3) ensure **path-consistent harvest sequences** — no orphaned harvest decisions
-- Product cascade allows premium stem biomass to be routed to higher-value consumers first
+![Gantt chart of optimal harvest decisions by site cluster and period. Each bar represents an active harvest arc $z_{ist}=1$; bar length equals rotation age $(t-s)$. Age-lag constraints (C2/C3) ensure path-consistent sequences — no orphaned harvest decisions.](../Paper/figures/fig-results-harvest-gantt-1.pdf){fig-align="center" width="95%"}
 
 ::: {.callout-note}
 ## Trade-off
@@ -300,13 +339,13 @@ Longer rotations → higher stem share & revenue per harvest
 Shorter rotations → more frequent harvests, lower capital tie-up, better demand coverage
 :::
 
-## Biomass Flows & Consumer Supply
+## Product Mix & Biomass Flows
 
-- Multi-period flow structure (based on OPTIMASS) captures **seasonal storage dynamics**
-- Storage nodes buffer harvest peaks → smooth consumer supply across periods
-- Product cascade (C8) enables **flexible demand satisfaction**: surplus P1 can cover P2/P3 shortfalls
+![Alluvial diagram of biomass flows: product type (P1/P2/P3) from harvest sites through storage nodes to industrial consumers. Width of flow bands proportional to annual average volume. Product cascade (C8) visible as P1-stem flows partially satisfying P2/P3 demand.](../Paper/figures/fig-results-product-mix-1.pdf){fig-align="center" width="95%"}
 
-*(Flow visualizations: alluvial diagrams in `Paper/figures/`)*
+## Inventory Dynamics at Storage Nodes
+
+![Inventory levels $S_{jpt}$ at storage nodes by product type and period. Storage buffers harvest peaks (spring/summer) to ensure continuous supply to consumers. Year-of-harvest drying cost-free; storage costs accrue from period 2 onward.](../Paper/figures/fig-results-inventory-1.pdf){fig-align="center" width="95%"}
 
 
 # Conclusion
