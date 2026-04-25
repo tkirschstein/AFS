@@ -61,6 +61,34 @@
 \newcommand\mc[1]{\multicolumn{1}{c}{#1}}
 \DeclareMathOperator{\di}{d\!}
 
+% =========================================================
+% Fraunhofer IKTS Logo als TikZ-Makro
+% Offizielle Fraunhofer-Farbe: #179C7D
+% Verwendung: \FraunhoferIKTSlogo[Hoehe]
+% =========================================================
+\definecolor{FhGreen}{HTML}{179C7D}
+
+\newcommand{\FraunhoferIKTSlogo}[1][8ex]{%
+  \begin{tikzpicture}[baseline=(current bounding box.center)]
+    % Skalierungsfaktor abhaengig von gewuenschter Hoehe
+    \pgfmathsetmacro{\sc}{0.38}
+    % Grünes Quadrat (Fraunhofer-Signet)
+    \fill[FhGreen] (0,0) rectangle (\sc,\sc);
+    % Weisser Streifen horizontal (oberes Drittel)
+    \fill[white] (0,0.67*\sc) rectangle (\sc,\sc);
+    % Weisser Streifen vertikal (rechtes Drittel)
+    \fill[white] (0.67*\sc,0) rectangle (\sc,\sc);
+    % Grünes Rechteck oben rechts (Fraunhofer-F)
+    \fill[FhGreen] (0.67*\sc,0.67*\sc) rectangle (\sc,\sc);
+    % Schriftzug "Fraunhofer" bold
+    \node[anchor=west, font=\sffamily\bfseries\tiny, text=FhGreen]
+      at (\sc+0.04,0.72*\sc) {Fraunhofer};
+    % Schriftzug "IKTS" kleiner
+    \node[anchor=west, font=\sffamily\small\bfseries, text=FhGreen]
+      at (\sc+0.04,0.28*\sc) {IKTS};
+  \end{tikzpicture}%
+}
+
 % Math-Befehle
 \newcommand{\Y}{\mathbf{Y}}
 \newcommand{\bZ}{\mathbf{Z}}
@@ -161,8 +189,11 @@
 \newcommand{\CC}[2]{\multicolumn{#1}{@{}c@{}}{#2}}
 \newcommand{\pc}{\tiny\%}
 
+% =========================================================
 % Titel-Informationen
-\logo{}
+% Logo: Fraunhofer IKTS TikZ-Makro auf allen Folien (Fusszeile/Header via \logo)
+% =========================================================
+\logo{\FraunhoferIKTSlogo[5ex]}
 \title[Agroforst-Wertsch\"opfungsketten]{Planung von Agroforst-Wertsch\"opfungsketten}
 \author[Thomas Kirschstein]{\textbf{Thomas Kirschstein}}
 \date{}
@@ -174,7 +205,11 @@
 
 % ----------------------------------------- TITELFOLIE -----------------------------------------------------
 \frame[plain,label=title]{
-  \maketitle
+  \titlepage
+  % Fraunhofer IKTS Logo prominent auf der Titelfolie (unten rechts)
+  \begin{textblock}{4}(8.5,7.5)
+    \FraunhoferIKTSlogo[10ex]
+  \end{textblock}
 }
 
 % ----------------------------------------- BLANKO-FOLIE -----------------------------------------------------
