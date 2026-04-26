@@ -18,6 +18,7 @@ output:
       highlightLines: true
       countIncrementalSlides: false
       slideNumberFormat: "%current% / %total%"
+      beforeInit: "navbar.js"   # externe JS-Datei laden
     seal: false
 bibliography: literature.bib
 ---
@@ -76,6 +77,15 @@ xaringanExtra::use_logo(
   position   = xaringanExtra::css_position(top = "10px", right = "15px"),
   exclude_class = c("title-slide")  # Logo auf Sektionsfolien ausblenden
 )
+
+xaringanExtra::use_progress_bar(
+  color    = "#179C7D",   # Fraunhofer-Grün
+  location = "top",       # oben
+  height   = "4px"
+)
+
+xaringanExtra::use_tile_view()       # Folienübersicht mit 'O'
+xaringanExtra::use_broadcast()       # Präsentation synchronisieren
 
 # ── RefManageR: Automatisches Literaturverzeichnis ────────────────────────────
 BibOptions(
@@ -139,6 +149,10 @@ ext <- extract_result(result, milp_instance)
 
 
 ```
+
+
+--- 
+class: title-slide
 
 # Agroforestry Biomass Supply Chain Design
 
@@ -266,7 +280,6 @@ $$B_{AG,p}(t) = B_{AG}(t) \cdot \frac{h_p(t)}{h_1(t)+h_2(t)+h_3(t)}$$
 ## Gompertz Growth Curves — Poplar Max 3
 
 .pull-left[
-
 ```{r max3-growth, fig.height=4.5, fig.width=6, out.width="100%"}
 # Code-Chunk direkt aus paper.Rmd (Abschnitt max3-growth)
 ages <- seq(0, 13, by = 0.1)
@@ -391,7 +404,7 @@ class: inverse, center, middle
 
 ## Sets, Indices & Parameters
 
-.pull-left[
+.pull-left55[
 **Sets & indices**
 
 | Symbol | Meaning |
@@ -405,7 +418,7 @@ class: inverse, center, middle
 | $\mathcal{S}$ | Feasible activity arcs $(s, t)$ |
 ]
 
-.pull-right[
+.pull-right45[
 **Key parameters**
 
 | Symbol | Meaning |

@@ -17,86 +17,12 @@
 /* ============================================================
    KOPFZEILE: JavaScript Navigationsleiste
    ============================================================ */
-#js-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 9999;
-  background: var(--fhg-nav-bg);
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 0 1em;
-  height: 2.2em;
-  font-size: 0.62em;
-  font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
-  letter-spacing: 0.03em;
-  line-height: 1;
-  border-bottom: 2px solid var(--fhg);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
-  box-sizing: border-box;
-}
 
-/* Einzelner Navbar-Link */
-#js-navbar a {
-  color: rgba(255, 255, 255, 0.82);
-  text-decoration: none;
-  padding: 0 0.75em;
-  height: 100%;
-  display: inline-flex;
-  align-items: center;
-  border-right: 1px solid rgba(255,255,255,0.12);
-  white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
-}
-
-#js-navbar a:first-child {
-  border-left: 1px solid rgba(255,255,255,0.12);
-}
-
-#js-navbar a:hover {
-  background: rgba(255,255,255,0.15);
-  color: #ffffff;
-  text-decoration: none;
-}
-
-/* Aktiver Abschnitt: hellerer Balken + weisse Schrift */
-#js-navbar a.nav-active {
-  background: rgba(255,255,255,0.22);
-  color: #ffffff;
-  font-weight: 700;
-  border-bottom: 2px solid #ffffff;
-}
-
-/* Kleiner Abstandhalter am Ende der Links */
-#js-navbar .nav-spacer {
-  flex: 1;
-}
-
-/* Folientitel ganz rechts (kleiner Hinweis auf aktuelle Folie) */
-#js-navbar .nav-slide-title {
-  color: rgba(255,255,255,0.60);
-  font-size: 0.95em;
-  letter-spacing: 0.01em;
-  padding-left: 0.5em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 28em;
-}
+   
 
 /* ============================================================
    Platz fuer die Navbar oben in allen Folien ausser Titelfolie
    ============================================================ */
-.remark-slide-content {
-  padding-top: 2.8em !important;
-}
-
-.title-slide.remark-slide-content,
-.section-divider.remark-slide-content {
-  padding-top: 0.9em !important;
-}
 
 /* ============================================================
    ALLGEMEINE FOLIENGESTALTUNG
@@ -106,7 +32,7 @@
   color: var(--text-main);
   font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
   font-size: 1.5em;
-  padding: 0.9em 1.2em 1.2em 1.2em;
+  padding: -0.0em 1.2em 1.2em 1.2em;
   text-align: left;
 }
 
@@ -120,7 +46,7 @@
   /* Oberer Rand groesser als unten/seitlich fuer mehr Luft zur Folienkante */
   padding: 0.55em 0.75em 0.32em 0.75em;
   margin: -0.9em -1.2em 0.75em -1.2em;
-  margin-top: 0.6em;
+  margin-top: 0.2em;
   border-bottom: 2px solid var(--fhg-dark);
   text-align: left;
   letter-spacing: 0.01em;
