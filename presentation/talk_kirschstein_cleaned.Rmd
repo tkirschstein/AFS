@@ -3,22 +3,34 @@ title: "Agroforestry Biomass Supply Chain Design"
 subtitle: "A MILP Model with Age-Lag Constraints for Product Cascading"
 author: "Thomas Kirschstein"
 institute: "Fraunhofer IKTS"
-date: ""
+date: "30.04.2026"
 output:
   xaringan::moon_reader:
-    css:
-      - default
-      - metropolis
-      - metropolis-fonts
-      - talk_kirschstein_cleaned.css
+    css: [default, metropolis, metropolis-fonts, talk_kirschstein_cleaned_xaringan.css]
     lib_dir: libs
     nature:
+      ratio: "16:9"
       highlightStyle: github
       highlightLines: true
       countIncrementalSlides: false
-      ratio: "16:9"
       slideNumberFormat: "%current% / %total%"
     seal: false
+  # 
+  # 
+  # xaringan::moon_reader:
+  #   css:
+  #     - default
+  #     - metropolis
+  #     - metropolis-fonts
+  #     - talk_kirschstein_cleaned.css
+  #   lib_dir: libs
+  #   nature:
+  #     highlightStyle: github
+  #     highlightLines: true
+  #     countIncrementalSlides: false
+  #     ratio: "16:9"
+  #     slideNumberFormat: "%current% / %total%"
+  #   seal: false
 bibliography: literature.bib
 ---
 
@@ -47,9 +59,6 @@ suppressPackageStartupMessages({
   library(RefManageR)
   library(magick)
   library(plotly)
-  library(ggplot2)
-  library(tidyr)
-  library(patchwork)
   library(sf)
   library(stringr)
   library(leaflet)
@@ -69,8 +78,16 @@ suppressPackageStartupMessages({
   library(htmlwidgets)
   library(webshot2)
   library(ggalluvial)
-  library(scales)
+  library(xaringanExtra)
 })
+
+xaringanExtra::use_logo(
+  image_url = "fig/ikts_logo.png",
+  width      = "150px",
+  height     = "auto",
+  position   = xaringanExtra::css_position(top = "10px", right = "15px"),
+  exclude_class = c("title-slide", "inverse")  # Logo auf Sektionsfolien ausblenden
+)
 
 # ── RefManageR: Automatisches Literaturverzeichnis ────────────────────────────
 BibOptions(
@@ -141,7 +158,14 @@ class: title-slide, center, middle
 
 ## A MILP Model with Age-Lag Constraints for Product Cascading
 
-**Thomas Kirschstein** · Fraunhofer IKTS
+**Thomas Kirschstein** 
+
+Fraunhofer IKTS
+
+.logo-title[
+![]( fig/ikts_logo.png)
+]
+
 
 ---
 
@@ -859,7 +883,7 @@ ggplot(rot_ages, aes(x = rotation_age)) +
 
 
 .col-50[
-```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=4, out.width="95%"}
+```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, out.width="90%"}
 
 crs_map <- 25833
 
