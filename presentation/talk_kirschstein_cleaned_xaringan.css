@@ -67,6 +67,7 @@
   /* Oberer Rand groesser als unten/seitlich fuer mehr Luft zur Folienkante */
   padding: 0.55em 0.75em 0.32em 0.75em;
   margin: -0.9em -1.2em 0.75em -1.2em;
+  margin-top: 0.6em;
   border-bottom: 2px solid var(--fhg-dark);
   text-align: left;
   letter-spacing: 0.01em;
