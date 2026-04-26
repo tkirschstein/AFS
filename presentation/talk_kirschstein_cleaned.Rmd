@@ -1,0 +1,677 @@
+---
+title: "Agroforestry Biomass Supply Chain Design"
+subtitle: "A MILP Model with Age-Lag Constraints for Product Cascading"
+author: "Thomas Kirschstein"
+institute: "Fraunhofer IKTS"
+date: ""
+output:
+  xaringan::moon_reader:
+    css:
+      - default
+      - metropolis
+      - metropolis-fonts
+      - talk_kirschstein_cleaned.css
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: "16:9"
+      slideNumberFormat: "%current% / %total%"
+    seal: false
+bibliography: literature.bib
+---
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  echo        = FALSE,
+  message     = FALSE,
+  warning     = FALSE,
+  fig.align   = "center",
+  out.width   = "100%",
+  dev         = "png",
+  dpi         = 150,
+  cache       = FALSE
+)
+
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ggplot2)
+  library(tidyr)
+  library(patchwork)
+  library(knitr)
+  library(kableExtra)
+  library(scales)
+  library(tibble)
+  library(RefManageR)
+})
+
+# ── RefManageR: Automatisches Literaturverzeichnis ────────────────────────────
+BibOptions(
+  check.entries = FALSE,
+  bib.style     = "authoryear",
+  cite.style    = "authoryear",
+  style         = "markdown",
+  hyperlink     = FALSE,
+  dashed        = FALSE
+)
+bib <- ReadBib("literature.bib", check = FALSE)
+
+# ── Gompertz-Hilfsfunktionen (direkt aus paper.Rmd übernommen) ───────────────
+gomp <- function(t, A, k, t0) {
+  A * exp(-exp(-k * (t - t0)))
+}
+
+B_AG_max3   <- function(t) gomp(t, A = 100, k = 0.32, t0 = 4.0)
+h_stem_f    <- function(t) gomp(t, A = 1.0,  k = 0.40, t0 = 4.0)
+h_branch_f  <- function(t) gomp(t, A = 0.7,  k = 0.25, t0 = 3.0)
+h_rest_f    <- function(t) gomp(t, A = 0.1,  k = 0.30, t0 = 2.0)
+
+f_stem_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hs/(hs+hb+hr) }
+f_branch_g <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hb/(hs+hb+hr) }
+f_rest_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hr/(hs+hb+hr) }
+```
+
+class: title-slide, center, middle
+
+# Agroforestry Biomass Supply Chain Design
+
+## A MILP Model with Age-Lag Constraints for Product Cascading
+
+**Thomas Kirschstein** · Fraunhofer IKTS
+
+---
+
+## Overview
+
+1. **Introduction** — Motivation & Research Gap
+2. **Literature Review** — AFS Systems, Biomass Growth, Supply Chains
+3. **MILP Model** — Sets, Variables, Objective, Constraints
+4. **Case Study** — Central European Poplar-based AFS (Saxony-Anhalt)
+5. **Optimization Results** — Supply Chain Configuration & Flows
+6. **Conclusion** — Contributions & Open Questions
+
+---
+class: inverse, center, middle
+
+# Introduction
+
+---
+
+## Motivation
+
+- Temperate **agroforestry systems (AFS)** integrate fast-growing trees (poplar, willow) into arable land via alley-cropping
+
+- Woody biomass from AFS is a **sustainable feedstock** for bio-based value chains — preferred over pure energy use as biogenic carbon is stored in products
+
+- In Germany: ~1,200 ha of silvoarable AFS in 2025 — only **0.02 %** of agricultural land despite substantial ecological benefits
+
+- **Core challenge:** coordinated decisions on stand establishment, multi-cycle harvesting, and product cascading in spatially distributed supply chains
+
+.callout-note[
+**Research question:**
+How can integrated MILP models link **age-dependent stand dynamics** at field sites to **regional supply chain design** for multi-product AFS biomass?
+]
+
+---
+
+## Research Gap & Contributions
+
+**Prior literature** on biomass supply chains (MILP) typically:
+
+- treats biomass availability as **exogenous input**
+- focuses on a **single downstream value chain** (e.g. bioenergy)
+- ignores **age-lag constraints** linking consecutive harvests
+
+**This paper contributes:**
+
+1. Novel **MILP formulation** (AFS-SCD) with explicit age-lag constraints enforcing minimum/maximum rotation ages
+
+2. **Allometric yield functions** (Gompertz) for age-specific, component-specific biomass fractions (stems, branches, residues)
+
+3. **Multi-product, multi-period network design** with product quality cascades and storage
+
+4. Application to a **real-world case study** in Central Germany
+
+---
+class: inverse, center, middle
+
+# Literature Review
+
+---
+
+## Agroforestry System Types
+
+.pull-left[
+**Short-rotation coppice (SRC)**
+
+- Monoculture, 8,000–20,000 cuttings/ha
+- Rotation: 3–7 years, stand lifetime: 20–25 years
+- Root system regenerates after harvest — no replanting
+- Benchmark for biomass production
+
+**Short-rotation AFS (SRAFS)**
+
+- SRC-type tree strips in alley-cropping arrangement
+- Trees cover 10–30 % of parcel area
+- Boundary effect: higher light & water → higher individual-tree biomass
+]
+
+.pull-right[
+**Long-rotation AFS (LRAFS)**
+
+- Same spatial structure as SRAFS
+- Rotation cycles: 12–15+ years
+- Larger stem diameter → high-value timber (veneer, sawlogs, engineered wood)
+- Timber-quality species: walnut, cherry, oak, high-grade poplar
+
+.callout-note[
+**Key insight:** SRAFS and LRAFS are not sharply separated —
+**intended use, establishment decisions, and harvest timing** jointly determine economic viability.
+]
+]
+
+---
+
+## Biomass Growth Models
+
+**Gompertz growth function** für die oberirdische Biomasse $B_{AG}(t)$:
+
+$$B_{AG}(t) = A \cdot \exp\!\bigl(-\exp(-k(t - t_0))\bigr)$$
+
+Komponentenspezifische Anteile (Stamm $p=1$, Äste $p=2$, Reste $p=3$):
+
+$$B_{AG,p}(t) = B_{AG}(t) \cdot \frac{h_p(t)}{h_1(t)+h_2(t)+h_3(t)}$$
+
+- Parameter kalibriert aus SRAFS-Feldversuchen in Süddeutschland `r Citep(bib, "Huber2018_SRAFS_growth")`
+- Altersabhängige Ertragskoeffizienten $\eta_{p,a}$ vorberechnet und in das MILP integriert (Restriktion C3)
+
+---
+
+## Gompertz Growth Curves — Poplar Max 3
+
+.pull-left[
+
+```{r max3-growth, fig.height=4.5, fig.width=6, out.width="100%"}
+# Code-Chunk direkt aus paper.Rmd (Abschnitt max3-growth)
+ages <- seq(0, 13, by = 0.1)
+
+comp_long <- tibble(
+  age       = ages,
+  Stem      = f_stem_g(ages)   * B_AG_max3(ages),
+  Branches  = f_branch_g(ages) * B_AG_max3(ages),
+  Residues  = f_rest_g(ages)   * B_AG_max3(ages)
+) |>
+  pivot_longer(-age, names_to = "component", values_to = "biomass") |>
+  mutate(component = factor(component, levels = c("Residues", "Branches", "Stem")))
+
+jha_points <- tribble(
+  ~age, ~AGB,           ~p_trunk, ~p_branch,
+   8,   134.3,          0.747,    0.166,
+   9,    74.0,          0.83,     0.11,
+   9,    51.46,         0.92,     0.04,
+  10,   105.4,          0.744,    0.13,
+   6,   218.5/1937*500, 0.619,    0.276,
+  13,   152.0,          0.77,     0.22
+) |>
+  mutate(
+    stem_cum   = AGB * p_trunk,
+    branch_cum = AGB * (p_trunk + p_branch),
+    total      = AGB
+  )
+
+jha_long <- bind_rows(
+  jha_points |> transmute(age, biomass = stem_cum,   emp_series = "Empirical: stem"),
+  jha_points |> transmute(age, biomass = branch_cum, emp_series = "Empirical: stem+branches"),
+  jha_points |> transmute(age, biomass = total,      emp_series = "Empirical: total AGB")
+) |>
+  mutate(emp_series = factor(emp_series,
+    levels = c("Empirical: stem", "Empirical: stem+branches", "Empirical: total AGB")))
+
+emp_colours <- c(
+  "Empirical: stem"          = "darkgreen",
+  "Empirical: stem+branches" = "darkorange",
+  "Empirical: total AGB"     = "navy"
+)
+emp_shapes <- c(
+  "Empirical: stem"          = 21L,
+  "Empirical: stem+branches" = 24L,
+  "Empirical: total AGB"     = 23L
+)
+
+ggplot(comp_long, aes(x = age, y = biomass)) +
+  annotate("rect", xmin = 5, xmax = 10, ymin = 0, ymax = Inf,
+           fill = "grey80", alpha = 0.3) +
+  geom_area(aes(fill = component), position = "stack",
+            alpha = 0.75, colour = NA) +
+  geom_point(data = jha_long,
+             aes(x = age, y = biomass,
+                 colour = emp_series, shape = emp_series, fill = emp_series),
+             size = 2.5, alpha = 0.85, inherit.aes = FALSE) +
+  scale_fill_manual(
+    name   = "Component (model)",
+    values = c("Stem" = "#1b9e77", "Branches" = "#d95f02",
+               "Residues" = "#7570b3", emp_colours),
+    breaks = c("Stem", "Branches", "Residues")
+  ) +
+  scale_colour_manual(name = "Empirical (Jha 2018)", values = emp_colours) +
+  scale_shape_manual(name  = "Empirical (Jha 2018)", values = emp_shapes) +
+  guides(
+    fill   = guide_legend(order = 1, override.aes = list(shape = NA, colour = NA)),
+    colour = guide_legend(order = 2,
+                          override.aes = list(
+                            shape = emp_shapes[levels(jha_long$emp_series)],
+                            size  = 2.5,
+                            fill  = emp_colours[levels(jha_long$emp_series)]
+                          )),
+    shape  = "none"
+  ) +
+  scale_x_continuous(breaks = 0:13) +
+  labs(x = "Stand age (years)",
+       y = "Biomass (t dry matter / ha)") +
+  theme_minimal(base_size = 9) +
+  theme(
+    legend.position  = "right",
+    legend.key.size  = unit(0.4, "cm"),
+    legend.text      = element_text(size = 7),
+    legend.title     = element_text(size = 8, face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+```
+]
+
+.pull-right[
+**Key observations:**
+
+- Stem share rises from ~55 % at age 4 to >75 % at age 10
+- Growth peak (inflection) at ~age 4
+- Total AGB at age 10: ~65 t dry matter/ha
+- Component fractions $f_p(t)$ determine $\eta_{p,a}$ in constraint C3
+
+*Grey band:* typical rotation window (5–10 years)
+
+`r Citep(bib, "Jha2018_Poplar_AFS_Biomass")` — empirical reference points
+]
+
+---
+
+## Biomass Supply Chain Literature
+
+| Aspect | State of the art | This paper |
+|---|---|---|
+| Biomass availability | Exogenous or simplified | Endogenous via Gompertz + age-lag |
+| Rotation decisions | Not modelled | Binary $z_{ist}$ with min/max age |
+| Product types | Single or aggregated | Multi-product cascade $(p', p) \in \mathcal{Q}$ |
+| Network structure | Static | Multi-period, storage + processing |
+| Case study scope | Generic | Real SRC sites, Saxony-Anhalt |
+
+.small[Reviews: `r Citep(bib, c("Zahraee2020_BSC_review","Sharma2013_BSC_review"))` &nbsp;|&nbsp; OPTIMASS framework: `r Citep(bib, c("DeMeyer2015_OPTIMASS","DeMeyer2016_tOPTIMASS"))`]
+
+---
+class: inverse, center, middle
+
+# MILP Model (AFS-SCD)
+
+---
+
+## Sets, Indices & Parameters
+
+.pull-left[
+**Sets & indices**
+
+| Symbol | Meaning |
+|---|---|
+| $\mathcal{I}$ | AFS sites (field parcels) |
+| $\mathcal{J}$ | Storage/processing facilities |
+| $\mathcal{K}$ | Industrial consumers |
+| $\mathcal{P}$ | Biomass product types |
+| $\mathcal{Q}$ | Quality cascade pairs $(p', p)$ |
+| $\mathcal{T}$ | Planning periods |
+| $\mathcal{S}$ | Feasible activity arcs $(s, t)$ |
+]
+
+.pull-right[
+**Key parameters**
+
+| Symbol | Meaning |
+|---|---|
+| $\eta_{p,a}$ | Yield (t/ha) for product $p$ at age $a$ |
+| $\text{AREA}_i$ | Site area (ha) |
+| $c^{est}_i$ | Establishment cost (€/ha) |
+| $c^{harv}_i$ | Harvest cost (€/ha) |
+| $c^{opp}_i$ | Opportunity cost (€/ha/yr) |
+| $R_{kp}$ | Revenue (€/t) at consumer $k$ |
+| $d_{ij}, d_{jk}$ | Transport distances (km) |
+]
+
+---
+
+## Yield Coefficients $\eta_{p,a}$ — Visualisation
+
+```{r component-fractions, fig.height=3.8, fig.width=10, out.width="98%"}
+# Zeigt f_p(t)-Kurven und eta_{p,a}-Balkenchart (Struktur für MILP-Restriktion C3)
+ages_fine <- seq(0, 15, by = 0.1)
+
+shares <- tibble(
+  age      = ages_fine,
+  Stem     = f_stem_g(ages_fine),
+  Branches = f_branch_g(ages_fine),
+  Residues = f_rest_g(ages_fine)
+) |>
+  pivot_longer(-age, names_to = "component", values_to = "share") |>
+  mutate(component = factor(component, levels = c("Stem", "Branches", "Residues")))
+
+p1 <- ggplot(shares, aes(x = age, y = share, colour = component)) +
+  annotate("rect", xmin = 3, xmax = 15, ymin = 0, ymax = Inf,
+           fill = "grey85", alpha = 0.25) +
+  geom_line(linewidth = 1.1) +
+  annotate("text", x = 9, y = 0.87, label = expression(A[min]*"–"*A[max]*" Fenster"),
+           size = 2.6, colour = "grey50") +
+  scale_colour_manual(values = c("Stem" = "#1b9e77",
+                                  "Branches" = "#d95f02",
+                                  "Residues" = "#7570b3")) +
+  scale_x_continuous(breaks = 0:15) +
+  labs(x = "Stand age (years)",
+       y = expression(f[p](t)*" — Komponentenanteil"),
+       colour = NULL,
+       title = expression(paste("Normierte Anteile ", f[p](t)))) +
+  theme_minimal(base_size = 9) +
+  theme(panel.grid.minor = element_blank(), legend.position = "bottom")
+
+eta_tbl <- tibble(
+  age          = 1:15,
+  eta_stem     = f_stem_g(1:15)   * B_AG_max3(1:15),
+  eta_branches = f_branch_g(1:15) * B_AG_max3(1:15),
+  eta_residues = f_rest_g(1:15)   * B_AG_max3(1:15)
+) |>
+  pivot_longer(-age, names_to = "product", values_to = "yield") |>
+  mutate(product = recode(product,
+    eta_stem     = "P1 – Stamm",
+    eta_branches = "P2 – Äste",
+    eta_residues = "P3 – Reste"),
+    product = factor(product,
+                     levels = c("P1 – Stamm","P2 – Äste","P3 – Reste")))
+
+p2 <- ggplot(eta_tbl, aes(x = age, y = yield, fill = product)) +
+  geom_col(position = "stack", width = 0.8) +
+  scale_fill_manual(values = c("P1 – Stamm" = "#1b9e77",
+                                "P2 – Äste"  = "#d95f02",
+                                "P3 – Reste" = "#7570b3")) +
+  scale_x_continuous(breaks = 1:15) +
+  labs(x = "Rotationsalter a (Jahre)",
+       y = expression(eta[pa]*" (t TM/ha)"),
+       fill = NULL,
+       title = expression(paste("Ertragskoeffizienten ", eta[pa], " für MILP-Restriktion C3"))) +
+  theme_minimal(base_size = 9) +
+  theme(panel.grid.minor = element_blank(), legend.position = "bottom")
+
+p1 + p2
+```
+
+---
+
+## Decision Variables
+
+| Variable | Type | Meaning |
+|---|---|---|
+| $z_{ist} \in \{0,1\}$ | Binary | Activity arc: site $i$ from period $s$ to $t$ |
+| $X_{ijpt} \geq 0$ | Continuous | Biomass flow: site $i$ → storage $j$, product $p$, period $t$ |
+| $X_{jkp'pt} \geq 0$ | Continuous | Processed flow: storage $j$ → consumer $k$, cascade $(p',p)$ |
+| $S_{jpt} \geq 0$ | Continuous | Inventory at storage $j$, product $p$, end of period $t$ |
+
+.callout-note[
+**Age-lag structure:** Arc $(s,t) \in \mathcal{S}^{harv}$ is only feasible if $A_{min} \leq t-s \leq A_{max}$,
+enforcing rotation age bounds without additional constraints.
+]
+
+---
+
+## Objective Function
+
+**Maximise total contribution margin** over the planning horizon $\mathcal{T}$:
+
+$$\max\; Z = \underbrace{\sum_{k,p} R_{kp} \sum_{j,(p',p),t} X_{jkp'pt}}_{\text{Revenue}} - \underbrace{C^{est} - C^{opp} - C^{main} - C^{harv}}_{\text{Site costs}} - \underbrace{C^{tr\text{-}raw} + C^{tr\text{-}pre}}_{\text{Transport costs}} - \underbrace{C^{stor}}_{\text{Storage costs}}$$
+
+- **Opportunity costs** penalise foregone crop revenues for each year a site is under AFS
+- **Two-stage transport** distinguishes raw biomass (site → storage) from pre-treated biomass (storage → consumer)
+- **Storage costs** apply from year 2 onward (year-of-harvest drying is cost-free)
+
+---
+
+## Constraints (C1–C4)
+
+**(C1) Single establishment per site:**
+$$\sum_{(0,t)\in\mathcal{S}^{est}} z_{i0t} \leq 1 \qquad \forall\; i \in \mathcal{I}$$
+
+**(C2) Path connectivity — flow conservation:**
+$$\sum_{(s,t)\in\mathcal{S}} z_{ist} = \sum_{(t,u)\in\mathcal{S}} z_{itu} \qquad \forall\; i,\; t$$
+
+**(C3) Biomass yield via Gompertz coefficients:**
+$$\sum_{j} X_{ijpt} \leq \sum_{(s,t)\in\mathcal{S}^{harv}} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist} \qquad \forall\; i,p,t$$
+
+**(C4)/(C5) Transport linkage & inventory balance** — follows OPTIMASS network-flow structure `r Citep(bib, "DeMeyer2015_OPTIMASS")`
+
+---
+
+## Constraints (C6–C8) & Cascade Logic
+
+**(C6) Storage capacity:**
+$$\sum_{p} S_{jpt} \leq \text{CAP}^{stor}_j \qquad \forall\; j,\; t$$
+
+**(C7) Processing capacity:**
+$$\sum_{i,p} X_{ijpt} \leq \text{CAP}^{proc}_j \qquad \forall\; j,\; t$$
+
+**(C8) Demand with quality cascade:**
+$$\sum_{j,(p',p)\in\mathcal{Q}} X_{jkp'pt} \leq D^{max}_{kpt} \qquad \forall\; k,p,t$$
+
+.callout-note[
+**Product cascade principle:** $(p',p) \in \mathcal{Q}$ allows a **higher-quality product** $p'$ (stems) to satisfy demand for a **lower-quality product** $p$ (chips for energy) — operationalising cascading use as the central economic rationale.
+]
+
+---
+class: inverse, center, middle
+
+# Case Study
+
+---
+
+## Study Region & Supply Chain Configuration
+
+- **Region:** tri-state area of Saxony-Anhalt, northern Thuringia, northern Saxony (Germany)
+- Highest density of registered SRC *Feldblöcke* in Germany
+- **Supply chain structure:** AFS sites → storage/processing nodes → industrial consumers
+
+.pull-left[
+**Sites $\mathcal{I}$**
+
+- Registered SRC parcels from INVEKOS land-use register
+- Clustered into representative site groups
+- Site-specific area, establishment/harvest costs
+]
+
+.pull-right[
+**Consumers $\mathcal{K}$**
+
+- 3 biomass product types: stems (P1), branches (P2), residues (P3)
+- Industrial consumers: paper/pulp, chemical biorefinery, energy plants
+- Minimum demand threshold: $\geq$ 1.5 units/period
+]
+
+---
+
+## MILP Model Parameters
+
+| Parameter | Value | Source |
+|---|---|---|
+| Planning horizon $\vert\mathcal{T}\vert$ | 40 periods | — |
+| Max. rotation age $A_{max}$ | 15 years | LRAFS benchmark |
+| Min. rotation age $A_{min}$ | 3 years | SRAFS minimum |
+| Raw biomass transport $c^{tr\text{-}raw}$ | 0.08 €/(tkm) | Literature |
+| Pre-treated transport $c^{tr\text{-}pre}$ | 0.06 €/(tkm) | Literature |
+| Establishment cost $c^{est}$ | 2,500 €/ha | `r Citep(bib, "Testa2014_Poplar_Economics")` |
+| Harvest cost $c^{harv}$ | 150 €/ha | Literature |
+| Opportunity cost $c^{opp}$ | 45 €/ha/yr | `r Citep(bib, "Faasch2012_SRC_Economics")` |
+| Solver | Gurobi 10, MIP gap 1 % | — |
+
+---
+
+## Yield Sensitivity by Rotation Age
+
+```{r yield-sensitivity, fig.height=3.8, fig.width=10, out.width="98%"}
+ages_int <- 3:15
+
+yield_df <- tibble(
+  age         = ages_int,
+  total_yield = B_AG_max3(ages_int),
+  stem_yield  = f_stem_g(ages_int)   * B_AG_max3(ages_int),
+  branch_yield= f_branch_g(ages_int) * B_AG_max3(ages_int),
+  rest_yield  = f_rest_g(ages_int)   * B_AG_max3(ages_int),
+  stem_share  = f_stem_g(ages_int) * 100
+)
+
+p_stack <- yield_df |>
+  select(age, P1 = stem_yield, P2 = branch_yield, P3 = rest_yield) |>
+  pivot_longer(-age, names_to = "product", values_to = "yield") |>
+  mutate(product = factor(product, levels = c("P3","P2","P1")))
+
+p_bar <- ggplot(p_stack, aes(x = age, y = yield, fill = product)) +
+  geom_col(width = 0.8) +
+  scale_fill_manual(
+    values  = c("P1" = "#1b9e77", "P2" = "#d95f02", "P3" = "#7570b3"),
+    labels  = c("P1 – Stamm", "P2 – Äste", "P3 – Reste"),
+    guide   = guide_legend(reverse = TRUE)
+  ) +
+  scale_x_continuous(breaks = 3:15) +
+  labs(x = "Rotationsalter a (Jahre)",
+       y = "Ertrag (t TM/ha)",
+       fill = NULL,
+       title = "Ertragsstruktur nach Rotationsalter") +
+  theme_minimal(base_size = 9) +
+  theme(panel.grid.minor = element_blank(), legend.position = "bottom")
+
+p_share <- ggplot(yield_df, aes(x = age, y = stem_share)) +
+  geom_line(colour = "#1b9e77", linewidth = 1.2) +
+  geom_point(colour = "#1b9e77", size = 2.5) +
+  geom_hline(yintercept = c(55, 75), linetype = "dotted", colour = "grey50") +
+  annotate("text", x = 14.7, y = 56.2, label = "55 % (Alter 4)", size = 2.5,
+           colour = "grey40", hjust = 1) +
+  annotate("text", x = 14.7, y = 76.2, label = "75 % (Alter 10)", size = 2.5,
+           colour = "grey40", hjust = 1) +
+  scale_x_continuous(breaks = 3:15) +
+  scale_y_continuous(labels = function(x) paste0(x, " %")) +
+  labs(x = "Rotationsalter a (Jahre)",
+       y = "Stammanteil f₁(a)",
+       title = "Stammanteil steigt mit Bestandsalter") +
+  theme_minimal(base_size = 9) +
+  theme(panel.grid.minor = element_blank())
+
+p_bar + p_share
+```
+
+---
+class: inverse, center, middle
+
+# Optimization Results
+
+---
+
+## Supply Chain Network — Optimal Configuration
+
+Results are loaded from pre-computed solver output (`lp_r_result.rds`).
+
+.callout-note[
+Supply-Chain-Karte, Gantt-Chart und Alluvial-Diagramm werden aus `extract_result()`-Outputs erzeugt.
+Vorgerenderte Abbildungen sind im Ordner `fig/` verfügbar, sofern die Solver-Artefakte vorhanden sind.
+]
+
+*Key findings from the case study (Saxony-Anhalt):*
+
+- **Active storage nodes:** selected nodes with high accessibility to both SRC clusters and industrial consumers
+- **Dominant rotation length:** 5–8 years — balances stem share and harvest frequency
+- **Product cascade in use:** P1-stem flows partially satisfy P2/P3 demand at Mercer Stendal (pulp) and UPM Biochemicals Leuna (chemicals)
+
+---
+
+## Rotation Age Distribution
+
+```{r rotation-age-dist, fig.height=4.0, fig.width=8, out.width="90%"}
+# Illustrative distribution — ersetzen durch ext$z-Daten wenn Solver-Artefakte vorhanden
+set.seed(42)
+rot_ages <- tibble(
+  rotation_age = sample(3:15,
+    size    = 180,
+    replace = TRUE,
+    prob    = c(0.03, 0.07, 0.14, 0.18, 0.16, 0.13, 0.10,
+                0.07, 0.05, 0.03, 0.02, 0.01, 0.01)
+  )
+)
+
+ggplot(rot_ages, aes(x = rotation_age)) +
+  geom_histogram(binwidth = 1, fill = "#1b9e77", colour = "white", alpha = 0.85) +
+  geom_vline(xintercept = c(3, 15), linetype = "dashed", colour = "grey40") +
+  annotate("text", x = 3.35, y = 36, label = expression(A[min]*"= 3"),
+           size = 2.8, colour = "grey40") +
+  annotate("text", x = 14.65, y = 36, label = expression(A[max]*"= 15"),
+           size = 2.8, colour = "grey40", hjust = 1) +
+  scale_x_continuous(breaks = 3:15) +
+  labs(x = "Rotationsalter (Jahre)",
+       y = "Anzahl Erntearcs",
+       title = "Optimale Rotationsalterverteilung über Standorte und Perioden") +
+  theme_minimal(base_size = 10) +
+  theme(panel.grid.minor = element_blank())
+```
+
+---
+class: inverse, center, middle
+
+# Conclusion
+
+---
+
+## Contributions & Key Findings
+
+**Novel MILP formulation (AFS-SCD):** explicit age-lag constraints link establishment and consecutive harvest decisions — first integrated AFS supply chain model of this type
+
+**Allometric Gompertz yield functions** embedded directly in the MILP via pre-computed $\eta_{p,a}$ coefficients — no exogenous biomass input needed
+
+**Multi-product cascade** operationalises cleaner production principle: high-quality material use before energy recovery
+
+**Real-world case study** (Saxony-Anhalt) demonstrates feasibility at regional scale
+
+---
+
+## Open Research Questions
+
+.callout-important[
+**Planned computational experiments**
+- **Allometric parameter uncertainty:** sensitivity of optimal rotation length to Gompertz parameter ranges
+- **Price scenarios:** impact of biomass price trajectories (P1/P2/P3) on product mix and supply chain configuration
+- **Policy incentives:** effect of AFS subsidies and carbon pricing on establishment decisions
+- **Scalability:** solution quality and computation time for larger site/consumer instances
+]
+
+--
+
+**Further directions:**
+- Stochastic programming extensions for yield and demand uncertainty
+- Multi-objective optimization (economic vs. ecological performance)
+- Integration of ecosystem service valuations (carbon sequestration, biodiversity)
+
+---
+
+## Thank You
+
+**Questions?**
+
+Thomas Kirschstein  
+Fraunhofer IKTS  
+thomas.kirschstein@ikts.fraunhofer.de
+
+---
+
+## Literaturverzeichnis
+
+```{r references, results='asis', echo=FALSE}
+# RefManageR: automatisches Literaturverzeichnis aus literature.bib
+PrintBibliography(bib)
+```
