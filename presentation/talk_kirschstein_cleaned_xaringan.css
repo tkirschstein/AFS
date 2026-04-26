@@ -261,8 +261,22 @@
 
 /* ============================================================
    FOLIENZAHL
+   Xaringan schreibt die aktuelle Foliennummer in .remark-slide-number.
+   Wir positionieren sie rechts in der grünen Fußzeile.
    ============================================================ */
-
+.remark-slide-number {
+  display: block;
+  position: absolute;
+  bottom: 0.52em;
+  right: 0.9em;
+  font-size: 0.62em;
+  font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.90);
+  background: transparent;
+  padding: 0;
+  line-height: 1;
+  z-index: 12;
+}
 
 /* ============================================================
    FUSSZEILE: Fraunhofer-Gruen mit Logo links + Foliennummer rechts
@@ -273,11 +287,6 @@
 /* Mehr Abstand unten, damit der Footer nicht den Inhalt ueberlagert */
 .remark-slide-content {
   padding-bottom: 2.6em !important;
-}
-
-/* Folienzahl ausblenden (wird im Footer integriert) */
-.remark-slide-number {
-  display: none !important;
 }
 
 /* Fusszeile via ::after auf dem Folienwrapper */
@@ -319,18 +328,6 @@
   min-width: 80px;
 }
 
-/* Folienzahl-Klon im Footer (rechts) — Xaringan schreibt
-   data-slide-number ins DOM; wir nutzen attr() */
-.remark-slide-number {
-  background: transparent !important;
-  color: rgba(255,255,255,0.90) !important;
-  font-size: 0.62em !important;
-  padding: 0 !important;
-  bottom: 0.52em !important;
-  right:  0.9em !important;
-  z-index: 12 !important;
-}
-
 /* Titelfolie und Section-Divider: andere Fusszeile */
 .title-slide.remark-slide-content::after,
 .section-divider.remark-slide-content::after {
@@ -341,6 +338,11 @@
 .title-slide.remark-slide-content::before,
 .section-divider.remark-slide-content::before {
   filter: brightness(0) invert(1);   /* Logo weiss auf gruener Titelfolie */
+}
+
+/* Seitenzahl auf Titelfolie ausblenden */
+.title-slide .remark-slide-number {
+  display: none;
 }
 
 /* ============================================================
