@@ -2,7 +2,7 @@
 title: "Agroforestry Biomass Supply Chain Design"
 subtitle: "A MILP Model with Age-Lag Constraints for Product Cascading"
 author: "Thomas Kirschstein"
-institute: "Fraunhofer IKTS · Martin-Luther-Universität Halle-Wittenberg"
+institute: "Fraunhofer IKTS"
 date: ""
 format:
   revealjs:
@@ -316,8 +316,8 @@ $(p',p) \in \mathcal{Q}$ allows a **higher-quality product** $p'$ (e.g. stems) t
 | Planning horizon $\vert\mathcal{T}\vert$ | 40 periods | — |
 | Max. rotation age $A_{max}$ | 15 years | LRAFS benchmark |
 | Min. rotation age $A_{min}$ | 3 years | SRAFS minimum |
-| Raw biomass transport $c^{tr\text{-}raw}$ | 0.08 €/(t·km) | Literature |
-| Pre-treated transport $c^{tr\text{-}pre}$ | 0.06 €/(t·km) | Literature |
+| Raw biomass transport $c^{tr\text{-}raw}$ | 0.08 €/(tkm) | Literature |
+| Pre-treated transport $c^{tr\text{-}pre}$ | 0.06 €/(tkm) | Literature |
 | Establishment cost $c^{est}$ | 2,500 €/ha | [@Testa2014_Poplar_Economics] |
 | Harvest cost $c^{harv}$ | 150 €/ha | Literature |
 | Opportunity cost $c^{opp}$ | 45 €/ha/yr | Literature |
@@ -385,7 +385,7 @@ Shorter rotations → more frequent harvests, lower capital tie-up, better deman
 **Questions?**
 
 Thomas Kirschstein  
-Fraunhofer IKTS · MLU Halle-Wittenberg  
+Fraunhofer IKTS
 thomas.kirschstein@ikts.fraunhofer.de
 
 
