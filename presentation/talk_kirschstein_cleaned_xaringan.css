@@ -16,7 +16,7 @@
 
 /* ============================================================
    KOPFZEILE: Navigationsleiste
-   ============================================================ 
+   ============================================================ */
 .nav-header {
   display: block;
   width: calc(100% + 2 * var(--slide-padding-x, 1em));
@@ -30,23 +30,6 @@
   line-height: 1.6;
   border-bottom: 2px solid var(--fhg);
 }
-*/
-
-.nav-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  margin: 0;             /* kein negativer Margin-Hack mehr */
-  padding: 0.28em 1em;
-  background: var(--fhg-nav-bg);
-  font-size: 0.62em;
-  color: rgba(255,255,255,0.92);
-  z-index: 10;
-  border-bottom: 2px solid var(--fhg);
-}
-
 
 .nav-header a {
   color: rgba(255, 255, 255, 0.90);
@@ -69,11 +52,9 @@
   background: #ffffff;
   color: var(--text-main);
   font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
-  font-size: 1.4em;
+  font-size: 1.5em;
   padding: 0.9em 1.2em 1.2em 1.2em;
   text-align: left;
-  position: relative;
-  padding-top: 3.8em; /* Platz für nav-header reservieren */
 }
 
 /* --- Folien-Titel (h2) = Beamer frametitle --- */
@@ -81,7 +62,7 @@
   background: var(--fhg);
   color: #ffffff;
   font-family: "Source Serif 4", Georgia, serif;
-  font-size: 1.5em;
+  font-size: 1.8em;
   font-weight: 600;
   padding: 0.32em 0.75em;
   margin: -0.9em -1.2em 0.75em -1.2em;
@@ -90,13 +71,11 @@
   letter-spacing: 0.01em;
 }
 
-
-
 /* --- Unterueberschrift h3 --- */
 .remark-slide-content h3 {
   color: var(--fhg);
   font-family: "Source Serif 4", Georgia, serif;
-  font-size: 2.05em;
+  font-size: 1.05em;
   font-weight: 700;
   margin-top: 0.6em;
   margin-bottom: 0.3em;
@@ -104,7 +83,7 @@
 
 /* --- Abschnittstitel (section divider / h1) --- */
 .section-divider h1 {
-  color: var(--text-main); /* #ffffff;*/
+  color: #ffffff;
   font-family: "Source Serif 4", Georgia, serif;
   font-size: 2em;
   font-weight: 700;
@@ -113,15 +92,9 @@
 }
 
 .section-divider {
-  background: var(--fhg-light) !important;
-  color: var(--text-main); /* #ffffff !important;*/
+  background: var(--fhg) !important;
+  color: #ffffff !important;
 }
-
-.remark-slide-content.inverse {
-  background-color: #179C7D;  /* --fhg */
-  color: #ffffff;
-}
-
 
 /* ============================================================
    TITELFOLIE
@@ -134,7 +107,7 @@
 .title-slide h1 {
   color: var(--fhg);
   font-family: "Source Serif 4", Georgia, serif;
-  font-size: 2.65em;
+  font-size: 1.65em;
   font-weight: 700;
   border: none;
   background: none;
@@ -147,7 +120,7 @@
   background: none !important;
   color: var(--text-muted) !important;
   font-family: "Source Sans 3", "Calibri", Arial, sans-serif !important;
-  font-size: 1.5em !important;
+  font-size: 1em !important;
   font-weight: 400 !important;
   border: none !important;
   padding: 0 !important;
@@ -159,19 +132,19 @@
 .title-slide .author {
   color: var(--text-main);
   font-weight: 600;
-  font-size: 3em !important;
+  font-size: 1em;
 }
 
 .title-slide .date {
   color: var(--text-muted);
-  font-size: 1.5em;
+  font-size: 0.85em;
 }
 
 /* Fraunhofer-Gruen Linie unter dem Haupttitel auf der Titelfolie */
 .title-slide h1::after {
   content: "";
   display: block;
-  width: 250px;
+  width: 80px;
   height: 3px;
   background: var(--fhg);
   margin: 0.4em auto 0;
@@ -289,25 +262,95 @@
 /* ============================================================
    FOLIENZAHL
    ============================================================ */
+
+
+/* ============================================================
+   FUSSZEILE: Fraunhofer-Gruen mit Logo links + Foliennummer rechts
+   Xaringan-native: remark-slide-content padding-bottom muss
+   Platz fuer die footer-Hoehe lassen (hier ~2.2em).
+   ============================================================ */
+
+/* Mehr Abstand unten, damit der Footer nicht den Inhalt ueberlagert */
+.remark-slide-content {
+  padding-bottom: 2.6em !important;
+}
+
+/* Folienzahl ausblenden (wird im Footer integriert) */
 .remark-slide-number {
+  display: none !important;
+}
+
+/* Fusszeile via ::after auf dem Folienwrapper */
+.remark-slide-container .remark-slide-scaler::after {
+  content: '';
+}
+
+/* Xaringan rendert jeden Slide in .remark-slide-content.
+   Wir nutzen position:absolute auf dem Slide-Element selbst. */
+.remark-slide {
+  position: relative;
+}
+
+.remark-slide-content::after {
+  content: '';
+  position: absolute;
+  left:   0;
+  right:  0;
+  bottom: 0;
+  height: 2.0em;
   background: var(--fhg);
-  color: #ffffff;
-  font-size: 0.6em;
-  padding: 0.18em 0.45em;
-  border-radius: 2px;
-  bottom: 0.8em;
-  right: 0.8em;
+  border-top: 2px solid var(--fhg-dark);
+  z-index: 10;
+}
+
+/* Logo in der Fusszeile (links) */
+.remark-slide-content::before {
+  content: '';
+  position: absolute;
+  left:   0.9em;
+  bottom: 0.35em;
+  width:  auto;
+  height: 1.3em;
+  background-image: url("fig/ikts_logo.png");
+  background-repeat: no-repeat;
+  background-size:   contain;
+  background-position: left center;
+  z-index: 11;
+  min-width: 80px;
+}
+
+/* Folienzahl-Klon im Footer (rechts) — Xaringan schreibt
+   data-slide-number ins DOM; wir nutzen attr() */
+.remark-slide-number {
+  background: transparent !important;
+  color: rgba(255,255,255,0.90) !important;
+  font-size: 0.62em !important;
+  padding: 0 !important;
+  bottom: 0.52em !important;
+  right:  0.9em !important;
+  z-index: 12 !important;
+}
+
+/* Titelfolie und Section-Divider: andere Fusszeile */
+.title-slide.remark-slide-content::after,
+.section-divider.remark-slide-content::after {
+  background: var(--fhg-dark);
+  border-top: 2px solid rgba(255,255,255,0.25);
+}
+
+.title-slide.remark-slide-content::before,
+.section-divider.remark-slide-content::before {
+  filter: brightness(0) invert(1);   /* Logo weiss auf gruener Titelfolie */
 }
 
 /* ============================================================
-   LOGO
+   LOGO (manuell, Legacy .logo-bottom — weiterhin nutzbar)
    ============================================================ */
 .remark-slide-content .logo-bottom {
   position: absolute;
   bottom: 0.5em;
   right: 0.9em;
 }
-
 .remark-slide-content .logo-bottom img {
   height: 28px;
   display: inline-block;
