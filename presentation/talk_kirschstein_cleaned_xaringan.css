@@ -65,7 +65,9 @@
   font-size: 1.8em;
   font-weight: 600;
   padding: 0.32em 0.75em;
+  /* Oberer Rand: 0.55em Abstand vor dem gruenen Titelbalken */
   margin: -0.9em -1.2em 0.75em -1.2em;
+  padding-top: 0.55em;
   border-bottom: 2px solid var(--fhg-dark);
   text-align: left;
   letter-spacing: 0.01em;
