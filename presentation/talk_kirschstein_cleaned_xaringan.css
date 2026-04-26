@@ -15,51 +15,87 @@
 }
 
 /* ============================================================
-   KOPFZEILE: Navigationsleiste
+   KOPFZEILE: JavaScript Navigationsleiste
    ============================================================ */
-.nav-header {
-  display: block;
-  width: calc(100% + 2 * var(--slide-padding-x, 1em));
-  margin: -0.9em calc(-1 * var(--slide-padding-x, 1em)) 0.7em;
-  padding: 0.28em 1em;
-  background: var(--fhg-nav-bg);
-  font-size: 0.62em;
-  color: rgba(255, 255, 255, 0.92);
-  font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
-  letter-spacing: 0.03em;
-  line-height: 1.6;
-  border-bottom: 2px solid var(--fhg);
-}
-
-.nav-header a {
-  color: rgba(255, 255, 255, 0.90);
-  text-decoration: none;
-  padding: 0 0.15em;
-  border-radius: 2px;
-  transition: color 0.15s, background 0.15s;
-}
-
-.nav-header a:hover {
-  color: #ffffff;
-  background: rgba(255,255,255,0.15);
-  text-decoration: underline;
-}
-
-/* NAVIGATIONSLEISTE */
-.remark-slide-tools {
-  display: flex !important;
-  bottom: 0;
+#js-navbar {
+  position: fixed;
+  top: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.35);
-  z-index: 10;
-  padding: 0.2em 0.5em;
+  z-index: 9999;
+  background: var(--fhg-nav-bg);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 1em;
+  height: 2.2em;
+  font-size: 0.62em;
+  font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  border-bottom: 2px solid var(--fhg);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  box-sizing: border-box;
 }
 
-/* Pfeile / Buttons sichtbar machen */
-.remark-slide-tools .remark-slide-tools-nav {
-  display: inline-block !important;
-  color: rgba(255, 255, 255, 0.85);
+/* Einzelner Navbar-Link */
+#js-navbar a {
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  padding: 0 0.75em;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  border-right: 1px solid rgba(255,255,255,0.12);
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+#js-navbar a:first-child {
+  border-left: 1px solid rgba(255,255,255,0.12);
+}
+
+#js-navbar a:hover {
+  background: rgba(255,255,255,0.15);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+/* Aktiver Abschnitt: hellerer Balken + weisse Schrift */
+#js-navbar a.nav-active {
+  background: rgba(255,255,255,0.22);
+  color: #ffffff;
+  font-weight: 700;
+  border-bottom: 2px solid #ffffff;
+}
+
+/* Kleiner Abstandhalter am Ende der Links */
+#js-navbar .nav-spacer {
+  flex: 1;
+}
+
+/* Folientitel ganz rechts (kleiner Hinweis auf aktuelle Folie) */
+#js-navbar .nav-slide-title {
+  color: rgba(255,255,255,0.60);
+  font-size: 0.95em;
+  letter-spacing: 0.01em;
+  padding-left: 0.5em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 28em;
+}
+
+/* ============================================================
+   Platz fuer die Navbar oben in allen Folien ausser Titelfolie
+   ============================================================ */
+.remark-slide-content {
+  padding-top: 2.8em !important;
+}
+
+.title-slide.remark-slide-content,
+.section-divider.remark-slide-content {
+  padding-top: 0.9em !important;
 }
 
 /* ============================================================
@@ -281,7 +317,7 @@
 /* ============================================================
    FOLIENZAHL
    Xaringan schreibt die aktuelle Foliennummer in .remark-slide-number.
-   Wir positionieren sie rechts in der grünen Fußzeile.
+   Wir positionieren sie rechts in der gruenen Fusszeile.
    ============================================================ */
 .remark-slide-number {
   display: block;
