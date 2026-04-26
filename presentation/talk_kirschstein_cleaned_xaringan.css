@@ -16,7 +16,7 @@
 
 /* ============================================================
    KOPFZEILE: Navigationsleiste
-   ============================================================ */
+   ============================================================ 
 .nav-header {
   display: block;
   width: calc(100% + 2 * var(--slide-padding-x, 1em));
@@ -28,6 +28,22 @@
   font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
   letter-spacing: 0.03em;
   line-height: 1.6;
+  border-bottom: 2px solid var(--fhg);
+}
+*/
+
+.nav-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  margin: 0;             /* kein negativer Margin-Hack mehr */
+  padding: 0.28em 1em;
+  background: var(--fhg-nav-bg);
+  font-size: 0.62em;
+  color: rgba(255,255,255,0.92);
+  z-index: 10;
   border-bottom: 2px solid var(--fhg);
 }
 
@@ -55,6 +71,8 @@
   font-size: 1.4em;
   padding: 0.9em 1.2em 1.2em 1.2em;
   text-align: left;
+  position: relative;
+  padding-top: 3.8em; /* Platz für nav-header reservieren */
 }
 
 /* --- Folien-Titel (h2) = Beamer frametitle --- */
@@ -62,7 +80,7 @@
   background: var(--fhg);
   color: #ffffff;
   font-family: "Source Serif 4", Georgia, serif;
-  font-size: 1.8em;
+  font-size: 1.5em;
   font-weight: 600;
   padding: 0.32em 0.75em;
   margin: -0.9em -1.2em 0.75em -1.2em;
@@ -70,6 +88,8 @@
   text-align: left;
   letter-spacing: 0.01em;
 }
+
+
 
 /* --- Unterueberschrift h3 --- */
 .remark-slide-content h3 {
@@ -95,6 +115,12 @@
   background: var(--fhg-light) !important;
   color: var(--text-main); /* #ffffff !important;*/
 }
+
+.remark-slide-content.inverse {
+  background-color: #179C7D;  /* --fhg */
+  color: #ffffff;
+}
+
 
 /* ============================================================
    TITELFOLIE
