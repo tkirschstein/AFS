@@ -86,7 +86,7 @@ xaringanExtra::use_logo(
   width      = "150px",
   height     = "auto",
   position   = xaringanExtra::css_position(top = "10px", right = "15px"),
-  exclude_class = c("title-slide", "inverse")  # Logo auf Sektionsfolien ausblenden
+  exclude_class = c("title-slide")  # Logo auf Sektionsfolien ausblenden
 )
 
 # ── RefManageR: Automatisches Literaturverzeichnis ────────────────────────────
@@ -152,8 +152,6 @@ ext <- extract_result(result, milp_instance)
 
 ```
 
-class: title-slide, center, middle
-
 # Agroforestry Biomass Supply Chain Design
 
 ## A MILP Model with Age-Lag Constraints for Product Cascading
@@ -162,8 +160,10 @@ class: title-slide, center, middle
 
 Fraunhofer IKTS
 
+30.04.2026
+
 .logo-title[
-![]( fig/ikts_logo.png)
+  <img src="fig/ikts_logo.png" height="136px"/>
 ]
 
 
