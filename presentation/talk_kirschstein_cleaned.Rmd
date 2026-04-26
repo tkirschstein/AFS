@@ -22,7 +22,8 @@ output:
 bibliography: literature.bib
 ---
 
-```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+
+```{r setup 1, echo=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(
   echo        = FALSE,
   message     = FALSE,
@@ -44,6 +45,31 @@ suppressPackageStartupMessages({
   library(scales)
   library(tibble)
   library(RefManageR)
+  library(magick)
+  library(plotly)
+  library(ggplot2)
+  library(tidyr)
+  library(patchwork)
+  library(sf)
+  library(stringr)
+  library(leaflet)
+  library(osrm)
+  library(ROI)
+  library(ROI.plugin.glpk)
+  library(gurobi)
+  library(ROI.plugin.gurobi)
+  library(ggrepel)
+  library(ggnewscale)
+  library(rnaturalearth)
+  library(rnaturalearthdata)
+  #library(Rcpp)
+  #library(RcppArmadillo)
+  library(scatterpie)
+  library(networkD3)
+  library(htmlwidgets)
+  library(webshot2)
+  library(ggalluvial)
+  library(scales)
 })
 
 # ── RefManageR: Automatisches Literaturverzeichnis ────────────────────────────
@@ -56,6 +82,11 @@ BibOptions(
   dashed        = FALSE
 )
 bib <- ReadBib("literature.bib", check = FALSE)
+
+```
+
+
+```{r setup-2, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
 
 # ── Gompertz-Hilfsfunktionen (direkt aus paper.Rmd übernommen) ───────────────
 gomp <- function(t, A, k, t0) {
@@ -70,6 +101,38 @@ h_rest_f    <- function(t) gomp(t, A = 0.1,  k = 0.30, t0 = 2.0)
 f_stem_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hs/(hs+hb+hr) }
 f_branch_g <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hb/(hs+hb+hr) }
 f_rest_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hr/(hs+hb+hr) }
+
+#load("../Modell/afs_workspace.RData")
+load("../Paper/afs_workspace_red.RData")
+source("../Modell/extract_result.R")
+
+sites_sf   <- afs_workspace$sites_sf
+sites      <- afs_workspace$sites
+sites_clustered      <- afs_workspace$sites_clustered
+storages   <- afs_workspace$storages
+consumers  <- afs_workspace$consumers
+
+# scale down industrial demand quantities by dividing by 5
+consumers <- consumers %>%
+  mutate(demand_P1 = demand_P1 / 5)
+
+# drop small Biogas plants --> compute total demand and drop all consumer with D<2
+consumers <- consumers %>%
+  mutate(total_demand = demand_P1 + demand_P2 + demand_P3) %>%
+  filter(total_demand >= 1.5) %>%
+  select(-total_demand)
+
+
+dist_jk <- afs_workspace$dist_jk[,consumers$consumer_id]
+
+
+model <- readRDS("../Paper/lp_r.RDS")
+result <- readRDS("../Paper/lp_r_result.rds")
+milp_instance <- readRDS("../Paper/lp_instance_data.rds")
+
+ext <- extract_result(result, milp_instance)
+
+
 ```
 
 class: title-slide, center, middle
@@ -497,6 +560,182 @@ class: inverse, center, middle
 - Minimum demand threshold: $\geq$ 1.5 units/period
 ]
 
+
+---
+
+## Case study data
+
+.pull-left[
+```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, out.width="90%"}
+
+crs_map <- 25833
+
+# ── Colour palette constants (identical to fig-results-sc-map) ────────────────
+COL_SAW <- "#e65c00"
+COL_HUB <- "#c05000"
+COL_P1  <- "#6a0dad"
+COL_P2  <- "#08519c"
+COL_P3  <- "#a50026"
+
+# ── Map extent: defined in WGS84, transformed to projected CRS ───────────────
+bbox_wgs84 <- st_as_sfc(
+  st_bbox(c(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8),
+          crs = st_crs(4326))
+)
+bbox_map <- st_transform(bbox_wgs84, crs_map)
+bbox_num <- st_bbox(bbox_map)
+
+# ── Base-map layers ────────────────────────────────────────────────────────────
+de_states <- ne_states(country = "Germany", returnclass = "sf") %>%
+  st_transform(crs_map) %>%
+  st_intersection(bbox_map)
+
+rivers_eu <- ne_download(
+  scale    = 10,
+  type     = "rivers_lake_centerlines",
+  category = "physical",
+  returnclass = "sf"
+) %>%
+  st_transform(crs_map) %>%
+  st_intersection(bbox_map)
+
+# ── Cluster colour palette (no legend printed) ────────────────────────────────
+cluster_assig <- afs_workspace$site_cluster_assig %>%
+  select(site_id, hac_cluster) %>%
+  mutate(hac_cluster = as.factor(hac_cluster))
+
+n_clusters <- length(unique(cluster_assig$hac_cluster))
+
+cluster_pal <- setNames(
+  if (n_clusters <= 12) {
+    colorRampPalette(RColorBrewer::brewer.pal(min(n_clusters, 12), "Set3"))(n_clusters)
+  } else {
+    scales::viridis_pal(option = "turbo")(n_clusters)
+  },
+  levels(cluster_assig$hac_cluster)
+)
+
+# ── Site polygons: join cluster assignment, project ───────────────────────────
+sites_sf_clust <- sites_sf %>%
+  mutate(site_id = seq_len(nrow(sites_sf))) %>%
+  left_join(cluster_assig, by = "site_id") %>%
+  st_transform(crs_map)
+
+# ── Consumers & storages ───────────────────────────────────────────────────────
+consumers_plt <- consumers %>%
+  mutate(
+    total_demand = demand_P1 + demand_P2 + demand_P3,
+    kategorie = case_when(
+      demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
+      demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
+      demand_P3 > 0                                                     ~ "Energy / Biogas (P3)",
+      TRUE                                                              ~ "Other"
+    ),
+    pt_size = pmin(4.5, pmax(1.5, 1.5 + log1p(total_demand) * 0.55))
+  )
+
+storages_plt <- storages %>%
+  mutate(
+    #subtype = if_else(type == "Hub", "Logistics Hub", "Sawmill"),
+    subtype = if_else(type == "Hub", "Hub", "Hub"),
+    pt_size = 3.5
+  )
+
+stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326) %>%
+  st_transform(crs_map)
+
+cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326) %>%
+  st_transform(crs_map)
+
+# ── Plot ───────────────────────────────────────────────────────────────────────
+ggplot() +
+
+  # Base map
+  geom_sf(data = de_states,
+          fill = "grey96", colour = "grey55", linewidth = 0.35) +
+  geom_sf(data = rivers_eu,
+          colour = "#4292c6", linewidth = 0.45, alpha = 0.7) +
+
+  # KUP site polygons coloured by cluster — legend suppressed via guide = "none"
+  geom_sf(data      = sites_sf_clust,
+          aes(fill  = hac_cluster),
+          colour    = "grey30",
+          linewidth = 0.05,
+          alpha     = 0.65,
+          show.legend = FALSE) +
+  scale_fill_manual(
+    values = cluster_pal,
+    guide  = "none"          # colours visible on map; no legend entry printed
+  ) +
+
+  # Pre-treatment facilities — new colour + shape scale after cluster fill
+  ggnewscale::new_scale_colour() +
+  ggnewscale::new_scale("shape") +
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = stor_sf,
+          aes(colour = subtype, shape = subtype, size = pt_size),
+          stroke = 1.2, alpha = 0.92, show.legend = F) +
+  scale_colour_manual(
+    name   = "Pre-treatment",
+    values = c("Sawmill" = COL_SAW, "Hub" = COL_HUB)
+  ) +
+  # scale_shape_manual(
+  #   name   = "Pre-treatment",
+  #   values = c("Sawmill" = 16, "Logistics Hub" = 17)
+  # ) +
+
+  # Consumer sites — fill scale registered after new_scale_fill() above
+  geom_sf(data  = cons_sf,
+          aes(fill = kategorie, size = pt_size),
+          shape = 22, colour = "white", stroke = 0.45,
+          alpha = 0.88, show.legend = TRUE) +
+  scale_fill_manual(
+    name   = "Consumer type",
+    values = c(
+      "Chemical / Pulp (P1)" = COL_P1,
+      "Pulp / Paper (P2)"    = COL_P2,
+      "Energy / Biogas (P3)" = COL_P3,
+      "Other"                = "grey60"
+    )
+  ) +
+
+  scale_size_continuous(range = c(1.5, 5), guide = "none") +
+  guides(
+    fill   = guide_legend(order = 1,
+                          override.aes = list(size = 3.5, stroke = 0.4,
+                                              colour = "white")),
+    colour = guide_legend(order = 2,
+                          override.aes = list(size = 4, stroke = 1.5)),
+    shape  = guide_legend(order = 2,
+                          override.aes = list(size = 4, stroke = 1.5))
+  ) +
+
+  coord_sf(
+    xlim   = c(bbox_num["xmin"], bbox_num["xmax"]),
+    ylim   = c(bbox_num["ymin"], bbox_num["ymax"]),
+    expand = FALSE
+  ) +
+  labs(x = NULL, y = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(
+    panel.grid      = element_line(colour = "grey88", linewidth = 0.25),
+    legend.position = "right",
+    legend.key.size = unit(0.40, "cm"),
+    legend.text     = element_text(size = 6),
+    legend.title    = element_text(size = 7.5, face = "bold"),
+    axis.text       = element_text(size = 7)
+  )
+```
+]
+
+.pull-right[
+**Data sources:**
+  - AFS sites: INVEKOS land-use register (2023)
+  - Consumers: public databases, company reports, expert interviews
+  - Distances: OpenRouteService API
+  - Cost parameters: literature review (see next slide)
+]
+
 ---
 
 ## MILP Model Parameters
@@ -575,15 +814,6 @@ class: inverse, center, middle
 
 ---
 
-## Supply Chain Network — Optimal Configuration
-
-Results are loaded from pre-computed solver output (`lp_r_result.rds`).
-
-.callout-note[
-Supply-Chain-Karte, Gantt-Chart und Alluvial-Diagramm werden aus `extract_result()`-Outputs erzeugt.
-Vorgerenderte Abbildungen sind im Ordner `fig/` verfügbar, sofern die Solver-Artefakte vorhanden sind.
-]
-
 *Key findings from the case study (Saxony-Anhalt):*
 
 - **Active storage nodes:** selected nodes with high accessibility to both SRC clusters and industrial consumers
@@ -620,6 +850,395 @@ ggplot(rot_ages, aes(x = rotation_age)) +
   theme_minimal(base_size = 10) +
   theme(panel.grid.minor = element_blank())
 ```
+
+
+
+---
+
+## Establishment decisions
+
+
+.col-50[
+```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=4, out.width="95%"}
+
+crs_map <- 25833
+
+# ── Colour palette constants ─────────────────────────────────────────────────
+COL_SAW       <- "#e65c00"
+COL_HUB       <- "#c05000"
+COL_P1        <- "#6a0dad"
+COL_P2        <- "#08519c"
+COL_P3        <- "#a50026"
+COL_SITE_ACT  <- "#1b9e77"
+COL_SITE_NONE <- "#bdbdbd"
+
+pal_products <- c(
+  p1 = "#1b9e77",  # stem
+  p2 = "#d95f02",  # branches
+  p3 = "#7570b3"   # residues
+)
+
+# ── Map extent: define once in WGS84, transform to plotting CRS ──────────────
+bbox_wgs84 <- st_as_sfc(
+  st_bbox(c(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8), crs = st_crs(4326))
+)
+bbox_map   <- st_transform(bbox_wgs84, crs_map)
+bbox_num   <- st_bbox(bbox_map)
+
+# ── Base-map layers ───────────────────────────────────────────────────────────
+de_states <- ne_states(country = "Germany", returnclass = "sf") %>%
+  st_transform(crs_map) %>%
+  st_intersection(bbox_map)
+
+rivers_eu <- ne_download(
+  scale = 10,
+  type = "rivers_lake_centerlines",
+  category = "physical",
+  returnclass = "sf"
+) %>%
+  st_transform(crs_map) %>%
+  st_intersection(bbox_map)
+
+# ── Aggregate harvest volumes per site over all periods ──────────────────────
+site_harvest <- ext$Xij %>%
+  group_by(site_id, product) %>%
+  summarise(vol = sum(value, na.rm = TRUE), .groups = "drop") %>%
+  tidyr::pivot_wider(
+    names_from   = product,
+    values_from  = vol,
+    values_fill  = 0,
+    names_prefix = "p"
+  )
+
+for (col in c("p1", "p2", "p3")) {
+  if (!col %in% names(site_harvest)) site_harvest[[col]] <- 0
+}
+
+site_harvest <- site_harvest %>%
+  mutate(total_vol = p1 + p2 + p3) %>%
+  filter(total_vol > 0)
+
+active_site_ids <- unique(site_harvest$site_id)
+
+# ── Site polygons for background activity map ────────────────────────────────
+sites_sf_map <- sites_sf %>%
+  mutate(site_id = seq_len(nrow(sites_sf))) %>%
+  inner_join( afs_workspace$site_cluster_assig, "site_id" ) %>% 
+  st_transform(crs_map) %>%
+  mutate(
+    active     = hac_cluster %in% active_site_ids,
+    site_class = if_else(active, "Active site", "Inactive site")
+  )
+
+# ── Pie-chart data: use centroid coordinates in projected CRS ────────────────
+sites_pie_sf <- milp_instance$sites %>%
+  inner_join(site_harvest, by = "site_id") %>%
+  st_as_sf(coords = c("lng", "lat"), crs = 4326) %>%
+  st_transform(crs_map)
+
+coords_sites <- st_coordinates(sites_pie_sf)
+
+sites_pie <- sites_pie_sf %>%
+  st_drop_geometry() %>%
+  mutate(
+    x = coords_sites[, 1],
+    y = coords_sites[, 2]
+  )
+
+vol_med <- median(sites_pie$total_vol[sites_pie$total_vol > 0], na.rm = TRUE)
+if (is.na(vol_med) || vol_med <= 0) vol_med <- 1
+
+# radius in map units (metres); tuned for this regional extent
+sites_pie <- sites_pie %>%
+  mutate(r = 3500 * sqrt(total_vol / vol_med))
+
+# ── Consumers & storages ──────────────────────────────────────────────────────
+consumers_plt <- consumers %>%
+  mutate(
+    total_demand = demand_P1 + demand_P2 + demand_P3,
+    kategorie = case_when(
+      demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
+      demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
+      demand_P3 > 0 ~ "Energy / Biogas (P3)",
+      TRUE ~ "Other"
+    ),
+    pt_size = pmin(4.5, pmax(1.5, 1.5 + log1p(total_demand) * 0.55))
+  )
+
+storages_plt <- storages %>%
+  mutate(
+    subtype = if_else(type == "Hub", "Logistics Hub", "Sawmill"),
+    pt_size = pmin(3.5, pmax(1.2, 1.2 + log1p(CAP_proc) * 0.38))
+  )
+
+stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326) %>%
+  st_transform(crs_map)
+
+cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326) %>%
+  st_transform(crs_map)
+
+# ── Plot ──────────────────────────────────────────────────────────────────────
+ggplot() +
+  # Base map
+  geom_sf(data = de_states,
+          fill = "grey96", colour = "grey55", linewidth = 0.35) +
+  geom_sf(data = rivers_eu,
+          colour = "#4292c6", linewidth = 0.35, alpha = 0.7) +
+
+  # Site polygons
+  geom_sf(data = sites_sf_map,
+          aes(fill = site_class),
+          colour = NA, alpha = 0.55, show.legend = TRUE) +
+  scale_fill_manual(
+    name   = "AFS site status",
+    values = c("Active site" = COL_SITE_ACT, "Inactive site" = COL_SITE_NONE)
+  ) +
+
+  # Pre-treatment facilities
+  ggnewscale::new_scale_colour() +
+  ggnewscale::new_scale("shape") +
+  geom_sf(data = stor_sf,
+          aes(colour = subtype, shape = subtype, size = pt_size),
+          stroke = 1.0, alpha = 0.92, show.legend = TRUE) +
+  scale_colour_manual(
+    name   = "Pre-treatment",
+    values = c("Sawmill" = COL_SAW, "Logistics Hub" = COL_HUB)
+  ) +
+  scale_shape_manual(
+    name   = "Pre-treatment",
+    values = c("Sawmill" = 16, "Logistics Hub" = 17)
+  ) +
+
+  # Consumer sites
+  ggnewscale::new_scale_fill() +
+  geom_sf(data = cons_sf,
+          aes(fill = kategorie, size = pt_size),
+          shape = 22, colour = "white", stroke = 0.45,
+          alpha = 0.9, show.legend = TRUE) +
+  scale_fill_manual(
+    name   = "Consumer type",
+    values = c(
+      "Chemical / Pulp (P1)" = COL_P1,
+      "Pulp / Paper (P2)"    = COL_P2,
+      "Energy / Biogas (P3)" = COL_P3,
+      "Other"                = "grey60"
+    )
+  ) +
+
+  # Pie charts at active sites
+  ggnewscale::new_scale_fill() +
+  scatterpie::geom_scatterpie(
+    data         = sites_pie,
+    aes(x = x, y = y, r = r),
+    cols         = c("p1", "p2", "p3"),
+    colour       = "white",
+    linewidth    = 0.15,
+    donut_radius =.5,
+    alpha        = 0.7,
+    show.legend  = TRUE
+  ) +
+  scale_fill_manual(
+    name   = "Harvested biomass",
+    values = pal_products,
+    labels = c(p1 = "Stem", p2 = "Branches", p3 = "Residues")
+  ) +
+
+  scale_size_continuous(range = c(1.5, 5), guide = "none") +
+  guides(
+    fill   = guide_legend(order = 1),
+    colour = guide_legend(order = 2,
+                          override.aes = list(size = 4, stroke = 1.2)),
+    shape  = guide_legend(order = 2,
+                          override.aes = list(size = 4, stroke = 1.2))
+  ) +
+
+  coord_sf(
+    xlim   = c(bbox_num["xmin"], bbox_num["xmax"]),
+    ylim   = c(bbox_num["ymin"], bbox_num["ymax"]),
+    expand = FALSE
+  ) +
+  labs(x = NULL, y = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(
+    panel.grid      = element_line(colour = "grey88", linewidth = 0.25),
+    legend.position = "right",
+    legend.key.size = unit(0.40, "cm"),
+    legend.text     = element_text(size = 6),
+    legend.title    = element_text(size = 7.5, face = "bold"),
+    axis.text       = element_text(size = 7)
+  )
+```
+]
+
+
+.col-50[
+- **Allometric parameter uncertainty:** sensitivity of optimal rotation length to Gompertz parameter ranges
+- **Price scenarios:** impact of biomass price trajectories (P1/P2/P3) on product mix and supply chain configuration
+- **Policy incentives:** effect of AFS subsidies and carbon pricing on establishment decisions
+- **Scalability:** solution quality and computation time for larger site/consumer instances
+]
+
+
+---
+
+## Harvest quantities
+
+
+```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total production quantity of biomass types and its industrial usage over planning horizon (in tons).", fig.width=8, fig.height=4, out.width="90%"}
+
+
+# ── Labels & colours ──────────────────────────────────────────────────────────
+# Source side (axis 1): biomass fractions delivered from sites → hubs (Xij)
+#   product index 1 = Stems, 2 = Branches, 3 = Residues  [§2.2, f_p(t)]
+SRC_LABEL <- c(
+  "1" = "Stems",
+  "2" = "Branches",
+  "3" = "Residues"
+)
+
+# Delivery side (axis 2): consumer categories receiving from hubs (Xjk)
+#   del_product 1 = Industrial (P1), 2 = Pulp & Paper (P2), 3 = Energy (P3)
+DEL_LABEL <- c(
+  "1" = "Industrial",
+  "2" = "Pulp & Paper",
+  "3" = "Energy"
+)
+
+# Fill colours for source strata — must match paper Fig. max3-growth
+P_COLS_SRC <- c(
+  "Stems"    = "#1b9e77",
+  "Branches" = "#d95f02",
+  "Residues" = "#7570b3"   
+)
+
+# ── Aggregate Xjk: src_product × del_product, summed over all periods/consumers
+flow_df <- ext$Xjk %>%
+  group_by(src_product, del_product) %>%
+  summarise(volume = sum(value, na.rm = TRUE), .groups = "drop") %>%
+  filter(volume > 0) %>%
+  mutate(
+    # axis1 = biomass fraction (source side)
+    src = factor(SRC_LABEL[as.character(src_product)], levels = SRC_LABEL),
+    # axis2 = consumer category (delivery/sink side)
+    del = factor(DEL_LABEL[as.character(del_product)], levels = DEL_LABEL)
+  )
+
+# ── Plot ──────────────────────────────────────────────────────────────────────
+ggplot(flow_df,
+       aes(axis1 = src, axis2 = del, y = volume, fill = src)) +
+
+  geom_alluvium(
+    alpha      = 0.72,
+    width      = 1 / 3,
+    knot.pos   = 0.45,
+    curve_type = "sigmoid"
+  ) +
+
+  geom_stratum(
+    width     = 1 / 3,
+    fill      = "grey94",
+    colour    = "grey50",
+    linewidth = 0.3
+  ) +
+
+  geom_text(
+    stat       = "stratum",
+    aes(label  = after_stat(stratum)),
+    size       = 2.8,
+    colour     = "grey15",
+    lineheight = 0.88
+  ) +
+
+  # Axis header annotations — placed below the stratum columns
+  # x = 1 (axis1 = Feedstock fraction), x = 2 (axis2 = End use)
+  annotate("text",
+    x        = c(1, 2),
+    y        = -Inf,
+    label    = c("Feedstock", "End use"),
+    vjust    = 1.6,
+    size     = 3.0,
+    fontface = "bold",
+    colour   = "grey30"
+  ) +
+
+  scale_fill_manual(
+    name   = "Biomass fraction",
+    values = P_COLS_SRC          # only 3 source entries; no ghost colours
+  ) +
+
+  # ggalluvial uses integer axis positions (1, 2, …); do NOT set
+  # limits = c("src", "del") — that breaks stratum positioning
+  scale_x_discrete(
+    expand = expansion(add = c(0.25, 0.25))  # widen margins for stratum labels
+  ) +
+
+  scale_y_continuous(
+    name   = "Volume (t dry matter)",
+    labels = comma_format(big.mark = ".", decimal.mark = ",")
+  ) +
+
+  coord_cartesian(clip = "off") +   # needed for below-axis annotations
+  theme_minimal(base_size = 9) +
+  theme(
+    axis.title.x       = element_blank(),
+    axis.text.x        = element_blank(),
+    axis.ticks.x       = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor   = element_blank(),
+    legend.position    = "none",
+    legend.key.size    = unit(0.42, "cm"),
+    plot.margin        = margin(t = 6, r = 6, b = 28, l = 6)
+  )
+```
+
+
+
+---
+
+## Product mix
+
+
+```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Total biomass delivered to consumers by product type over the planning horizon. Stacked areas show period-level volumes of stem (P1), branches (P2), and residues (P3) flowing from storage hubs to all consumers. Dashed line: total harvested raw biomass shipped from sites to hubs.",  fig.width=8, fig.height=4, out.width="90%"}
+
+prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
+
+# Deliveries aggregated by period × del_product
+delivery_ts <- ext$Xjk %>%
+  group_by(period, product = factor(del_product)) %>%
+  summarise(volume = sum(value), .groups = "drop")
+
+# Raw biomass shipped (Xij) aggregated by period — shown as dashed reference
+shipped_ts <- ext$Xij %>%
+  group_by(period) %>%
+  summarise(shipped = sum(value), .groups = "drop")
+
+ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
+  geom_area(position = "stack", alpha = 0.80, colour = "white", linewidth = 0.2) +
+  geom_line(data = shipped_ts,
+            aes(x = period, y = shipped),
+            inherit.aes = FALSE,
+            colour = "#636363", linetype = "dashed", linewidth = 0.7) +
+  scale_fill_manual(
+    name   = "Product",
+    values = c("1" = "#1b9e77", "2" = "#d95f02", "3" = "#7570b3"),
+    labels = prod_labels
+  ) +
+  scale_x_continuous(name = "Planning period (year)",
+                     breaks = seq(1, milp_instance$n_periods, by = 2)) +
+  scale_y_continuous(name = "Volume (t dry matter)",
+                     labels = scales::comma) +
+  annotate("text", x = max(shipped_ts$period) - 1,
+           y = max(shipped_ts$shipped) * 0.95,
+           label = "Raw shipped\n(site→hub)", size = 2.5,
+           colour = "#636363", hjust = 1) +
+  theme_minimal(base_size = 9) +
+  theme(legend.position = "right",
+        panel.grid.minor = element_blank())
+```
+
+
+
+
 
 ---
 class: inverse, center, middle
