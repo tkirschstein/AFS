@@ -6,31 +6,19 @@ institute: "Fraunhofer IKTS"
 date: "30.04.2026"
 output:
   xaringan::moon_reader:
-    css: [default, talk_kirschstein_cleaned_xaringan.css]
-    lib_dir: libs
+    css: [talk_kirschstein_cleaned_xaringan.css]
+    #lib_dir: libs
     nature:
+      navigation:
+        scroll: true          # Mausrad-Navigation
+        click: true           # Klick auf Folie
+        touch: true           # Touch-Gesten
       ratio: "16:9"
       highlightStyle: github
       highlightLines: true
       countIncrementalSlides: false
       slideNumberFormat: "%current% / %total%"
     seal: false
-  # 
-  # 
-  # xaringan::moon_reader:
-  #   css:
-  #     - default
-  #     - metropolis
-  #     - metropolis-fonts
-  #     - talk_kirschstein_cleaned.css
-  #   lib_dir: libs
-  #   nature:
-  #     highlightStyle: github
-  #     highlightLines: true
-  #     countIncrementalSlides: false
-  #     ratio: "16:9"
-  #     slideNumberFormat: "%current% / %total%"
-  #   seal: false
 bibliography: literature.bib
 ---
 
@@ -590,7 +578,7 @@ class: inverse, center, middle
 ## Case study data
 
 .pull-left[
-```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, out.width="90%"}
+```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, out.width="85%"}
 
 crs_map <- 25833
 
@@ -882,8 +870,8 @@ ggplot(rot_ages, aes(x = rotation_age)) +
 ## Establishment decisions
 
 
-.col-50[
-```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, out.width="90%"}
+.pull-left[
+```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, out.width="85%"}
 
 crs_map <- 25833
 
@@ -1095,7 +1083,7 @@ ggplot() +
 ]
 
 
-.col-50[
+.pull-right[
 - **Allometric parameter uncertainty:** sensitivity of optimal rotation length to Gompertz parameter ranges
 - **Price scenarios:** impact of biomass price trajectories (P1/P2/P3) on product mix and supply chain configuration
 - **Policy incentives:** effect of AFS subsidies and carbon pricing on establishment decisions
@@ -1216,7 +1204,6 @@ ggplot(flow_df,
 ```
 
 
-
 ---
 
 ## Product mix
@@ -1259,8 +1246,6 @@ ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
   theme(legend.position = "right",
         panel.grid.minor = element_blank())
 ```
-
-
 
 
 

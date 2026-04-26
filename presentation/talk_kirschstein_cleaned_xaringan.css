@@ -45,6 +45,23 @@
   text-decoration: underline;
 }
 
+/* NAVIGATIONSLEISTE */
+.remark-slide-tools {
+  display: flex !important;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 10;
+  padding: 0.2em 0.5em;
+}
+
+/* Pfeile / Buttons sichtbar machen */
+.remark-slide-tools .remark-slide-tools-nav {
+  display: inline-block !important;
+  color: rgba(255, 255, 255, 0.85);
+}
+
 /* ============================================================
    ALLGEMEINE FOLIENGESTALTUNG
    ============================================================ */
