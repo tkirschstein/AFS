@@ -2,6 +2,12 @@
    talk_kirschstein_cleaned_xaringan.css
    Fraunhofer IKTS Theme fuer Xaringan
    Primaerfarbe: #179C7D (Fraunhofer-Gruen)
+
+   ÄNDERUNGEN gegenüber Original:
+   1. Widersprüchliche margin-top-Regel in .remark-slide-content h2 entfernt
+   2. .title-slide h2 Selektor zu .title-slide.remark-slide-content h2 erhöht
+      (höhere CSS-Spezifität verhindert Überschreibung durch allgemeines h2-Styling)
+   3. Gleiches Prinzip für .title-slide h1 Selektor
    ============================================================ */
 
 /* --- Design Tokens (matching talk_kirschstein_cleaned.css) --- */
@@ -33,6 +39,7 @@
   font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
   font-size: 1.5em;
   padding: -0.0em 1.2em 1.2em 1.2em;
+  padding-top: 2.0em; /* Platz fuer den Titel (h2) lassen */
   text-align: left;
 }
 
@@ -43,10 +50,8 @@
   font-family: "Source Serif 4", Georgia, serif;
   font-size: 1.8em;
   font-weight: 600;
-  /* Oberer Rand groesser als unten/seitlich fuer mehr Luft zur Folienkante */
   padding: 0.55em 0.75em 0.32em 0.75em;
   margin: -0.9em -1.2em 0.75em -1.2em;
-  margin-top: 0.2em;
   border-bottom: 2px solid var(--fhg-dark);
   text-align: left;
   letter-spacing: 0.01em;
@@ -85,7 +90,7 @@
   text-align: center;
 }
 
-.title-slide h1 {
+.title-slide.remark-slide-content h1 {
   color: var(--fhg);
   font-family: "Source Serif 4", Georgia, serif;
   font-size: 1.65em;
@@ -97,7 +102,7 @@
   text-align: center;
 }
 
-.title-slide h2 {
+.title-slide.remark-slide-content h2 {
   background: none !important;
   color: var(--text-muted) !important;
   font-family: "Source Sans 3", "Calibri", Arial, sans-serif !important;
@@ -122,10 +127,10 @@
 }
 
 /* Fraunhofer-Gruen Linie unter dem Haupttitel auf der Titelfolie */
-.title-slide h1::after {
+.title-slide.remark-slide-content h1::after {
   content: "";
   display: block;
-  width: 80px;
+  width: 580px;
   height: 3px;
   background: var(--fhg);
   margin: 0.4em auto 0;
@@ -202,6 +207,31 @@
   margin: -0.5em -0.85em 0.5em -0.85em;
   border-radius: 0;
 }
+
+
+.callout-block {
+  border-left: 4px solid var(--fhg-dark);
+  background: #f0faf7;
+  border-radius: 2px;
+  padding: 0.3em 0.5em;
+  font-size: 1.2em;
+  margin: 0.3em 0;
+}
+
+.callout-block::before {
+  content: "";
+  display: block;
+  background: var(--fhg-dark);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.2em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15em 0.3em;
+  margin: -0.3em -0.5em 0.3em -0.5em;
+  border-radius: 0;
+}
+
 
 /* ============================================================
    TABELLEN
@@ -335,7 +365,7 @@
   right: 0.9em;
 }
 .remark-slide-content .logo-bottom img {
-  height: 28px;
+  height: 36px;
   display: inline-block;
 }
 
@@ -365,6 +395,13 @@
   width: 43%;
 }
 
+/* Beliebige Breiten-Klassen */
+.col-30 { float: left;  width: 28%; padding-right: 1em; }
+.col-40 { float: left;  width: 35%; padding-right: 1em; }
+.col-50 { float: left;  width: 45%; padding-right: 1em; }
+.col-60 { float: left;  width: 55%; padding-right: 1em; }
+.col-70 { float: left;  width: 68%; }
+
 /* ============================================================
    HORIZONTALE TRENNLINIE
    ============================================================ */
@@ -392,6 +429,8 @@
 /* ============================================================
    UTILITY-KLASSEN
    ============================================================ */
+   
+   
 .center {
   text-align: center;
 }
@@ -406,6 +445,8 @@
   font-size: 0.65em;
   color: var(--text-muted);
 }
+
+
 
 /* Clearfix nach float-Layouts */
 .clearfix::after {

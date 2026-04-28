@@ -13,10 +13,33 @@
     <script src="talk_kirschstein_cleaned_files/tiny.toast-1.0.0/toast.min.js"></script>
     <link href="talk_kirschstein_cleaned_files/xaringanExtra-broadcast-0.2.6/broadcast.css" rel="stylesheet" />
     <script src="talk_kirschstein_cleaned_files/xaringanExtra-broadcast-0.2.6/broadcast.js"></script>
+    <script src="talk_kirschstein_cleaned_files/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+    <script src="talk_kirschstein_cleaned_files/d3-4.10.2/d3.min.js"></script>
+    <link href="talk_kirschstein_cleaned_files/collapsibleTree-0.1.6/collapsibleTree.css" rel="stylesheet" />
+    <script src="talk_kirschstein_cleaned_files/collapsibleTree-binding-0.1.8/collapsibleTree.js"></script>
     <link rel="stylesheet" href="talk_kirschstein_cleaned_xaringan.css" type="text/css" />
   </head>
   <body>
     <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Agroforestry Biomass Supply Chain Design
+]
+.subtitle[
+## Economic assessment and planning of AFS-based bioeconomy netwrks
+]
+.author[
+### Thomas Kirschstein
+]
+.institute[
+### Fraunhofer IKTS
+]
+.date[
+### 30.04.2026
+]
+
+---
 
 
 
@@ -41,7 +64,7 @@ top:10px;right:15px;
         setTimeout(addLogo, 100)
       }
     } else {
-      document.querySelectorAll('.remark-slide-content:not(.title-slide)')
+      document.querySelectorAll('.remark-slide-content')
         .forEach(function (slide) {
           const logo = document.createElement('div')
           logo.classList = 'xaringan-extra-logo'
@@ -77,34 +100,14 @@ top:10px;right:15px;
 
 
 
---- 
-class: title-slide
-
-# Agroforestry Biomass Supply Chain Design
-
-## A MILP Model with Age-Lag Constraints for Product Cascading
-
-**Thomas Kirschstein** 
-
-Fraunhofer IKTS
-
-30.04.2026
-
-.logo-title[
-  &lt;img src="fig/ikts_logo.png" height="136px"/&gt;
-]
-
-
----
 
 ## Overview
 
-1. **Introduction** — Motivation &amp; Research Gap
-2. **Literature Review** — AFS Systems, Biomass Growth, Supply Chains
-3. **MILP Model** — Sets, Variables, Objective, Constraints
-4. **Case Study** — Central European Poplar-based AFS (Saxony-Anhalt)
-5. **Optimization Results** — Supply Chain Configuration &amp; Flows
-6. **Conclusion** — Contributions &amp; Open Questions
+1. **Introduction** 
+2. **AFS Systems &amp; Biomass Growth**
+3. **Designing AFS Supply chains**
+4. **Case Study Saxony-Anhalt**
+5. **Conclusion**
 
 ---
 class: inverse, center, middle
@@ -113,51 +116,54 @@ class: inverse, center, middle
 
 ---
 
-## Motivation
+## Motivation - Biobased plastics and biomass demand
 
-- Temperate **agroforestry systems (AFS)** integrate fast-growing trees (poplar, willow) into arable land via alley-cropping
+&lt;img src="fig/motivation_upm.png" alt="" width="90%" style="display: block; margin: auto;" /&gt;
 
-- Woody biomass from AFS is a **sustainable feedstock** for bio-based value chains — preferred over pure energy use as biogenic carbon is stored in products
 
-- In Germany: ~1,200 ha of silvoarable AFS in 2025 — only **0.02 %** of agricultural land despite substantial ecological benefits
-
-- **Core challenge:** coordinated decisions on stand establishment, multi-cycle harvesting, and product cascading in spatially distributed supply chains
-
-.callout-note[
-**Research question:**
-How can integrated MILP models link **age-dependent stand dynamics** at field sites to **regional supply chain design** for multi-product AFS biomass?
+.callout-block[
+Total wood production in Germany: about 27 mill. tons  (dry, 2024) of which about 4-5 mill. tons is beech wood (Bundesamt, 2026) `\(\Rightarrow\)` UPM demands about 10% of German beech production
 ]
 
 ---
 
-## Research Gap &amp; Contributions
+## Motivation - Wood and AFS potential in Germany
 
-**Prior literature** on biomass supply chains (MILP) typically:
+.col-40[
+&lt;a href="https://defaf.map.agroforestry-map.eu/de" target="_blank" rel="noopener"&gt;
+&lt;img src="fig/motivation_defaf.png" alt="" width="95%" style="display: block; margin: auto;" /&gt;
+&lt;/a&gt;
+]
 
-- treats biomass availability as **exogenous input**
-- focuses on a **single downstream value chain** (e.g. bioenergy)
-- ignores **age-lag constraints** linking consecutive harvests
+.col-60[
 
-**This paper contributes:**
+- Agroforestry systems (AFS) on about 2000 ha agricultural land `\(\rightarrow\)` 424 ha of agroforest `\(\rightarrow\)` about 4-6 kt wood production potential per year (DeFAF, 2024)
+- total agricultural land in Germany: about 17 mill. ha `\(\rightarrow\)` potential AFS area: 1–2 mill. ha (6–12% of agricultural land) 
+- total gross wood potential from AFS: 10–30 mill. tons dry wood per year 
 
-1. Novel **MILP formulation** (AFS-SCD) with explicit age-lag constraints enforcing minimum/maximum rotation ages
+.callout-block[
+How to convince farmers to convert conventional farms to AFS and establish AFS-based value chains? 
+]
 
-2. **Allometric yield functions** (Gompertz) for age-specific, component-specific biomass fractions (stems, branches, residues)
-
-3. **Multi-product, multi-period network design** with product quality cascades and storage
-
-4. Application to a **real-world case study** in Central Germany
+]
 
 ---
 class: inverse, center, middle
 
-# Literature Review
+# AFS Systems &amp; Biomass Growth
+
+---
+
+## Economics of Agrofoerstry systems
+
+<div id="htmlwidget-7db5bee22405a6353d0f" style="width:700px;height:500px;" class="collapsibleTree html-widget"></div>
+<script type="application/json" data-for="htmlwidget-7db5bee22405a6353d0f">{"x":{"data":{"name":"afs_tree","fill":"#2d6a2d","SizeOfNode":14.05,"WeightOfNode":"9","children":[{"name":"Costs","fill":"#c0392b","SizeOfNode":10.47,"WeightOfNode":"5","children":[{"name":"Estabishment costs","fill":"#f1948a","SizeOfNode":4.68,"WeightOfNode":"1"},{"name":"Maintenance costs","fill":"#f1948a","SizeOfNode":4.68,"WeightOfNode":"1"},{"name":"Harvest costs (Arable Crops)","fill":"#f1948a","SizeOfNode":4.68,"WeightOfNode":"1"},{"name":"Harvest costs (Timber & Fruits)","fill":"#f1948a","SizeOfNode":4.68,"WeightOfNode":"1"},{"name":"Opportunity costs (land foregone)","fill":"#f1948a","SizeOfNode":4.68,"WeightOfNode":"1"}]},{"name":"Returns","fill":"#27ae60","SizeOfNode":9.369999999999999,"WeightOfNode":"4","children":[{"name":"Wood & Fruits","fill":"#a9dfbf","SizeOfNode":4.68,"WeightOfNode":"1"},{"name":"Arable Crop Yield","fill":"#a9dfbf","SizeOfNode":4.68,"WeightOfNode":"1"},{"name":"Agricultural Subsidies\n& Direct Payments","fill":"#a9dfbf","SizeOfNode":4.68,"WeightOfNode":"1"},{"name":"Carbon Credits\n& C-Markets","fill":"#a9dfbf","SizeOfNode":4.68,"WeightOfNode":"1"}]}]},"options":{"hierarchy":["Level1","Level2"],"input":null,"attribute":"leafCount","linkLength":null,"fontSize":15,"tooltip":true,"collapsed":false,"zoomable":true,"margin":{"top":20,"bottom":20,"left":89.05,"right":325}}},"evals":[],"jsHooks":[]}</script>
 
 ---
 
 ## Agroforestry System Types
 
-.pull-left[
+.col-50[
 **Short-rotation coppice (SRC)**
 
 - Monoculture, 8,000–20,000 cuttings/ha
@@ -172,7 +178,7 @@ class: inverse, center, middle
 - Boundary effect: higher light &amp; water → higher individual-tree biomass
 ]
 
-.pull-right[
+.col-50[
 **Long-rotation AFS (LRAFS)**
 
 - Same spatial structure as SRAFS
@@ -205,11 +211,11 @@ Komponentenspezifische Anteile (Stamm `\(p=1\)`, Äste `\(p=2\)`, Reste `\(p=3\)
 
 ## Gompertz Growth Curves — Poplar Max 3
 
-.pull-left[
+.col-50[
 &lt;img src="talk_kirschstein_cleaned_files/figure-html/max3-growth-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
 ]
 
-.pull-right[
+.col-50[
 **Key observations:**
 
 - Stem share rises from ~55 % at age 4 to &gt;75 % at age 10
@@ -245,7 +251,7 @@ class: inverse, center, middle
 
 ## Sets, Indices &amp; Parameters
 
-.pull-left55[
+.col-50[
 **Sets &amp; indices**
 
 | Symbol | Meaning |
@@ -259,7 +265,7 @@ class: inverse, center, middle
 | `\(\mathcal{S}\)` | Feasible activity arcs `\((s, t)\)` |
 ]
 
-.pull-right45[
+.col-50[
 **Key parameters**
 
 | Symbol | Meaning |
@@ -352,7 +358,7 @@ class: inverse, center, middle
 - Highest density of registered SRC *Feldblöcke* in Germany
 - **Supply chain structure:** AFS sites → storage/processing nodes → industrial consumers
 
-.pull-left[
+.col-50[
 **Sites `\(\mathcal{I}\)`**
 
 - Registered SRC parcels from INVEKOS land-use register
@@ -360,7 +366,7 @@ class: inverse, center, middle
 - Site-specific area, establishment/harvest costs
 ]
 
-.pull-right[
+.col-50[
 **Consumers `\(\mathcal{K}\)`**
 
 - 3 biomass product types: stems (P1), branches (P2), residues (P3)
@@ -373,11 +379,11 @@ class: inverse, center, middle
 
 ## Case study data
 
-.pull-left[
+.col-50[
 &lt;img src="talk_kirschstein_cleaned_files/figure-html/fig-supply-chain-network-1.png" alt="" width="85%" style="display: block; margin: auto;" /&gt;
 ]
 
-.pull-right[
+.col-50[
 **Data sources:**
   - AFS sites: INVEKOS land-use register (2023)
   - Consumers: public databases, company reports, expert interviews
@@ -433,12 +439,12 @@ class: inverse, center, middle
 ## Establishment decisions
 
 
-.pull-left[
+.col-50[
 &lt;img src="talk_kirschstein_cleaned_files/figure-html/fig-results-sc-map-1.png" alt="" width="85%" style="display: block; margin: auto;" /&gt;
 ]
 
 
-.pull-right[
+.col-50[
 - **Allometric parameter uncertainty:** sensitivity of optimal rotation length to Gompertz parameter ranges
 - **Price scenarios:** impact of biomass price trajectories (P1/P2/P3) on product mix and supply chain configuration
 - **Policy incentives:** effect of AFS subsidies and carbon pricing on establishment decisions
@@ -519,11 +525,11 @@ thomas.kirschstein@ikts.fraunhofer.de
 
 ## Literaturverzeichnis
 
-NULL
+Bundesamt, S. (2026). _Gesamteinschlag nach Holzartengruppen_.
+Statistisches Bundesamt.
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
-<script src="navbar.js"></script>
 <script>var slideshow = remark.create({
   "navigation": {
     "scroll": true,
