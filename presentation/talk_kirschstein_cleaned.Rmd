@@ -210,12 +210,14 @@ class: inverse, center, middle
 
 ## Economics of Agrofoerstry systems
 
+
+.col-40[
 ```{r afs-tree-interactive, echo=FALSE, message=FALSE, warning=FALSE, out.width="100%"}
  library("collapsibleTree")
 
 
 # ── Data structure: parent-child relationships ──────────────────
-afs_tree <- data.frame(
+economics <- data.frame(
   Level1 = c(
     # Costs
     rep("Costs", 5),
@@ -255,17 +257,39 @@ fill_colours <- c(
 
 # ── Diagram ─────────────────────────────────────────────────────
 collapsibleTree(
-  afs_tree,
+  economics,
   hierarchy  = c("Level1", "Level2"),
-  width      = 700,
-  height     = 500,
-  fontSize   = 15,
+  width      = 400,
+  height     = 400,
+  fontSize   = 18,
   nodeSize   = "leafCount",
   fill       = fill_colours,
   tooltip    = TRUE,
   collapsed  = FALSE
 )
 ```
+]
+
+.col-60[
+<!-- small text -->
+.small[
+- **Costs:** 
+  - Establishment: site preparation, planting, ...
+  - maintenance: pruning, pest management, ...
+  - harvest: increased crop & additional tree harvesting cost
+  - opportunity: foregone crop revenues for land with AFS 
+- **Returns:** 
+  - Wood & fruits: timber (only once), fruits (like nuts, annual)
+  - crop yield: potential increase due to improved microclimate, ...
+  - subsidies: agricultural subsidies, direct payments, ...
+  - carbon credits: potential sequestration revenue from carbon markets, ...
+]
+.callout-block[
+  .small[
+    Which effects dominates, depends on cost and revenue drivers. 
+    ]
+  ]
+]
 
 ---
 

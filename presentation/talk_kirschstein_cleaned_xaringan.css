@@ -435,8 +435,17 @@
   text-align: center;
 }
 
+.medium {
+  font-size: 0.9em;
+}
+
 .small {
-  font-size: 0.78em;
+  font-size: 0.8em;
+}
+
+
+.tiny {
+  font-size: 0.7em;
 }
 
 .footnote {
