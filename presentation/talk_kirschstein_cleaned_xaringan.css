@@ -426,6 +426,12 @@
   margin-bottom: 0.7em;
 }
 
+
+/* FIX 3: Kompakte Folien – weniger padding-top wenn kein h2-Offset nötig */
+.compact-slide.remark-slide-content {
+  padding-top: 3.2em !important;
+}
+
 /* ============================================================
    UTILITY-KLASSEN
    ============================================================ */

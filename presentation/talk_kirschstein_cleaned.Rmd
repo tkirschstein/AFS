@@ -152,6 +152,7 @@ ext <- extract_result(result, milp_instance)
 
 
 ## Overview
+
 .large[
 1. **Introduction** 
 2. **AFS Systems, Value Creation & Biomass Growth**
@@ -159,6 +160,7 @@ ext <- extract_result(result, milp_instance)
 4. **Case Study Saxony-Anhalt**
 5. **Conclusion**
 ]
+
 ---
 class: inverse, center, middle
 
@@ -291,6 +293,82 @@ collapsibleTree(
   ]
 ]
 
+
+---
+class: compact-slide
+
+## Usage of AFS biomasses
+<!-- FIX 1: KEINE Leerzeile zwischen h2 und dem div -->
+<div style="display:grid; grid-template-columns: 210px 1fr; gap: 1.2rem; align-items:start; margin-top:0.3rem; overflow:visible;">
+
+<!-- LINKE SPALTE: Baumfraktionen -->
+<div style="background:#f4f9f4; border-radius:8px; padding:0.8rem; border-left:4px solid #4a7c2f;">
+  <p style="font-weight:700; color:#2d5a1b; font-size:0.85rem; margin:0 0 0.6rem 0;">🌳 BIOMASSE-FRAKTIONEN</p>
+  <div style="margin:0.4rem 0; padding:0.3rem 0.5rem; background:#2d5a1b; color:white; border-radius:4px; font-size:0.75rem;">
+    🪵 <strong>Stammholz</strong> (Ø &gt;15 cm)
+  </div>
+  <div style="margin:0.4rem 0; padding:0.3rem 0.5rem; background:#4a7c2f; color:white; border-radius:4px; font-size:0.75rem;">
+    🌿 <strong>Starkäste</strong> (Ø 7–15 cm)
+  </div>
+  <div style="margin:0.4rem 0; padding:0.3rem 0.5rem; background:#6ea048; color:white; border-radius:4px; font-size:0.75rem;">
+    🍃 <strong>Schwachäste / Reisig</strong> (&lt;7 cm)
+  </div>
+  <div style="margin:0.4rem 0; padding:0.3rem 0.5rem; background:#8fbb6a; color:white; border-radius:4px; font-size:0.75rem;">
+    🍂 <strong>Laub / Feinreisig</strong>
+  </div>
+</div>
+
+<!-- RECHTE SPALTE: Nutzungspfade -->
+<div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.6rem;">
+
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.7rem; text-align:center;">
+    <div style="font-size:1.8rem;">🪑</div>
+    <p style="font-weight:700; font-size:0.72rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Möbelindustrie</p>
+    <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Schnittholz, Furniere, Massivholzmöbel</p>
+    <div style="margin-top:0.4rem; padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:0.6rem; color:#4a7c2f;">▶ Stammholz</div>
+  </div>
+
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.7rem; text-align:center;">
+    <div style="font-size:1.8rem;">📄</div>
+    <p style="font-weight:700; font-size:0.72rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Papierindustrie</p>
+    <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Zellstoff, Fasern, Karton</p>
+    <div style="margin-top:0.4rem; padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:0.6rem; color:#4a7c2f;">▶ Stamm + Starkäste</div>
+  </div>
+
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.7rem; text-align:center;">
+    <div style="font-size:1.8rem;">🧪</div>
+    <p style="font-weight:700; font-size:0.72rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Chemieindustrie</p>
+    <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Biokunststoffe, Lignin-Derivate, Harze</p>
+    <div style="margin-top:0.4rem; padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:0.6rem; color:#4a7c2f;">▶ Alle Fraktionen</div>
+  </div>
+
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.7rem; text-align:center;">
+    <div style="font-size:1.8rem;">🔥</div>
+    <p style="font-weight:700; font-size:0.72rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Energieerzeugung</p>
+    <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Holzchips, Pellets, Heizkraftwerke</p>
+    <div style="margin-top:0.4rem; padding:0.15rem; background:#fff3e0; border-radius:3px; font-size:0.6rem; color:#b45309;">▶ Schwachäste + Reisig</div>
+  </div>
+
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.7rem; text-align:center;">
+    <div style="font-size:1.8rem;">⚡</div>
+    <p style="font-weight:700; font-size:0.72rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Biogasanlage</p>
+    <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Vergärung, Strom + Wärme (KWK)</p>
+    <div style="margin-top:0.4rem; padding:0.15rem; background:#fff3e0; border-radius:3px; font-size:0.6rem; color:#b45309;">▶ Laub + Feinreisig</div>
+  </div>
+
+  <div style="background:#f0f7ff; border:1px solid #93c5fd; border-radius:8px; padding:0.7rem; text-align:center;">
+    <div style="font-size:1.8rem;">♻️</div>
+    <p style="font-weight:700; font-size:0.72rem; color:#1e40af; margin:0.2rem 0 0.3rem 0;">Kaskadennutzung</p>
+    <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Stofflich → energetisch (Priorität)</p>
+    <div style="margin-top:0.4rem; padding:0.15rem; background:#dbeafe; border-radius:3px; font-size:0.6rem; color:#1e40af;">▶ Optimierungsziel</div>
+  </div>
+
+</div>
+</div>
+<!-- FIX 2: Leerzeile VOR .footnote ist Pflicht -->
+
+.footnote[Kaskadennutzung nach EU-Bioökonomie-Strategie (2018); Fraktionszuordnung: eigene Systematik]
+
 ---
 
 ## Agroforestry System Types
@@ -323,6 +401,7 @@ collapsibleTree(
 **intended use, establishment decisions, and harvest timing** jointly determine economic viability.
 ]
 ]
+
 
 ---
 
