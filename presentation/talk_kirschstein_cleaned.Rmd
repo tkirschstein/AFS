@@ -152,13 +152,13 @@ ext <- extract_result(result, milp_instance)
 
 
 ## Overview
-
+.large[
 1. **Introduction** 
-2. **AFS Systems & Biomass Growth**
+2. **AFS Systems, Value Creation & Biomass Growth**
 3. **Designing AFS Supply chains**
 4. **Case Study Saxony-Anhalt**
 5. **Conclusion**
-
+]
 ---
 class: inverse, center, middle
 
@@ -204,7 +204,7 @@ How to convince farmers to convert conventional farms to AFS and establish AFS-b
 ---
 class: inverse, center, middle
 
-# AFS Systems & Biomass Growth
+# AFS Systems, Value Creation & Biomass Growth
 
 ---
 
