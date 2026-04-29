@@ -1599,6 +1599,10 @@ ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
 ```
 
 
+# Conclusion
+
+# Appendix
+
 ```{r fig-results-inventory, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="End-of-period inventory levels at storage/pre-treatment hubs, disaggregated by product type. Each panel corresponds to one active hub.", fig.width=7, fig.height=3.5, dev="pdf", out.width="\\textwidth"}
 
 inv_ts <- ext$S %>%
@@ -1624,3 +1628,7 @@ ggplot(inv_ts, aes(x = period, y = value, fill = product)) +
         panel.grid.minor = element_blank(),
         strip.text = element_text(face = "bold", size = 7))
 ```
+
+
+
+

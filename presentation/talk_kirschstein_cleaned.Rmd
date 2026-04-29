@@ -58,8 +58,8 @@ suppressPackageStartupMessages({
   library(ggnewscale)
   library(rnaturalearth)
   library(rnaturalearthdata)
-  #library(Rcpp)
-  #library(RcppArmadillo)
+  library(Rcpp)
+  library(RcppArmadillo)
   library(scatterpie)
   library(networkD3)
   library(htmlwidgets)
@@ -153,13 +153,11 @@ ext <- extract_result(result, milp_instance)
 
 ## Overview
 
-.large[
 1. **Introduction** 
 2. **AFS Systems, Value Creation & Biomass Growth**
 3. **Designing AFS Supply chains**
 4. **Case Study Saxony-Anhalt**
 5. **Conclusion**
-]
 
 ---
 class: inverse, center, middle
@@ -296,78 +294,96 @@ collapsibleTree(
 
 ---
 class: compact-slide
+## Usage of AFS Biomasses
+<!-- FIX 1: NO blank line between h2 and the div -->
+<div style="display:grid; grid-template-columns: 250px 1fr; gap: 1.2rem; align-items:start; margin-top:0.3rem; overflow:visible;">
 
-## Usage of AFS biomasses
-<!-- FIX 1: KEINE Leerzeile zwischen h2 und dem div -->
-<div style="display:grid; grid-template-columns: 210px 1fr; gap: 1.2rem; align-items:start; margin-top:0.3rem; overflow:visible;">
-
-<!-- LINKE SPALTE: Baumfraktionen -->
+<!-- LEFT COLUMN: Biomass fractions -->
 <div style="background:#f4f9f4; border-radius:8px; padding:0.8rem; border-left:4px solid #4a7c2f;">
-  <p style="font-weight:700; color:#2d5a1b; font-size:0.85rem; margin:0 0 0.6rem 0;">🌳 BIOMASSE-FRAKTIONEN</p>
-  <div style="margin:0.4rem 0; padding:0.3rem 0.5rem; background:#2d5a1b; color:white; border-radius:4px; font-size:0.75rem;">
-    🪵 <strong>Stammholz</strong> (Ø &gt;15 cm)
+  <p style="font-weight:700; color:#2d5a1b; font-size:1rem; margin:0 0 0.6rem 0;">🌳 BIOMASS FRACTIONS</p>
+
+  <div style="margin:0.4rem 0; border-radius:4px; overflow:hidden; font-size:0.9rem; background:#2d5a1b; color:white;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Holzstapel01_2010-03-07.jpg/330px-Holzstapel01_2010-03-07.jpg"
+         alt="Stem wood" style="width:100%; height:72px; object-fit:cover; display:block;">
+    <div style="padding:0.3rem 0.5rem;">🪵 <strong>Stem wood</strong> (Ø &gt;15 cm)</div>
   </div>
-  <div style="margin:0.4rem 0; padding:0.3rem 0.5rem; background:#4a7c2f; color:white; border-radius:4px; font-size:0.75rem;">
-    🌿 <strong>Starkäste</strong> (Ø 7–15 cm)
+
+  <div style="margin:0.4rem 0; border-radius:4px; overflow:hidden; font-size:0.9rem; background:#4a7c2f; color:white;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Gibberd_Garden_apple_tree_bough_Harlow_Essex_England.jpg/330px-Gibberd_Garden_apple_tree_bough_Harlow_Essex_England.jpg"
+         alt="Large branches" style="width:100%; height:72px; object-fit:cover; display:block;">
+    <div style="padding:0.3rem 0.5rem;">🌿 <strong>Large branches</strong> (Ø 7–15 cm)</div>
   </div>
-  <div style="margin:0.4rem 0; padding:0.3rem 0.5rem; background:#6ea048; color:white; border-radius:4px; font-size:0.75rem;">
-    🍃 <strong>Schwachäste / Reisig</strong> (&lt;7 cm)
-  </div>
-  <div style="margin:0.4rem 0; padding:0.3rem 0.5rem; background:#8fbb6a; color:white; border-radius:4px; font-size:0.75rem;">
-    🍂 <strong>Laub / Feinreisig</strong>
+
+  <div style="margin:0.4rem 0; border-radius:4px; overflow:hidden; font-size:0.9rem; background:#6ea048; color:white;">
+    <img src="fig/reissig-unsplash.jpg"
+         alt="Small branches / leaves" style="width:100%; height:72px; object-fit:cover; display:block;">
+    <div style="padding:0.3rem 0.5rem;">🍃 <strong>Small branches / leaves</strong> (Ø &lt;7 cm)</div>
   </div>
 </div>
 
-<!-- RECHTE SPALTE: Nutzungspfade -->
+<!-- RIGHT COLUMN: Usage pathways -->
 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.6rem;">
 
-  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.7rem; text-align:center;">
-    <div style="font-size:1.8rem;">🪑</div>
-    <p style="font-weight:700; font-size:0.72rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Möbelindustrie</p>
-    <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Schnittholz, Furniere, Massivholzmöbel</p>
-    <div style="margin-top:0.4rem; padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:0.6rem; color:#4a7c2f;">▶ Stammholz</div>
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; overflow:hidden; text-align:center;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Kantholz.jpg/330px-Kantholz.jpg"
+         alt="Furniture industry – sawn timber"
+         style="width:100%; height:100px; object-fit:cover; display:block;">
+    <div style="padding:0.5rem 0.7rem 0.7rem;">
+      <p style="font-weight:700; font-size:1rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Furniture industry</p>
+      <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Sawn timber, veneers, solid wood furniture</p>
+      <div style="margin-top:0.4rem; padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:0.6rem; color:#4a7c2f;">▶ Stem wood</div>
+    </div>
   </div>
 
-  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.7rem; text-align:center;">
-    <div style="font-size:1.8rem;">📄</div>
-    <p style="font-weight:700; font-size:0.72rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Papierindustrie</p>
-    <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Zellstoff, Fasern, Karton</p>
-    <div style="margin-top:0.4rem; padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:0.6rem; color:#4a7c2f;">▶ Stamm + Starkäste</div>
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; overflow:hidden; text-align:center;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Papier_fabrication.jpg/330px-Papier_fabrication.jpg"
+         alt="Paper industry – pulpwood"
+         style="width:100%; height:100px; object-fit:cover; display:block;">
+    <div style="padding:0.5rem 0.7rem 0.7rem;">
+      <p style="font-weight:700; font-size:1rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Paper industry</p>
+      <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Pulp, fibres, cardboard</p>
+      <div style="margin-top:0.4rem; padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:0.6rem; color:#4a7c2f;">▶ Stem + large branches</div>
+    </div>
   </div>
 
-  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.7rem; text-align:center;">
-    <div style="font-size:1.8rem;">🧪</div>
-    <p style="font-weight:700; font-size:0.72rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Chemieindustrie</p>
-    <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Biokunststoffe, Lignin-Derivate, Harze</p>
-    <div style="margin-top:0.4rem; padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:0.6rem; color:#4a7c2f;">▶ Alle Fraktionen</div>
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; overflow:hidden; text-align:center;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/%D0%A1%D0%B0%D0%BB%D1%84%D0%B5%D1%82%D0%BA%D0%B0_%D1%83%D0%BD%D0%B8%D0%B2%D0%B5%D1%80%D1%81%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F_%D0%B3%D1%83%D0%B1%D1%87%D0%B0%D1%82%D0%B0%D1%8F_%28%D0%B2%D0%B8%D0%B4_%D1%81%D0%B1%D0%BE%D0%BA%D1%83%29.jpg/330px-%D0%A1%D0%B0%D0%BB%D1%84%D0%B5%D1%82%D0%BA%D0%B0_%D1%83%D0%BD%D0%B8%D0%B2%D0%B5%D1%80%D1%81%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F_%D0%B3%D1%83%D0%B1%D1%87%D0%B0%D1%82%D0%B0%D1%8F_%28%D0%B2%D0%B8%D0%B4_%D1%81%D0%B1%D0%BE%D0%BA%D1%83%29.jpg"
+         alt="Chemical industry – wood material"
+         style="width:100%; height:100px; object-fit:cover; display:block;">
+    <div style="padding:0.5rem 0.7rem 0.7rem;">
+      <p style="font-weight:700; font-size:1rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Chemical industry</p>
+      <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Bioplastics, lignin derivatives, resins</p>
+      <div style="margin-top:0.4rem; padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:0.6rem; color:#4a7c2f;">▶ Stem + large branches</div>
+    </div>
   </div>
 
-  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.7rem; text-align:center;">
-    <div style="font-size:1.8rem;">🔥</div>
-    <p style="font-weight:700; font-size:0.72rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Energieerzeugung</p>
-    <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Holzchips, Pellets, Heizkraftwerke</p>
-    <div style="margin-top:0.4rem; padding:0.15rem; background:#fff3e0; border-radius:3px; font-size:0.6rem; color:#b45309;">▶ Schwachäste + Reisig</div>
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; overflow:hidden; text-align:center;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Bushblok_Factory.jpg/330px-Bushblok_Factory.jpg"
+         alt="Energy generation – wood chips"
+         style="width:100%; height:100px; object-fit:cover; display:block;">
+    <div style="padding:0.5rem 0.7rem 0.7rem;">
+      <p style="font-weight:700; font-size:1rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Energy generation</p>
+      <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Wood chips, pellets, combined heat & power</p>
+      <div style="margin-top:0.4rem; padding:0.15rem; background:#fff3e0; border-radius:3px; font-size:0.6rem; color:#b45309;">▶ all fractions</div>
+    </div>
   </div>
 
-  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.7rem; text-align:center;">
-    <div style="font-size:1.8rem;">⚡</div>
-    <p style="font-weight:700; font-size:0.72rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Biogasanlage</p>
-    <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Vergärung, Strom + Wärme (KWK)</p>
-    <div style="margin-top:0.4rem; padding:0.15rem; background:#fff3e0; border-radius:3px; font-size:0.6rem; color:#b45309;">▶ Laub + Feinreisig</div>
-  </div>
-
-  <div style="background:#f0f7ff; border:1px solid #93c5fd; border-radius:8px; padding:0.7rem; text-align:center;">
-    <div style="font-size:1.8rem;">♻️</div>
-    <p style="font-weight:700; font-size:0.72rem; color:#1e40af; margin:0.2rem 0 0.3rem 0;">Kaskadennutzung</p>
-    <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Stofflich → energetisch (Priorität)</p>
-    <div style="margin-top:0.4rem; padding:0.15rem; background:#dbeafe; border-radius:3px; font-size:0.6rem; color:#1e40af;">▶ Optimierungsziel</div>
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; overflow:hidden; text-align:center;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/2013-05-03_Fotoflug_Leer_Papenburg_DSCF6946.jpg/330px-2013-05-03_Fotoflug_Leer_Papenburg_DSCF6946.jpg?uselang=de"
+         alt="Biogas plant – leaf and fine material"
+         style="width:100%; height:100px; object-fit:cover; display:block;">
+    <div style="padding:0.5rem 0.7rem 0.7rem;">
+      <p style="font-weight:700; font-size:1rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Biogas plant</p>
+      <p style="font-size:0.65rem; color:#555; margin:0; line-height:1.3;">Anaerobic digestion, electricity + heat (CHP)</p>
+      <div style="margin-top:0.4rem; padding:0.15rem; background:#fff3e0; border-radius:3px; font-size:0.6rem; color:#b45309;">▶ Leaves + fine brushwood</div>
+    </div>
   </div>
 
 </div>
 </div>
-<!-- FIX 2: Leerzeile VOR .footnote ist Pflicht -->
+<!-- FIX 2: blank line BEFORE .footnote is mandatory -->
 
-.footnote[Kaskadennutzung nach EU-Bioökonomie-Strategie (2018); Fraktionszuordnung: eigene Systematik]
+.footnote[Cascade utilisation following EU Bioeconomy Strategy (2018); fraction assignment: own classification]
 
 ---
 
@@ -734,7 +750,7 @@ class: inverse, center, middle
 ## Case study data
 
 .col-50[
-```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, out.width="85%"}
+```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, out.width="85%", cache =TRUE}
 
 crs_map <- 25833
 
@@ -1027,7 +1043,7 @@ ggplot(rot_ages, aes(x = rotation_age)) +
 
 
 .col-50[
-```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, out.width="85%"}
+```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, out.width="85%", cache =TRUE}
 
 crs_map <- 25833
 
@@ -1252,7 +1268,7 @@ ggplot() +
 ## Harvest quantities
 
 
-```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total production quantity of biomass types and its industrial usage over planning horizon (in tons).", fig.width=8, fig.height=4, out.width="90%"}
+```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=4, out.width="90%", cache =TRUE}
 
 
 # ── Labels & colours ──────────────────────────────────────────────────────────
@@ -1365,7 +1381,7 @@ ggplot(flow_df,
 ## Product mix
 
 
-```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Total biomass delivered to consumers by product type over the planning horizon. Stacked areas show period-level volumes of stem (P1), branches (P2), and residues (P3) flowing from storage hubs to all consumers. Dashed line: total harvested raw biomass shipped from sites to hubs.",  fig.width=8, fig.height=4, out.width="90%"}
+```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,  fig.width=8, fig.height=4, out.width="90%", cache =TRUE}
 
 prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
 
