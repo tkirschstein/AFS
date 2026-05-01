@@ -103,19 +103,6 @@ suppressPackageStartupMessages({
 options(kableExtra.latex.load_packages = FALSE)
 options(knitr.table.format = "latex")
 
-```
-
-```{r load-model-data, echo=FALSE, message=FALSE, warning=FALSE, cache=T}
-source("../Modell/!helper_func.r")
-source("../Modell/!helper_instance_builder_v8a.R")
-source("../Modell/!build_AFS_milp.r")
-source("../Modell/build_lp_rcpp_wrapper.R")
-source("../Modell/gurobi_adapter.R")
-source("../Modell/gurobi_warmstart.R")
-source("../Modell/gurobi_feascheck.R")
-source("../Modell/extract_result.R")
-Rcpp::sourceCpp("../Modell/build_lp_rcpp.cpp")
-
 # Chapman-Richards biomass function
 B_cr <- function(t, Bmax, k, m) {
   Bmax * (1 - exp(-k * t))^m
@@ -125,6 +112,35 @@ B_cr <- function(t, Bmax, k, m) {
 gomp <- function(t, A, k, t0) {
   A * exp(-exp(-k * (t - t0)))
 }
+
+# Component Gompertz functions (parameters as defined above) parametrized for dry matter aboveground biomass per tree of poplar
+B_AG_max3     <- function(t) gomp(t, A = 0.8, k = 0.2, t0 = 9.0)
+h_stem_f      <- function(t) gomp(t, A = 1.2,  k = 0.25, t0 = 8.0)
+h_branch_f    <- function(t) gomp(t, A = 0.2,  k = 0.3, t0 = 5.0)
+h_rest_f      <- function(t) gomp(t, A = 0.1,  k = 0.40, t0 = 2.0)
+
+B_AG_index <- function(t,p) {
+  B_AG_max3(t) * c(f_stem_g(t), f_branch_g(t), f_rest_g(t))[p]
+}
+
+f_stem_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hs/(hs+hb+hr) }
+f_branch_g <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hb/(hs+hb+hr) }
+f_rest_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hr/(hs+hb+hr) }
+
+
+
+```
+
+```{r load-model-data, echo=FALSE, message=FALSE, warning=FALSE, cache=T,cache.extra = tools::md5sum(c(     "../Modell/!helper_func.r", "../Modell/!helper_instance_builder_v8a.R","../Modell/!build_AFS_milp.r",      "../Modell/build_lp_rcpp_wrapper.R","../Modell/gurobi_adapter.R","../Modell/gurobi_warmstart.R",      "../Modell/gurobi_feascheck.R","../Modell/extract_result.R","../Modell/build_lp_rcpp.cpp","afs_workspace_red.RData",      "lp_r.RDS","lp_r_result.rds","lp_instance_data.rds" ))}
+source("../Modell/!helper_func.r")
+source("../Modell/!helper_instance_builder_v8a.R")
+source("../Modell/!build_AFS_milp.r")
+source("../Modell/build_lp_rcpp_wrapper.R")
+source("../Modell/gurobi_adapter.R")
+source("../Modell/gurobi_warmstart.R")
+source("../Modell/gurobi_feascheck.R")
+source("../Modell/extract_result.R")
+Rcpp::sourceCpp("../Modell/build_lp_rcpp.cpp")
 
 #load("../Modell/afs_workspace.RData")
 load("afs_workspace_red.RData")
@@ -148,26 +164,13 @@ consumers <- consumers %>%
 
 dist_jk <- afs_workspace$dist_jk[,consumers$consumer_id]
 
-# Component Gompertz functions (parameters as defined above)
-B_AG_max3     <- function(t) gomp(t, A = 100, k = 0.32, t0 = 4.0)
-h_stem_f      <- function(t) gomp(t, A = 1.0,  k = 0.40, t0 = 4.0)
-h_branch_f    <- function(t) gomp(t, A = 0.7,  k = 0.25, t0 = 3.0)
-h_rest_f      <- function(t) gomp(t, A = 0.1,  k = 0.30, t0 = 2.0)
-
-B_AG_index <- function(t,p) {
-  B_AG_max3(t) * c(f_stem_g(t), f_branch_g(t), f_rest_g(t))[p]
-}
-
-f_stem_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hs/(hs+hb+hr) }
-f_branch_g <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hb/(hs+hb+hr) }
-f_rest_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hr/(hs+hb+hr) }
-
 
 # # Yield table from Chapman-Richards (3 products)
 # yields_by_age <- expand_grid(product = 1:3, age = 1:15)
 # yields_by_age$yield_ha <- apply(yields_by_age, 1, function(row) B_AG_index(row[2] , row[1]))
 # 
-# yields_by_age$yield_ha <- yields_by_age$yield_ha / 3 # scale to share of AFS to total size of Feldblock
+# yields_by_age$yield_ha <- yields_by_age$yield_ha * 110 # scale to number of trees per ha of farm land in AFS (between 100 and 140 usually)
+# yields_by_age$yield_ha <- yields_by_age$yield_ha * 1.8 # scale to felling weight (2.2) or weight after outdoor drying (1.8)
 # 
 # sites_clustered <- afs_workspace$sites_clustered %>%
 #   mutate(
@@ -408,15 +411,15 @@ Empirical studies show that the stem fraction rises from roughly 55\% of AGB at 
 \end{align}
 For Max~3 the stem helper is parameterised with a high asymptote (\(a_\mathrm{stem} = 1.0\)) and a relatively late inflection (\(\tau_{\mathrm{stem}} = 4.0\) years), whereas the branch uses a lower asymptote (\(a_\mathrm{branch} = 0.7\)) and an earlier inflection (\(\tau_{\mathrm{branch}} = 3.0\) years), and the residue helper saturates earliest (\(a_\mathrm{rest} = 0.1\), \(\tau_{\mathrm{rest}} = 2.0\) years). This parameterisation reproduces the observed shift towards stem dominance with age and is consistent with the empirical component fractions compiled across poplar agroforestry and SRC systems spanning ages 6--13 years, as illustrated in Figure \@ref(fig:max3-growth).
 
-```{r max3-growth, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Modelled stand-level biomass components for poplar (Max~3) over stand age, represented as stacked Gompertz curves (shaded areas: stem green, branches orange, residues purple) and compared with empirical aboveground biomass observations from poplar agroforestry and SRC systems. Symbols denote cumulative component totals: stem (filled circles), stem+branches (triangles), total AGB (diamonds). Empirical data compiled from Jha (2018) and cited primary sources. Grey shading: typical rotation-age window (5--10 years).", fig.width=6.5, fig.height=5.0, out.width="\\textwidth"}
+```{r max3-growth, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Modelled stand-level biomass components for poplar (Max~3) over stand age, represented as stacked Gompertz curves (shaded areas: stem green, branches orange, residues purple) and compared with empirical aboveground biomass observations from poplar agroforestry and SRC systems. Symbols denote cumulative component totals: stem (filled circles), stem+branches (triangles), total AGB (diamonds). Empirical data compiled from Jha (2018) and cited primary sources. Grey shading: typical rotation-age window (5--10 years).", fig.width=6.5, fig.height=5.0, out.width="\\textwidth", cache=TRUE}
 
-ages <- seq(0, 13, by = 0.1)
+ages <- seq(0, 15, by = 0.1)
 
 comp_long <- tibble(
   age       = ages,
-  Stem      = f_stem_g(ages)   * B_AG_max3(ages),
-  Branches  = f_branch_g(ages) * B_AG_max3(ages),
-  Residues  = f_rest_g(ages)   * B_AG_max3(ages)
+  Stem      = f_stem_g(ages)   * B_AG_max3(ages) * 140, # scale by tree density
+  Branches  = f_branch_g(ages) * B_AG_max3(ages) * 140,
+  Residues  = f_rest_g(ages)   * B_AG_max3(ages) * 140
 ) |>
   pivot_longer(-age, names_to = "component", values_to = "biomass") |>
   mutate(component = factor(component, levels = c("Residues", "Branches", "Stem")))
@@ -458,7 +461,7 @@ emp_shapes <- c(
 )
 
 ggplot(comp_long, aes(x = age, y = biomass)) +
-  annotate("rect", xmin = 5, xmax = 10, ymin = 0, ymax = Inf,
+  annotate("rect", xmin = 5, xmax = max(ages), ymin = 0, ymax = Inf,
            fill = "grey80", alpha = 0.3) +
   geom_area(aes(fill = component), position = "stack",
             alpha = 0.75, colour = NA) +
@@ -608,7 +611,7 @@ The model considers a set of agroforestry sites $\mathcal{I}$, storage/pre-treat
 
 Figure \@ref(fig:fig-set-S-tikz) illustrates this network structure of all arc sets for $T=8$, $A^{\min}=3$, $A^{\max}=5$. 
 
-```{tikz fig-set-S-tikz, echo=FALSE, fig.cap="Network structure of set $\\mathcal{S}$ for $T=8$, $A_{\\min}=3$, $A_{\\max}=5$. Dashed blue arcs: establishment arcs $(0,t)$, $t\\in\\{1,\\ldots,T-1\\}$. Solid green arcs above: harvest arcs $(s,t)$ with odd $s$; below: harvest arcs with even $s$. Solid red arcs:    termination arcs $(s,T+1)$, $s\\in\\{A_{\\min}+1,\\ldots,T\\}$.",    fig.align="center", out.width="\\textwidth", engine.opts=list(extra.preamble=c(      "\\usetikzlibrary{arrows.meta,bending,positioning}"   ))}
+```{tikz fig-set-S-tikz, echo=FALSE, fig.cap="Network structure of set $\\mathcal{S}$ for $T=8$, $A_{\\min}=3$, $A_{\\max}=5$. Dashed blue arcs: establishment arcs $(0,t)$, $t\\in\\{1,\\ldots,T-1\\}$. Solid green arcs above: harvest arcs $(s,t)$ with odd $s$; below: harvest arcs with even $s$. Solid red arcs:    termination arcs $(s,T+1)$, $s\\in\\{A_{\\min}+1,\\ldots,T\\}$.",    fig.align="center", out.width="\\textwidth", engine.opts=list(extra.preamble=c(      "\\usetikzlibrary{arrows.meta,bending,positioning}"   )), cache=TRUE}
 
 \begin{tikzpicture}[
   x=1.55cm, y=1cm,
@@ -681,7 +684,7 @@ Figure \@ref(fig:fig-set-S-tikz) illustrates this network structure of all arc s
 
 Binary variables $z_{ist}$ indicate whether an arc from set $(s,t) \in \Sc$ is selected for site $i$, indicating establishment, (consecutive) harvest, or termination. Taken together across all arcs, these variables trace a path of consecutive harvest cycles at each site over the planning horizon. Figure \@ref(fig:fig-set-S-path) illustrates a feasible path corresponding to the establishment of an AFS in period 1 and harvests in periods 5 and 8, whereby the harvest in $t=8$ is final (and AFS is terminated, thus).
 
-```{tikz fig-set-S-path, echo=FALSE, fig.cap="Example of a feasible path through the network for $T=8$,$A_{\\min}=3$, $A_{\\max}=5$: establishment in period~1,     harvests in periods~5 and~8, termination at $T+1$.",    fig.align="center", out.width="\\textwidth", engine.opts=list(extra.preamble=c(     "\\usetikzlibrary{arrows.meta,bending,positioning}"    ))}
+```{tikz fig-set-S-path, echo=FALSE, fig.cap="Example of a feasible path through the network for $T=8$,$A_{\\min}=3$, $A_{\\max}=5$: establishment in period~1,     harvests in periods~5 and~8, termination at $T+1$.",    fig.align="center", out.width="\\textwidth", engine.opts=list(extra.preamble=c(     "\\usetikzlibrary{arrows.meta,bending,positioning}"    )), cache=TRUE}
 
 \begin{tikzpicture}[
   x=1.55cm, y=1cm,
@@ -912,7 +915,7 @@ where $M^{sl}(a)$ follows from \eqref{eq:total-stand-biomass} and $f_p(a)$ follo
 
 The proposed MILP model is intended to support the design of agroforestry biomass supply chains for cleaner production in specific regional contexts. In a forthcoming case study, we focus on poplar-based alley-cropping systems in a temperate European setting, informed by empirical data from SRAFS trials in Southern Germany and SRC plantations in Central Europe [@Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF; @Testa2014_Poplar_Economics].
 
-```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Coloured polygons: potential KUP/AFS sites grouped by HAC super-site (colours encode cluster membership; no legend). Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth"}
+```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Coloured polygons: potential KUP/AFS sites grouped by HAC super-site (colours encode cluster membership; no legend). Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth", cache=TRUE}
 
 crs_map <- 25833
 
@@ -1242,7 +1245,7 @@ params_df %>%
 
 
 ## Optimization results
-```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Optimal agroforestry supply chain network. Green polygons: active super-sites with biomass harvest; grey polygons: non-selected sites. Pie charts at active sites show the product mix of harvested biomass (stem = P1, branches = P2, residues = P3), scaled by total harvested volume. Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub). Coloured squares: consumer sites by dominant demand category.", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth"}
+```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Optimal agroforestry supply chain network. Green polygons: active super-sites with biomass harvest; grey polygons: non-selected sites. Pie charts at active sites show the product mix of harvested biomass (stem = P1, branches = P2, residues = P3), scaled by total harvested volume. Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub). Coloured squares: consumer sites by dominant demand category.", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth", cache=TRUE}
 
 crs_map <- 25833
 
@@ -1452,7 +1455,7 @@ ggplot() +
   )
 ```
 
-```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total production quantity of biomass types and its industrial usage over planning horizon (in tons).", fig.width=7, fig.height=5.5, dev="pdf", out.width="\\textwidth"}
+```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total production quantity of biomass types and its industrial usage over planning horizon (in tons).", fig.width=7, fig.height=5.5, dev="pdf", out.width="\\textwidth", cache=TRUE}
 
 
 # ── Labels & colours ──────────────────────────────────────────────────────────
@@ -1560,7 +1563,7 @@ ggplot(flow_df,
 ```
 
 
-```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Total biomass delivered to consumers by product type over the planning horizon. Stacked areas show period-level volumes of stem (P1), branches (P2), and residues (P3) flowing from storage hubs to all consumers. Dashed line: total harvested raw biomass shipped from sites to hubs.", fig.width=6.5, fig.height=4, dev="pdf", out.width="\\textwidth"}
+```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Total biomass delivered to consumers by product type over the planning horizon. Stacked areas show period-level volumes of stem (P1), branches (P2), and residues (P3) flowing from storage hubs to all consumers. Dashed line: total harvested raw biomass shipped from sites to hubs.", fig.width=6.5, fig.height=4, dev="pdf", out.width="\\textwidth", cache=TRUE}
 
 prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
 

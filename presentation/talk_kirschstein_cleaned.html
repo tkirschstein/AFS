@@ -3,7 +3,7 @@
   <head>
     <title>Agroforestry Biomass Supply Chain Design</title>
     <meta charset="utf-8" />
-    <meta name="author" content="Thomas Kirschstein" />
+    <meta name="author" content="Thomas Kirschstein and Nico Tauchnitz" />
     <script src="talk_kirschstein_cleaned_files/header-attrs-2.31/header-attrs.js"></script>
     <script src="talk_kirschstein_cleaned_files/xaringanExtra-progressBar-0.0.1/progress-bar.js"></script>
     <link href="talk_kirschstein_cleaned_files/tile-view-0.2.6/tile-view.css" rel="stylesheet" />
@@ -17,6 +17,8 @@
     <script src="talk_kirschstein_cleaned_files/d3-4.10.2/d3.min.js"></script>
     <link href="talk_kirschstein_cleaned_files/collapsibleTree-0.1.6/collapsibleTree.css" rel="stylesheet" />
     <script src="talk_kirschstein_cleaned_files/collapsibleTree-binding-0.1.8/collapsibleTree.js"></script>
+    <script src="talk_kirschstein_cleaned_files/kePrint-0.0.1/kePrint.js"></script>
+    <link href="talk_kirschstein_cleaned_files/lightable-0.0.1/lightable.css" rel="stylesheet" />
     <link rel="stylesheet" href="talk_kirschstein_cleaned_xaringan.css" type="text/css" />
   </head>
   <body>
@@ -27,10 +29,10 @@ class: center, middle, inverse, title-slide
 # Agroforestry Biomass Supply Chain Design
 ]
 .subtitle[
-## Economic assessment and planning of AFS-based bioeconomy netwrks
+## Economic assessment and planning of AFS-based bioeconomy networks
 ]
 .author[
-### Thomas Kirschstein
+### Thomas Kirschstein and Nico Tauchnitz
 ]
 .institute[
 ### Fraunhofer IKTS
@@ -122,7 +124,7 @@ class: inverse, center, middle
 
 
 .callout-block[
-Total wood production in Germany: about 27 mill. tons  (dry, 2024) of which about 4-5 mill. tons is beech wood (Bundesamt, 2026) `\(\Rightarrow\)` UPM demands about 10% of German beech production
+Total wood production in Germany: about 27 mill. tons  (dry, 2024) of which about 4-5 mill. tons is beech wood (Bundesamt, 2026) `\(\Rightarrow\)` UPM demands about 10% of German beech production (UPM Biochemicals, 2024)
 ]
 
 ---
@@ -136,15 +138,13 @@ Total wood production in Germany: about 27 mill. tons  (dry, 2024) of which abou
 ]
 
 .col-60[
-
 - Agroforestry systems (AFS) on about 2000 ha agricultural land `\(\rightarrow\)` 424 ha of agroforest `\(\rightarrow\)` about 4-6 kt wood production potential per year (DeFAF, 2024)
 - total agricultural land in Germany: about 17 mill. ha `\(\rightarrow\)` potential AFS area: 1–2 mill. ha (6–12% of agricultural land) 
 - total gross wood potential from AFS: 10–30 mill. tons dry wood per year 
 
 .callout-block[
-How to convince farmers to convert conventional farms to AFS and establish AFS-based value chains? 
-]
-
+  How to convince farmers to convert conventional farms to AFS and establish AFS-based value chains?
+  ]
 ]
 
 ---
@@ -176,7 +176,8 @@ class: inverse, center, middle
   - subsidies: agricultural subsidies, direct payments, ...
   - carbon credits: potential sequestration revenue from carbon markets, ...
 ]
-.callout-block[
+
+.callout-block[ 
   .small[
     Which effects dominates, depends on cost and revenue drivers. 
     ]
@@ -186,6 +187,7 @@ class: inverse, center, middle
 
 ---
 class: compact-slide
+
 ## Usage of AFS Biomasses
 &lt;!-- FIX 1: NO blank line between h2 and the div --&gt;
 &lt;div style="display:grid; grid-template-columns: 250px 1fr; gap: 1.2rem; align-items:start; margin-top:0.3rem; overflow:visible;"&gt;
@@ -279,92 +281,305 @@ class: compact-slide
 
 ---
 
-## Agroforestry System Types
+## Agroforestry system types &amp; design parameters
 
-.col-50[
-**Short-rotation coppice (SRC)**
-
-- Monoculture, 8,000–20,000 cuttings/ha
-- Rotation: 3–7 years, stand lifetime: 20–25 years
-- Root system regenerates after harvest — no replanting
-- Benchmark for biomass production
-
-**Short-rotation AFS (SRAFS)**
-
-- SRC-type tree strips in alley-cropping arrangement
-- Trees cover 10–30 % of parcel area
-- Boundary effect: higher light &amp; water → higher individual-tree biomass
+.col-40[
+**Short Rotation Coppice (SRC)**
+.center[
+&lt;img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/b85e327b53548ec58761b530c078ce006f4f6a56.jpg" style="width:55%; margin-bottom:8px;"&gt;
 ]
 
-.col-50[
-**Long-rotation AFS (LRAFS)**
-
-- Same spatial structure as SRAFS
-- Rotation cycles: 12–15+ years
-- Larger stem diameter → high-value timber (veneer, sawlogs, engineered wood)
-- Timber-quality species: walnut, cherry, oak, high-grade poplar
-
-.callout-note[
-**Key insight:** SRAFS and LRAFS are not sharply separated —
-**intended use, establishment decisions, and harvest timing** jointly determine economic viability.
+**Agroforestry System (AFS)**
+.center[
+&lt;img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/1bef14d477d7b6bcc161e077fa6758919766f1a2.jpg" style="width:55%; margin-bottom:8px;"&gt;
 ]
 ]
 
+.col-60[
+.small[
+- **Tree species choice**  (e.g. (Huber, Amann, Hülsbergen, and Schmid, 2018))
+  Suitability to climate and soils, target products (timber and/or fruits), 
 
----
+- **Spacing**  (e.g. (Testa, Di Trapani, Foderà, Sgroi, and Tudisca, 2014))
+  Distance between tree rows and trees; determines growth, access for machinery, ...
 
-## Biomass Growth Models
+- **Row orientation**  
+  Alignment with respect to sun and prevailing winds `\(\rightarrow\)` erosion protection 
 
-**Gompertz growth function** für die oberirdische Biomasse `\(B_{AG}(t)\)`:
+- **Tree–crop distance**  
+  Lateral distance from crop strips to tree rows; moderates below‑ and above‑ground competition
 
-`$$B_{AG}(t) = A \cdot \exp\!\bigl(-\exp(-k(t - t_0))\bigr)$$`
-
-Komponentenspezifische Anteile (Stamm `\(p=1\)`, Äste `\(p=2\)`, Reste `\(p=3\)`):
-
-`$$B_{AG,p}(t) = B_{AG}(t) \cdot \frac{h_p(t)}{h_1(t)+h_2(t)+h_3(t)}$$`
-
-- Parameter kalibriert aus SRAFS-Feldversuchen in Süddeutschland 
-- Altersabhängige Ertragskoeffizienten `\(\eta_{p,a}\)` vorberechnet und in das MILP integriert (Restriktion C3)
-
----
-
-## Gompertz Growth Curves — Poplar Max 3
-
-.col-50[
-&lt;img src="talk_kirschstein_cleaned_files/figure-html/max3-growth-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
+- **Rotation length**  (e.g. (Niemczyk and Thomas, 2021))
+  Duration until harvest (short vs. long rotation), determines growth &amp; revenue cycles
 ]
-
-.col-50[
-**Key observations:**
-
-- Stem share rises from ~55 % at age 4 to &gt;75 % at age 10
-- Growth peak (inflection) at ~age 4
-- Total AGB at age 10: ~65 t dry matter/ha
-- Component fractions `\(f_p(t)\)` determine `\(\eta_{p,a}\)` in constraint C3
-
-*Grey band:* typical rotation window (5–10 years)
-
- — empirical reference points
 ]
 
 ---
 
-## Biomass Supply Chain Literature
+## Modelling Biomass Growth
 
-| Aspect | State of the art | This paper |
-|---|---|---|
-| Biomass availability | Exogenous or simplified | Endogenous via Gompertz + age-lag |
-| Rotation decisions | Not modelled | Binary `\(z_{ist}\)` with min/max age |
-| Product types | Single or aggregated | Multi-product cascade `\((p', p) \in \mathcal{Q}\)` |
-| Network structure | Static | Multi-period, storage + processing |
-| Case study scope | Generic | Real SRC sites, Saxony-Anhalt |
 
-.small[Reviews:  &amp;nbsp;|&amp;nbsp; OPTIMASS framework: ]
+.col-40[
+.small[
+- multiple models available `\(\rightarrow\)` here 3-parameter Gompertz model chosen
+ `$$B(t) = a \cdot \exp\!\bigl(-\exp(-k \cdot (t - t_0))\bigr)$$`
+- `\(B(t)\)` biomass quantity (in tons per ha) after `\(t\)` years of growth
+- parameters: 
+  - `\(a\)`...asymptotic biomass quantity
+  - `\(k\)`...growth rate
+  - `\(t_0\)`...inflection time (max. growth rate)
+- parameter values highly dependent on tree species, local climate, planting details, ... (Jha, 2018)
+]
+]
+
+.col-60[
+&lt;img src="talk_kirschstein_cleaned_files/figure-html/max3-growth-1.png" alt="" width="90%" style="display: block; margin: auto;" /&gt;
+]
 
 ---
 class: inverse, center, middle
 
-# MILP Model (AFS-SCD)
+# Designing AFS Supply Chains
+
+---
+
+## Model description
+
+.callout-block[
+  Objective is to maximize the total profit of an AFS Supply Chain over a time horizon of `\(T\)` years. The supply chain consists of a set of farms (`\(\mathcal{I}\)`, potential AFS sites), a set of wood logistics hubs (`\(\mathcal{J}\)`), and a set of industrial consumer `\(\mathcal{K}\)`. 
+]
+
+**Decisions:**
+- Establishment: Is an AFS established on farm `\(i \in \mathcal{I}\)`?
+- Harvest: In which period `\(t \in \mathcal{T}\)` is an AFS on farm `\(i\)` harvested?
+- Processing: In which period `\(t\)` and in which hub `\(j \in \mathcal{J}\)` is harvested AFS biomass pretreated?
+- Supply: In which period `\(t\)` and consumer `\(k \in \mathcal{K}\)` is AFS biomass usage?
+
+---
+
+## Modelling establishing &amp; harvesting decisions 
+
+For a time horizon of `\(T=8\)` minium rotation length `\(A^{\min}=3\)` and maximum rotation length `\(A^{\max}=5\)`
+&lt;img src="talk_kirschstein_cleaned_files/figure-html/tikz-netzwerk-1-1.png" alt="" width="80%" style="display: block; margin: auto;" /&gt;
+
+--
+Representation of establishment in `\(t=1\)` and harvests in periods `\(t=5\)` and `\(t=8\)`
+&lt;img src="talk_kirschstein_cleaned_files/figure-html/tikz-netzwerk-2-1.png" alt="" width="80%" style="display: block; margin: auto;" /&gt;
+
+---
+
+## Spatial MILP model structure
+
+&lt;img src="talk_kirschstein_cleaned_files/figure-html/tikz-netzwerk-1.png" alt="" width="80%" style="display: block; margin: auto;" /&gt;
+
+
+---
+
+## Objective Function
+
+.small[
+$$
+`\begin{aligned}
+\max\; Z \;=\;&amp;
+  \sum_{k ,\, p} R_{kp} \cdot\sum_{j,\,(p',p),\, t} x_{jkp'pt}  &amp;\text{Revenue}  \label{eq:obj-revenue} \\
+&amp;- \sum_{i} c^{\text{est}}_i \cdot \text{AREA}_i  \cdot\sum_{(0,t) } z_{i0t} &amp;\text{establishment cost}\\
+&amp;- \sum_{i} c^{\text{opp}}_i \cdot \text{AREA}_i \cdot\left(\sum_{(s,T+1) } (s+1) \cdot z_{is(T+1)}  -  \sum_{(0,t)}  t \cdot z_{i0t} \right) &amp;\text{opportunity cost}\\
+&amp;- \sum_{i} c^{\text{main}}_{i} \cdot (t-s) \cdot \text{AREA}_i \sum_{(s,t) } z_{ist} &amp;\text{maintenance cost}\\
+&amp;- \sum_{i} c^{\text{harv}}_i \cdot \text{AREA}_i \cdot \sum_{(s,t) } z_{ist} &amp;\text{harvesting cost}\\
+&amp;- \sum_{i,\, j,\, p,\, t} c^{\text{tr-raw}}_p \cdot d_{ij} \cdot X_{ijpt} &amp;\text{transport cost}\\
+&amp;- \sum_{j,\, k,\,(p,p'),\, t} c^{\text{tr-pre}}_{p'} \cdot d_{jk} \cdot X_{jkpp't} &amp;\text{transport cost}\\
+&amp;- \sum_{j,\, p,\, t}  c^{\text{stor}}_j \cdot S_{jpt} &amp;\text{storage cost}
+\end{aligned}`
+$$
+]
+
+---
+
+## Constraints (C1–C4)
+.small[
+**Single establishment per site:**
+`$$\sum_{(0,t)\in\mathcal{S}^{est}} z_{i0t} \leq 1 \qquad \forall\; i \in \mathcal{I}$$`
+
+**Path connectivity — flow conservation:**
+`$$\sum_{(s,t)\in\mathcal{S}} z_{ist} = \sum_{(t,u)\in\mathcal{S}} z_{itu} \qquad \forall\; i,\; t$$`
+
+**Biomass yield via Gompertz coefficients:**
+`$$\sum_{j} X_{ijpt} \leq \sum_{(s,t)\in\mathcal{S}^{harv}} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist} \qquad \forall\; i,p,t$$`
+
+**Demand with quality cascade:**
+`$$\sum_{j,(p',p)\in\mathcal{Q}} X_{jkp'pt} \leq D^{max}_{kpt} \qquad \forall\; k,p,t$$`
+
+**Transport &amp; inventory capacities/balances** — follows network flow structure (De Meyer, Cattrysse, Rasinmäki, and Van Orshoven, 2014)
+
+]
+
+---
+class: inverse, center, middle
+
+# Case Study
+
+---
+
+## Study Region &amp; Supply Chain Configuration
+
+- **Region:** tri-state area of Saxony-Anhalt, northern Thuringia, northern Saxony (Germany)
+- Highest density of registered SRC *Feldblöcke* in Germany
+- **Supply chain structure:** AFS sites → storage/processing nodes → industrial consumers
+
+.col-50[
+**Sites `\(\mathcal{I}\)`**
+
+- Registered SRC parcels from INVEKOS land-use register
+- Clustered into representative site groups
+- Site-specific area, establishment/harvest costs
+]
+
+.col-50[
+**Consumers `\(\mathcal{K}\)`**
+
+- 3 biomass product types: stems (P1), branches (P2), residues (P3)
+- Industrial consumers: paper/pulp (Mercer), chemical biorefinery (UPM), wood industry, energy plants (biogas)
+- Minimum demand threshold: `\(\geq\)` 1.5 kt/year
+]
+
+
+---
+
+## Case study data
+
+.col-50[
+&lt;img src="talk_kirschstein_cleaned_files/figure-html/fig-supply-chain-network-1.png" alt="" width="85%" style="display: block; margin: auto;" /&gt;
+]
+
+.col-50[
+.small[
+| Parameter | Value | 
+|---|---|
+| Farms `\(\vert\mathcal{I}\vert\)` | 39 (clustered from 2239) |
+| Hubs `\(\vert\mathcal{J}\vert\)` | 11 |
+| Consumers `\(\vert\mathcal{K}\vert\)` | 28 |
+| Planning horizon `\(\vert\mathcal{T}\vert\)` | 40 periods |
+| Max. rotation age `\(A_{max}\)` | 15 years | 
+| Min. rotation age `\(A_{min}\)` | 3 years | 
+| Raw biomass transport `\(c^{tr\text{-}raw}\)` | 0.08 €/(tkm) | 
+| Pre-treated transport `\(c^{tr\text{-}pre}\)` | 0.06 €/(tkm) | 
+| Establishment cost `\(c^{est}\)` | 2,500 €/ha | 
+| Harvest cost `\(c^{harv}\)` | 150 €/ha | 
+| Opportunity cost `\(c^{opp}\)` | 450 €/ha/yr | 
+]
+]
+
+---
+class: inverse, center, middle
+
+# Optimization Results
+
+---
+
+## Establishment decisions
+
+.col-50[
+&lt;img src="talk_kirschstein_cleaned_files/figure-html/fig-results-sc-map-1.png" alt="" width="85%" style="display: block; margin: auto;" /&gt;
+]
+
+
+.col-50[
+- **total profit:** 2.8 Mill. €
+- **opened super-farms:** 22/39
+- **biomass produced:** 46.1 Mill. t 
+- **biomass consumed:** 26.7 Mill. t 
+
+&lt;table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+&lt;caption&gt;Total produced vs. consumed biomass by product.&lt;/caption&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Product &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Produced [Mill. t] &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Consumed [Mill. t] &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Surplus [Mill. t] &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Branches &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 19.4 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 11.4 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 8.0 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Residues &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 17.1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 11.3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 5.8 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; Stems &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 9.6 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 4.0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 5.6 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+]
+
+
+---
+
+## Product flows by type
+
+
+&lt;img src="talk_kirschstein_cleaned_files/figure-html/fig-results-harvest-gantt-1.png" alt="" width="90%" style="display: block; margin: auto;" /&gt;
+
+---
+
+## Rotation Age Distribution
+
+&lt;img src="talk_kirschstein_cleaned_files/figure-html/rotation-age-dist-1.png" alt="" width="90%" style="display: block; margin: auto;" /&gt;
+
+
+---
+
+## Harvesting quantities over time
+
+
+&lt;img src="talk_kirschstein_cleaned_files/figure-html/fig-results-product-mix-1.png" alt="" width="90%" style="display: block; margin: auto;" /&gt;
+
+
+
+---
+class: inverse, center, middle
+
+# Conclusion
+
+---
+
+## Open Research Questions
+
+.callout-important[
+**Planned computational experiments**
+- **Allometric parameter uncertainty:** sensitivity of optimal rotation length to Gompertz parameter ranges
+- **Price scenarios:** impact of biomass price trajectories (P1/P2/P3) on product mix and supply chain configuration
+- **Policy incentives:** effect of AFS subsidies and carbon pricing on establishment decisions
+- **Scalability:** solution quality and computation time for larger site/consumer instances
+]
+
+--
+
+**Further directions:**
+- Stochastic programming extensions for yield and demand uncertainty
+- Multi-objective optimization (economic vs. ecological performance)
+- Integration of ecosystem service valuations (carbon sequestration, biodiversity)
+
+---
+
+## Thank You
+
+**Questions?**
+
+Thomas Kirschstein  
+Fraunhofer IKTS  
+thomas.kirschstein@ikts.fraunhofer.de
 
 ---
 
@@ -400,12 +615,6 @@ class: inverse, center, middle
 
 ---
 
-## Yield Coefficients `\(\eta_{p,a}\)` — Visualisation
-
-&lt;img src="talk_kirschstein_cleaned_files/figure-html/component-fractions-1.png" alt="" width="98%" style="display: block; margin: auto;" /&gt;
-
----
-
 ## Decision Variables
 
 | Variable | Type | Meaning |
@@ -421,225 +630,48 @@ enforcing rotation age bounds without additional constraints.
 ]
 
 ---
+class: small-slide
+## References
 
-## Objective Function
-
-**Maximise total contribution margin** over the planning horizon `\(\mathcal{T}\)`:
-
-`$$\max\; Z = \underbrace{\sum_{k,p} R_{kp} \sum_{j,(p',p),t} X_{jkp'pt}}_{\text{Revenue}} - \underbrace{C^{est} - C^{opp} - C^{main} - C^{harv}}_{\text{Site costs}} - \underbrace{C^{tr\text{-}raw} + C^{tr\text{-}pre}}_{\text{Transport costs}} - \underbrace{C^{stor}}_{\text{Storage costs}}$$`
-
-- **Opportunity costs** penalise foregone crop revenues for each year a site is under AFS
-- **Two-stage transport** distinguishes raw biomass (site → storage) from pre-treated biomass (storage → consumer)
-- **Storage costs** apply from year 2 onward (year-of-harvest drying is cost-free)
-
----
-
-## Constraints (C1–C4)
-
-**(C1) Single establishment per site:**
-`$$\sum_{(0,t)\in\mathcal{S}^{est}} z_{i0t} \leq 1 \qquad \forall\; i \in \mathcal{I}$$`
-
-**(C2) Path connectivity — flow conservation:**
-`$$\sum_{(s,t)\in\mathcal{S}} z_{ist} = \sum_{(t,u)\in\mathcal{S}} z_{itu} \qquad \forall\; i,\; t$$`
-
-**(C3) Biomass yield via Gompertz coefficients:**
-`$$\sum_{j} X_{ijpt} \leq \sum_{(s,t)\in\mathcal{S}^{harv}} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist} \qquad \forall\; i,p,t$$`
-
-**(C4)/(C5) Transport linkage &amp; inventory balance** — follows OPTIMASS network-flow structure 
-
----
-
-## Constraints (C6–C8) &amp; Cascade Logic
-
-**(C6) Storage capacity:**
-`$$\sum_{p} S_{jpt} \leq \text{CAP}^{stor}_j \qquad \forall\; j,\; t$$`
-
-**(C7) Processing capacity:**
-`$$\sum_{i,p} X_{ijpt} \leq \text{CAP}^{proc}_j \qquad \forall\; j,\; t$$`
-
-**(C8) Demand with quality cascade:**
-`$$\sum_{j,(p',p)\in\mathcal{Q}} X_{jkp'pt} \leq D^{max}_{kpt} \qquad \forall\; k,p,t$$`
-
-.callout-note[
-**Product cascade principle:** `\((p',p) \in \mathcal{Q}\)` allows a **higher-quality product** `\(p'\)` (stems) to satisfy demand for a **lower-quality product** `\(p\)` (chips for energy) — operationalising cascading use as the central economic rationale.
-]
-
----
-class: inverse, center, middle
-
-# Case Study
-
----
-
-## Study Region &amp; Supply Chain Configuration
-
-- **Region:** tri-state area of Saxony-Anhalt, northern Thuringia, northern Saxony (Germany)
-- Highest density of registered SRC *Feldblöcke* in Germany
-- **Supply chain structure:** AFS sites → storage/processing nodes → industrial consumers
-
-.col-50[
-**Sites `\(\mathcal{I}\)`**
-
-- Registered SRC parcels from INVEKOS land-use register
-- Clustered into representative site groups
-- Site-specific area, establishment/harvest costs
-]
-
-.col-50[
-**Consumers `\(\mathcal{K}\)`**
-
-- 3 biomass product types: stems (P1), branches (P2), residues (P3)
-- Industrial consumers: paper/pulp, chemical biorefinery, energy plants
-- Minimum demand threshold: `\(\geq\)` 1.5 units/period
-]
-
-
----
-
-## Case study data
-
-.col-50[
-&lt;img src="talk_kirschstein_cleaned_files/figure-html/fig-supply-chain-network-1.png" alt="" width="85%" style="display: block; margin: auto;" /&gt;
-]
-
-.col-50[
-**Data sources:**
-  - AFS sites: INVEKOS land-use register (2023)
-  - Consumers: public databases, company reports, expert interviews
-  - Distances: OpenRouteService API
-  - Cost parameters: literature review (see next slide)
-]
-
----
-
-## MILP Model Parameters
-
-| Parameter | Value | Source |
-|---|---|---|
-| Planning horizon `\(\vert\mathcal{T}\vert\)` | 40 periods | — |
-| Max. rotation age `\(A_{max}\)` | 15 years | LRAFS benchmark |
-| Min. rotation age `\(A_{min}\)` | 3 years | SRAFS minimum |
-| Raw biomass transport `\(c^{tr\text{-}raw}\)` | 0.08 €/(tkm) | Literature |
-| Pre-treated transport `\(c^{tr\text{-}pre}\)` | 0.06 €/(tkm) | Literature |
-| Establishment cost `\(c^{est}\)` | 2,500 €/ha |  |
-| Harvest cost `\(c^{harv}\)` | 150 €/ha | Literature |
-| Opportunity cost `\(c^{opp}\)` | 45 €/ha/yr |  |
-| Solver | Gurobi 10, MIP gap 1 % | — |
-
----
-
-## Yield Sensitivity by Rotation Age
-
-&lt;img src="talk_kirschstein_cleaned_files/figure-html/yield-sensitivity-1.png" alt="" width="98%" style="display: block; margin: auto;" /&gt;
-
----
-class: inverse, center, middle
-
-# Optimization Results
-
----
-
-*Key findings from the case study (Saxony-Anhalt):*
-
-- **Active storage nodes:** selected nodes with high accessibility to both SRC clusters and industrial consumers
-- **Dominant rotation length:** 5–8 years — balances stem share and harvest frequency
-- **Product cascade in use:** P1-stem flows partially satisfy P2/P3 demand at Mercer Stendal (pulp) and UPM Biochemicals Leuna (chemicals)
-
----
-
-## Rotation Age Distribution
-
-&lt;img src="talk_kirschstein_cleaned_files/figure-html/rotation-age-dist-1.png" alt="" width="90%" style="display: block; margin: auto;" /&gt;
-
-
-
----
-
-## Establishment decisions
-
-
-.col-50[
-&lt;img src="talk_kirschstein_cleaned_files/figure-html/fig-results-sc-map-1.png" alt="" width="85%" style="display: block; margin: auto;" /&gt;
-]
-
-
-.col-50[
-- **Allometric parameter uncertainty:** sensitivity of optimal rotation length to Gompertz parameter ranges
-- **Price scenarios:** impact of biomass price trajectories (P1/P2/P3) on product mix and supply chain configuration
-- **Policy incentives:** effect of AFS subsidies and carbon pricing on establishment decisions
-- **Scalability:** solution quality and computation time for larger site/consumer instances
-]
-
-
----
-
-## Harvest quantities
-
-
-&lt;img src="talk_kirschstein_cleaned_files/figure-html/fig-results-harvest-gantt-1.png" alt="" width="90%" style="display: block; margin: auto;" /&gt;
-
-
----
-
-## Product mix
-
-
-&lt;img src="talk_kirschstein_cleaned_files/figure-html/fig-results-product-mix-1.png" alt="" width="90%" style="display: block; margin: auto;" /&gt;
-
-
-
----
-class: inverse, center, middle
-
-# Conclusion
-
----
-
-## Contributions &amp; Key Findings
-
-**Novel MILP formulation (AFS-SCD):** explicit age-lag constraints link establishment and consecutive harvest decisions — first integrated AFS supply chain model of this type
-
-**Allometric Gompertz yield functions** embedded directly in the MILP via pre-computed `\(\eta_{p,a}\)` coefficients — no exogenous biomass input needed
-
-**Multi-product cascade** operationalises cleaner production principle: high-quality material use before energy recovery
-
-**Real-world case study** (Saxony-Anhalt) demonstrates feasibility at regional scale
-
----
-
-## Open Research Questions
-
-.callout-important[
-**Planned computational experiments**
-- **Allometric parameter uncertainty:** sensitivity of optimal rotation length to Gompertz parameter ranges
-- **Price scenarios:** impact of biomass price trajectories (P1/P2/P3) on product mix and supply chain configuration
-- **Policy incentives:** effect of AFS subsidies and carbon pricing on establishment decisions
-- **Scalability:** solution quality and computation time for larger site/consumer instances
-]
-
---
-
-**Further directions:**
-- Stochastic programming extensions for yield and demand uncertainty
-- Multi-objective optimization (economic vs. ecological performance)
-- Integration of ecosystem service valuations (carbon sequestration, biodiversity)
-
----
-
-## Thank You
-
-**Questions?**
-
-Thomas Kirschstein  
-Fraunhofer IKTS  
-thomas.kirschstein@ikts.fraunhofer.de
-
----
-
-## Literaturverzeichnis
-
+.small[
 Bundesamt, S. (2026). _Gesamteinschlag nach Holzartengruppen_.
 Statistisches Bundesamt.
+
+De Meyer, A., D. Cattrysse, J. Rasinmäki, et al. (2014). "Methods to
+optimise the design and management of biomass-for-bioenergy supply
+chains: A review". In: _Renewable and Sustainable Energy Reviews_ 31,
+pp. 657-670. ISSN: 1364-0321. DOI:
+[10.1016/j.rser.2013.12.036](https://doi.org/10.1016%2Fj.rser.2013.12.036).
+
+Huber, G., C. Amann, K. Hülsbergen, et al. (2018). "Yield potential of
+tree species in organic and conventional short-rotation agroforestry
+systems in Southern Germany". In: _Heliyon_ 4.1, p. e00543. ISSN:
+2405-8440. DOI:
+[10.1016/j.heliyon.2018.e00543](https://doi.org/10.1016%2Fj.heliyon.2018.e00543).
+
+Jha, K. K. (2018). "Biomass production and carbon balance in two hybrid
+poplar (\textitPopulus euramericana) plantations raised with and
+without agriculture in southern France". In: _Journal of Forestry
+Research_ 29.6, pp. 1689-1701. ISSN: 1007-662X. DOI:
+[10.1007/s11676-017-0555-3](https://doi.org/10.1007%2Fs11676-017-0555-3).
+
+Niemczyk, M. and B. R. Thomas (2021). "Does intensive management affect
+wood density and fiber properties of hybrid poplar grown in
+short-rotation plantation?" In: _Forests_ 12.4, p. 399. ISSN:
+1999-4907. DOI:
+[10.3390/f12040399](https://doi.org/10.3390%2Ff12040399).
+
+Testa, R., A. M. Di Trapani, M. Foderà, et al. (2014). "Economic
+evaluation of introduction of poplar as biomass crop in Italy". In:
+_Renewable and Sustainable Energy Reviews_ 38, pp. 498-506. ISSN:
+1364-0321. DOI:
+[10.1016/j.rser.2014.07.007](https://doi.org/10.1016%2Fj.rser.2014.07.007).
+
+UPM Biochemicals (2024). _UPM Biochemicals Leuna: Bioraffinerie für
+Laubholz-Biomassekonversion_. Unternehmenswebsite. Abgerufen: April
+2026. URL:
+[https://www.upmbiochemicals.com/de/](https://www.upmbiochemicals.com/de/).
+]
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

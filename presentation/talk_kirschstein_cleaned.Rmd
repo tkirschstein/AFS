@@ -1,7 +1,7 @@
 ---
 title: "Agroforestry Biomass Supply Chain Design"
-subtitle: "Economic assessment and planning of AFS-based bioeconomy netwrks"
-author: "Thomas Kirschstein"
+subtitle: "Economic assessment and planning of AFS-based bioeconomy networks"
+author: "Thomas Kirschstein and Nico Tauchnitz"
 institute: "Fraunhofer IKTS"
 date: "30.04.2026"
 output:
@@ -18,7 +18,6 @@ output:
       countIncrementalSlides: false
       slideNumberFormat: "%current% / %total%"
     seal: true
-bibliography: literature.bib
 ---
 
 
@@ -67,6 +66,8 @@ suppressPackageStartupMessages({
   library(ggalluvial)
   library(xaringanExtra)
   library(collapsibleTree)
+  library(tikzDevice)
+  library(pdftools)
 })
 
 xaringanExtra::use_logo(
@@ -174,7 +175,7 @@ knitr::include_graphics("fig/motivation_upm.png")
 
 
 .callout-block[
-Total wood production in Germany: about 27 mill. tons  (dry, 2024) of which about 4-5 mill. tons is beech wood `r Citep(bib, "StatistischesBundesamt2026_WoodProduction")` $\Rightarrow$ UPM demands about 10% of German beech production
+Total wood production in Germany: about 27 mill. tons  (dry, 2024) of which about 4-5 mill. tons is beech wood `r Citep(bib, "StatistischesBundesamt2026_WoodProduction")` $\Rightarrow$ UPM demands about 10% of German beech production `r Citep(bib,"upmBiochemicals2024")`
 ]
 
 ---
@@ -190,15 +191,13 @@ knitr::include_graphics("fig/motivation_defaf.png")
 ]
 
 .col-60[
-
 - Agroforestry systems (AFS) on about 2000 ha agricultural land $\rightarrow$ 424 ha of agroforest $\rightarrow$ about 4-6 kt wood production potential per year (DeFAF, 2024)
 - total agricultural land in Germany: about 17 mill. ha $\rightarrow$ potential AFS area: 1–2 mill. ha (6–12% of agricultural land) 
 - total gross wood potential from AFS: 10–30 mill. tons dry wood per year 
 
 .callout-block[
-How to convince farmers to convert conventional farms to AFS and establish AFS-based value chains? 
-]
-
+  How to convince farmers to convert conventional farms to AFS and establish AFS-based value chains?
+  ]
 ]
 
 ---
@@ -284,7 +283,8 @@ collapsibleTree(
   - subsidies: agricultural subsidies, direct payments, ...
   - carbon credits: potential sequestration revenue from carbon markets, ...
 ]
-.callout-block[
+
+.callout-block[ 
   .small[
     Which effects dominates, depends on cost and revenue drivers. 
     ]
@@ -294,6 +294,7 @@ collapsibleTree(
 
 ---
 class: compact-slide
+
 ## Usage of AFS Biomasses
 <!-- FIX 1: NO blank line between h2 and the div -->
 <div style="display:grid; grid-template-columns: 250px 1fr; gap: 1.2rem; align-items:start; margin-top:0.3rem; overflow:visible;">
@@ -387,59 +388,59 @@ class: compact-slide
 
 ---
 
-## Agroforestry System Types
+## Agroforestry system types & design parameters
 
-.col-50[
-**Short-rotation coppice (SRC)**
-
-- Monoculture, 8,000–20,000 cuttings/ha
-- Rotation: 3–7 years, stand lifetime: 20–25 years
-- Root system regenerates after harvest — no replanting
-- Benchmark for biomass production
-
-**Short-rotation AFS (SRAFS)**
-
-- SRC-type tree strips in alley-cropping arrangement
-- Trees cover 10–30 % of parcel area
-- Boundary effect: higher light & water → higher individual-tree biomass
+.col-40[
+**Short Rotation Coppice (SRC)**
+.center[
+<img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/b85e327b53548ec58761b530c078ce006f4f6a56.jpg" style="width:55%; margin-bottom:8px;">
 ]
 
-.col-50[
-**Long-rotation AFS (LRAFS)**
-
-- Same spatial structure as SRAFS
-- Rotation cycles: 12–15+ years
-- Larger stem diameter → high-value timber (veneer, sawlogs, engineered wood)
-- Timber-quality species: walnut, cherry, oak, high-grade poplar
-
-.callout-note[
-**Key insight:** SRAFS and LRAFS are not sharply separated —
-**intended use, establishment decisions, and harvest timing** jointly determine economic viability.
+**Agroforestry System (AFS)**
+.center[
+<img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/1bef14d477d7b6bcc161e077fa6758919766f1a2.jpg" style="width:55%; margin-bottom:8px;">
 ]
 ]
 
+.col-60[
+.small[
+- **Tree species choice**  (e.g. `r Citep(bib, "Huber2018_SRAFS_growth")`)
+  Suitability to climate and soils, target products (timber and/or fruits), 
+
+- **Spacing**  (e.g. `r Citep(bib, "Testa2014_Poplar_Economics")`)
+  Distance between tree rows and trees; determines growth, access for machinery, ...
+
+- **Row orientation**  
+  Alignment with respect to sun and prevailing winds $\rightarrow$ erosion protection 
+
+- **Tree–crop distance**  
+  Lateral distance from crop strips to tree rows; moderates below‑ and above‑ground competition
+
+- **Rotation length**  (e.g. `r Citep(bib, "Niemczyk2021_Poplar_Rotation")`)
+  Duration until harvest (short vs. long rotation), determines growth & revenue cycles
+]
+]
 
 ---
 
-## Biomass Growth Models
+## Modelling Biomass Growth
 
-**Gompertz growth function** für die oberirdische Biomasse $B_{AG}(t)$:
 
-$$B_{AG}(t) = A \cdot \exp\!\bigl(-\exp(-k(t - t_0))\bigr)$$
+.col-40[
+.small[
+- multiple models available $\rightarrow$ here 3-parameter Gompertz model chosen
+ $$B(t) = a \cdot \exp\!\bigl(-\exp(-k \cdot (t - t_0))\bigr)$$
+- $B(t)$ biomass quantity (in tons per ha) after $t$ years of growth
+- parameters: 
+  - $a$...asymptotic biomass quantity
+  - $k$...growth rate
+  - $t_0$...inflection time (max. growth rate)
+- parameter values highly dependent on tree species, local climate, planting details, ... `r Citep(bib, "Jha2018_Poplar_AFS_Biomass")`
+]
+]
 
-Komponentenspezifische Anteile (Stamm $p=1$, Äste $p=2$, Reste $p=3$):
-
-$$B_{AG,p}(t) = B_{AG}(t) \cdot \frac{h_p(t)}{h_1(t)+h_2(t)+h_3(t)}$$
-
-- Parameter kalibriert aus SRAFS-Feldversuchen in Süddeutschland `r Citep(bib, "Huber2018_SRAFS_growth")`
-- Altersabhängige Ertragskoeffizienten $\eta_{p,a}$ vorberechnet und in das MILP integriert (Restriktion C3)
-
----
-
-## Gompertz Growth Curves — Poplar Max 3
-
-.col-50[
-```{r max3-growth, fig.height=4.5, fig.width=6, out.width="100%"}
+.col-60[
+```{r max3-growth, fig.height=4.5, fig.width=6, out.width="90%", cache=TRUE}
 # Code-Chunk direkt aus paper.Rmd (Abschnitt max3-growth)
 ages <- seq(0, 13, by = 0.1)
 
@@ -523,196 +524,306 @@ ggplot(comp_long, aes(x = age, y = biomass)) +
     legend.text      = element_text(size = 7),
     legend.title     = element_text(size = 8, face = "bold"),
     panel.grid.minor = element_blank()
+    #,    title = Citep(bib, "Jha2018_Poplar_AFS_Biomass")
   )
 ```
 ]
 
-.col-50[
-**Key observations:**
-
-- Stem share rises from ~55 % at age 4 to >75 % at age 10
-- Growth peak (inflection) at ~age 4
-- Total AGB at age 10: ~65 t dry matter/ha
-- Component fractions $f_p(t)$ determine $\eta_{p,a}$ in constraint C3
-
-*Grey band:* typical rotation window (5–10 years)
-
-`r Citep(bib, "Jha2018_Poplar_AFS_Biomass")` — empirical reference points
-]
-
----
-
-## Biomass Supply Chain Literature
-
-| Aspect | State of the art | This paper |
-|---|---|---|
-| Biomass availability | Exogenous or simplified | Endogenous via Gompertz + age-lag |
-| Rotation decisions | Not modelled | Binary $z_{ist}$ with min/max age |
-| Product types | Single or aggregated | Multi-product cascade $(p', p) \in \mathcal{Q}$ |
-| Network structure | Static | Multi-period, storage + processing |
-| Case study scope | Generic | Real SRC sites, Saxony-Anhalt |
-
-.small[Reviews: `r Citep(bib, c("Zahraee2020_BSC_review","Sharma2013_BSC_review"))` &nbsp;|&nbsp; OPTIMASS framework: `r Citep(bib, c("DeMeyer2015_OPTIMASS","DeMeyer2016_tOPTIMASS"))`]
-
 ---
 class: inverse, center, middle
 
-# MILP Model (AFS-SCD)
+# Designing AFS Supply Chains
 
 ---
 
-## Sets, Indices & Parameters
+## Model description
 
-.col-50[
-**Sets & indices**
-
-| Symbol | Meaning |
-|---|---|
-| $\mathcal{I}$ | AFS sites (field parcels) |
-| $\mathcal{J}$ | Storage/processing facilities |
-| $\mathcal{K}$ | Industrial consumers |
-| $\mathcal{P}$ | Biomass product types |
-| $\mathcal{Q}$ | Quality cascade pairs $(p', p)$ |
-| $\mathcal{T}$ | Planning periods |
-| $\mathcal{S}$ | Feasible activity arcs $(s, t)$ |
+.callout-block[
+  Objective is to maximize the total profit of an AFS Supply Chain over a time horizon of $T$ years. The supply chain consists of a set of farms ($\mathcal{I}$, potential AFS sites), a set of wood logistics hubs ($\mathcal{J}$), and a set of industrial consumer $\mathcal{K}$. 
 ]
 
-.col-50[
-**Key parameters**
-
-| Symbol | Meaning |
-|---|---|
-| $\eta_{p,a}$ | Yield (t/ha) for product $p$ at age $a$ |
-| $\text{AREA}_i$ | Site area (ha) |
-| $c^{est}_i$ | Establishment cost (€/ha) |
-| $c^{harv}_i$ | Harvest cost (€/ha) |
-| $c^{opp}_i$ | Opportunity cost (€/ha/yr) |
-| $R_{kp}$ | Revenue (€/t) at consumer $k$ |
-| $d_{ij}, d_{jk}$ | Transport distances (km) |
-]
+**Decisions:**
+- Establishment: Is an AFS established on farm $i \in \mathcal{I}$?
+- Harvest: In which period $t \in \mathcal{T}$ is an AFS on farm $i$ harvested?
+- Processing: In which period $t$ and in which hub $j \in \mathcal{J}$ is harvested AFS biomass pretreated?
+- Supply: In which period $t$ and consumer $k \in \mathcal{K}$ is AFS biomass usage?
 
 ---
 
-## Yield Coefficients $\eta_{p,a}$ — Visualisation
+## Modelling establishing & harvesting decisions 
 
-```{r component-fractions, fig.height=3.8, fig.width=10, out.width="98%"}
-# Zeigt f_p(t)-Kurven und eta_{p,a}-Balkenchart (Struktur für MILP-Restriktion C3)
-ages_fine <- seq(0, 15, by = 0.1)
+For a time horizon of $T=8$ minium rotation length $A^{\min}=3$ and maximum rotation length $A^{\max}=5$
+```{r tikz-netzwerk-1, engine='tikz', fig.ext='png', fig.align='center', out.width='80%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}", "\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}", "\\definecolor{basic}{RGB}{34,139,34}")), fig.height = 3, cache=T}
 
-shares <- tibble(
-  age      = ages_fine,
-  Stem     = f_stem_g(ages_fine),
-  Branches = f_branch_g(ages_fine),
-  Residues = f_rest_g(ages_fine)
-) |>
-  pivot_longer(-age, names_to = "component", values_to = "share") |>
-  mutate(component = factor(component, levels = c("Stem", "Branches", "Residues")))
+\begin{tikzpicture}[
+  x=1.55cm, y=1cm,
+  node/.style={circle, draw, fill=#1, text=white,
+               font=\small\bfseries, inner sep=2pt, minimum size=18pt},
+  est/.style  ={-{Stealth[length=4pt]}, blue!70!black,  dashed, semithick},
+  harva/.style={-{Stealth[length=4pt]}, green!40!black, semithick},
+  harvb/.style={-{Stealth[length=4pt]}, green!40!black, semithick},
+  term/.style ={-{Stealth[length=4pt]}, red!70!black,   semithick},
+]
 
-p1 <- ggplot(shares, aes(x = age, y = share, colour = component)) +
-  annotate("rect", xmin = 3, xmax = 15, ymin = 0, ymax = Inf,
-           fill = "grey85", alpha = 0.25) +
-  geom_line(linewidth = 1.1) +
-  annotate("text", x = 9, y = 0.87, label = expression(A[min]*"–"*A[max]*" Fenster"),
-           size = 2.6, colour = "grey50") +
-  scale_colour_manual(values = c("Stem" = "#1b9e77",
-                                  "Branches" = "#d95f02",
-                                  "Residues" = "#7570b3")) +
-  scale_x_continuous(breaks = 0:15) +
-  labs(x = "Stand age (years)",
-       y = expression(f[p](t)*" — Komponentenanteil"),
-       colour = NULL,
-       title = expression(paste("Normierte Anteile ", f[p](t)))) +
-  theme_minimal(base_size = 9) +
-  theme(panel.grid.minor = element_blank(), legend.position = "bottom")
+%% ---- Nodes ----
+\node[node=blue!70!black]  (n0) at (0,0) {$0$};
+\foreach \i in {1,...,8} {
+  \node[node=gray!50!black] (n\i) at (\i,0) {$\i$};
+}
+\node[node=red!70!black]   (n9) at (9,0) {$T\!+\!1$};
 
-eta_tbl <- tibble(
-  age          = 1:15,
-  eta_stem     = f_stem_g(1:15)   * B_AG_max3(1:15),
-  eta_branches = f_branch_g(1:15) * B_AG_max3(1:15),
-  eta_residues = f_rest_g(1:15)   * B_AG_max3(1:15)
-) |>
-  pivot_longer(-age, names_to = "product", values_to = "yield") |>
-  mutate(product = recode(product,
-    eta_stem     = "P1 – Stamm",
-    eta_branches = "P2 – Äste",
-    eta_residues = "P3 – Reste"),
-    product = factor(product,
-                     levels = c("P1 – Stamm","P2 – Äste","P3 – Reste")))
+%% ---- Establishment arcs ----
+\draw[est] (n0) -- (n1);
+\foreach \t/\l in {2/1.3, 3/1.0, 4/0.80, 5/0.65}{
+  \draw[est] (n0) to[out=55, in=125, looseness=\l] (n\t);
+}
 
-p2 <- ggplot(eta_tbl, aes(x = age, y = yield, fill = product)) +
-  geom_col(position = "stack", width = 0.8) +
-  scale_fill_manual(values = c("P1 – Stamm" = "#1b9e77",
-                                "P2 – Äste"  = "#d95f02",
-                                "P3 – Reste" = "#7570b3")) +
-  scale_x_continuous(breaks = 1:15) +
-  labs(x = "Rotationsalter a (Jahre)",
-       y = expression(eta[pa]*" (t TM/ha)"),
-       fill = NULL,
-       title = expression(paste("Ertragskoeffizienten ", eta[pa], " für MILP-Restriktion C3"))) +
-  theme_minimal(base_size = 9) +
-  theme(panel.grid.minor = element_blank(), legend.position = "bottom")
+%% ---- Harvest arcs ----
+\draw[harva] (n1) to[out=55,  in=125,  looseness=0.55] (n4);
+\draw[harvb] (n2) to[out=-55, in=-125, looseness=0.55] (n5);
+\draw[harva] (n3) to[out=55,  in=125,  looseness=0.55] (n6);
+\draw[harvb] (n4) to[out=-55, in=-125, looseness=0.55] (n7);
+\draw[harva] (n5) to[out=55,  in=125,  looseness=0.55] (n8);
+\draw[harva] (n1) to[out=60,  in=120,  looseness=0.42] (n5);
+\draw[harvb] (n2) to[out=-60, in=-120, looseness=0.42] (n6);
+\draw[harva] (n3) to[out=60,  in=120,  looseness=0.42] (n7);
+\draw[harvb] (n4) to[out=-60, in=-120, looseness=0.42] (n8);
+\draw[harva] (n1) to[out=65,  in=115,  looseness=0.35] (n6);
+\draw[harvb] (n2) to[out=-65, in=-115, looseness=0.35] (n7);
+\draw[harva] (n3) to[out=65,  in=115,  looseness=0.35] (n8);
 
-p1 + p2
+%% ---- Termination arcs ----
+\foreach \s/\l in {4/0.80, 5/0.65, 6/0.55, 7/0.48}{
+  \draw[term] (n\s) to[out=55, in=125, looseness=\l] (n9);
+}
+\draw[term] (n8) -- (n9);
+
+%% ---- Legend ----
+\node[anchor=north west] at (0.0,-0.85) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[est]   (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Establishment arc $(0,t)$};
+  \end{tikzpicture}};
+\node[anchor=north west] at (4.2,-0.85) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[harva] (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Harvest arc $(s,t)$};
+  \end{tikzpicture}};
+\node[anchor=north west] at (7.6,-0.85) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[term]  (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Termination arc $(s,T{+}1)$};
+  \end{tikzpicture}};
+
+\end{tikzpicture}
+```
+
+--
+Representation of establishment in $t=1$ and harvests in periods $t=5$ and $t=8$
+```{r tikz-netzwerk-2, engine='tikz', fig.ext='png', fig.align='center', out.width='80%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}", "\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}", "\\definecolor{basic}{RGB}{34,139,34}")), fig.height = 3, cache=T}
+
+
+\begin{tikzpicture}[
+  x=1.55cm, y=1cm,
+  node/.style    ={circle, draw, fill=#1, text=white,
+                   font=\small\bfseries, inner sep=2pt, minimum size=18pt},
+  inactive/.style={node=gray!25, text=gray!50},
+  pathnode/.style={node=green!40!black},
+  n0style/.style ={node=blue!70!black},
+  n9style/.style ={node=red!70!black},
+  patharc/.style ={-{Stealth[length=5pt]}, green!40!black, very thick},
+  est/.style     ={patharc, blue!70!black, dashed},
+  term/.style    ={patharc, red!70!black},
+]
+
+%% ---- Nodes ----
+\node[n0style]   (n0) at (0,0) {$0$};
+\foreach \i in {2,3,4,6,7} {
+  \node[inactive] (n\i) at (\i,0) {$\i$};
+}
+\foreach \i in {1,5,8} {
+  \node[pathnode]  (n\i) at (\i,0) {$\i$};
+}
+\node[n9style]   (n9) at (9,0) {$T\!+\!1$};
+
+%% ---- Path arcs ----
+\draw[est]     (n0) -- (n1);
+\draw[patharc] (n1) to[out=60, in=120, looseness=0.42] (n5);
+\draw[patharc] (n5) to[out=55, in=125, looseness=0.55] (n8);
+\draw[term]    (n8) -- (n9);
+
+%% ---- Arc labels ----
+\node[font=\footnotesize, text=blue!70!black]   at (0.5, 0.28) {est.};
+\node[font=\footnotesize, text=green!40!black]  at (3.0, 0.6) {$t-s=4$};
+\node[font=\footnotesize, text=green!40!black]  at (6.5, 0.55) {$t-s=3$};
+\node[font=\footnotesize, text=red!70!black]    at (8.5, 0.28) {term.};
+
+%% ---- Legend ----
+\node[anchor=north west] at (0.0,-0.78) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[est]     (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Establishment arc $(0,t)$};
+  \end{tikzpicture}};
+\node[anchor=north west] at (4.2,-0.78) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[patharc] (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Harvest arc $(s,t)$};
+  \end{tikzpicture}};
+\node[anchor=north west] at (7.6,-0.78) {%
+  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
+    \draw[term]    (0,0)--(1,0);
+    \node[font=\small, anchor=west] at (1.1,0)
+      {Termination arc $(s,T{+}1)$};
+  \end{tikzpicture}};
+
+\end{tikzpicture}
 ```
 
 ---
 
-## Decision Variables
+## Spatial MILP model structure
 
-| Variable | Type | Meaning |
-|---|---|---|
-| $z_{ist} \in \{0,1\}$ | Binary | Activity arc: site $i$ from period $s$ to $t$ |
-| $X_{ijpt} \geq 0$ | Continuous | Biomass flow: site $i$ → storage $j$, product $p$, period $t$ |
-| $X_{jkp'pt} \geq 0$ | Continuous | Processed flow: storage $j$ → consumer $k$, cascade $(p',p)$ |
-| $S_{jpt} \geq 0$ | Continuous | Inventory at storage $j$, product $p$, end of period $t$ |
+```{r tikz-netzwerk, engine='tikz', fig.ext='png', fig.align='center', out.width='80%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}", "\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}", "\\definecolor{basic}{RGB}{34,139,34}")), fig.height = 3, cache=T}
 
-.callout-note[
-**Age-lag structure:** Arc $(s,t) \in \mathcal{S}^{harv}$ is only feasible if $A_{min} \leq t-s \leq A_{max}$,
-enforcing rotation age bounds without additional constraints.
+\begin{tikzpicture}[
+  % ── Knotentypen ──────────────────────────────────────────
+  source/.style={
+    draw=basic, fill=basic!15, thick,
+    rounded corners=4pt,
+    minimum width=2.1cm, minimum height=0.75cm,
+    font=\scriptsize\bfseries, align=center
+  },
+  transship/.style={
+    draw=orange!80!black, fill=orange!12, thick,
+    diamond, aspect=1.6,
+    minimum width=2.2cm, minimum height=0.85cm,
+    font=\scriptsize\bfseries, align=center
+  },
+  demand/.style={
+    draw=blue!70!black, fill=blue!10, thick,
+    rounded corners=2pt,
+    minimum width=2.0cm, minimum height=0.75cm,
+    font=\scriptsize\bfseries, align=center
+  },
+  % ── Kantenstile ──────────────────────────────────────────
+  flow/.style={-Latex, thick, draw=gray!60},
+  flowblue/.style={-Latex, thick, draw=blue!50!gray},
+  elabel/.style={font=\tiny, fill=white, inner sep=1.5pt, pos=0.5},
+  caplab/.style={font=\tiny\itshape, text=gray!80}
 ]
+
+%% SCHICHT 1 – Aufkommenspunkte (AFS-Systeme)
+\node[source] (S1) at (0,  3.2) {farm $1$};
+\node[source, fill=gray!40, draw=gray!40] (S2) at (0,  1.6) {farm $2$};
+\node[source] (S3) at (0,  0.0) {farm $3$};
+\node[source] (S4) at (0, -1.6) {farm $4$};
+
+%\node[caplab, anchor=west] at (1.15, 3.2)  {$q_{i_1}\!=\!85\,\text{t/a}$};
+%\node[caplab, anchor=west] at (1.15, 1.6)  {$q_{i_2}\!=\!60\,\text{t/a}$};
+%\node[caplab, anchor=west] at (1.15, 0.0)  {$q_{i_3}\!=\!120\,\text{t/a}$};
+%\node[caplab, anchor=west] at (1.15,-1.6)  {$q_{i_4}\!=\!45\,\text{t/a}$};
+
+%% SCHICHT 2 – Umschlagspunkte
+\node[transship] (T1) at (6,  2.4) {hub $1$};
+\node[transship] (T2) at (6,  0.0) {hub $2$};
+\node[transship] (T3) at (6, -1.8) {hub $3$};
+
+%\node[caplab, anchor=west] at (5.4,  2.4) {$C_{j_1}\!=\!200\,\text{t}$};
+%\node[caplab, anchor=west] at (5.4,  0.0) {$C_{j_2}\!=\!150\,\text{t}$};
+%\node[caplab, anchor=west] at (5.4, -1.8) {$C_{j_3}\!=\!300\,\text{t}$};
+
+%% SCHICHT 3 – Verbrauchsknoten
+\node[demand] (D1) at (12,  2.8) {consumer $1$};
+\node[demand] (D2) at (12,  1.0) {consumer $2$};
+\node[demand] (D3) at (12, -0.8) {consumer $3$};
+
+%\node[caplab, anchor=west] at (10.8,  2.8) {$d_{k_1}\!=\!110\,\text{t/a}$};
+%\node[caplab, anchor=west] at (10.8,  1.0) {$d_{k_2}\!=\!90\,\text{t/a}$};
+%\node[caplab, anchor=west] at (10.8, -0.8) {$d_{k_3}\!=\!70\,\text{t/a}$};
+
+%% KANTEN Schicht 1 → Schicht 2
+\draw[flow,draw=brown!50] (S1) -- node[elabel, above] {$x_{i_1,j_1,stem}$} (T1);
+\draw[flow,draw=blue!50] (S1) -- node[elabel, near start, below] {$x_{i_1,j_2,branch}$} (T2);
+%\draw[flow] (S2) -- node[elabel, above] {$x_{i_2 j_1}$} (T1);
+%\draw[flow] (S2) -- node[elabel, below] {$x_{i_2 j_2}$} (T2);
+\draw[flow,draw=blue!50] (S3) -- node[elabel, above] {$x_{i_3,j_2, branch}$} (T2);
+\draw[flow,draw=green!50] (S3) -- node[elabel, above] {$x_{i_3,j_3, leaves}$} (T3);
+\draw[flow,draw=brown!50] (S4) -- node[elabel, below] {$x_{i_4,j_1, stem }$} (T3);
+
+%% KANTEN Schicht 2 → Schicht 3
+\draw[flowblue,draw=brown!50] (T1) -- node[elabel, above] {$x_{j_1,k_1,stem-grade}$} (D1);
+\draw[flowblue,draw=blue!50] (T1) -- node[elabel, above] {$x_{j_1,k_2,branch-grade}$} (D2);
+\draw[flowblue,draw=blue!50] (T2) -- node[elabel, above] {$x_{j_2,k_2,branch-grade}$} (D2);
+\draw[flowblue,draw=green!50] (T2) -- node[elabel, above] {$x_{j_2,k_3,leave-grade}$} (D3);
+\draw[flowblue,draw=green!50] (T3) -- node[elabel, below] {$x_{j_3,k_3,leave-grade}$} (D3);
+\draw[flowblue,draw=brown!50] (T3) -- node[elabel, below, near end] {$y_{j_3,k_1,stem-grade}$} (D1);
+
+%% LEGENDE
+\begin{scope}[shift={(0,-3.0)}]
+  \node[source, minimum width=0.9cm, minimum height=0.45cm,
+        font=\tiny] at (0,0) {};
+  \node[font=\tiny, anchor=west] at (0.25,0)
+        {farm)};
+  \node[transship, minimum width=0.9cm, minimum height=0.45cm,
+        font=\tiny] at (5.2,0) {};
+  \node[font=\tiny, anchor=west] at (6,0)
+        {transshipment};
+  \node[demand, minimum width=0.9cm, minimum height=0.45cm,
+        font=\tiny] at (9.2,0) {};
+  \node[font=\tiny, anchor=west] at (10,0)
+        {consumer};
+  \draw[flow]     (0.3,-0.55) -- ++(0.7,0)
+        node[font=\tiny, anchor=west] {Transport $x_{ijp}$};
+  
+\end{scope}
+
+\end{tikzpicture}
+```
+
 
 ---
 
 ## Objective Function
 
-**Maximise total contribution margin** over the planning horizon $\mathcal{T}$:
-
-$$\max\; Z = \underbrace{\sum_{k,p} R_{kp} \sum_{j,(p',p),t} X_{jkp'pt}}_{\text{Revenue}} - \underbrace{C^{est} - C^{opp} - C^{main} - C^{harv}}_{\text{Site costs}} - \underbrace{C^{tr\text{-}raw} + C^{tr\text{-}pre}}_{\text{Transport costs}} - \underbrace{C^{stor}}_{\text{Storage costs}}$$
-
-- **Opportunity costs** penalise foregone crop revenues for each year a site is under AFS
-- **Two-stage transport** distinguishes raw biomass (site → storage) from pre-treated biomass (storage → consumer)
-- **Storage costs** apply from year 2 onward (year-of-harvest drying is cost-free)
+.small[
+$$
+\begin{aligned}
+\max\; Z \;=\;&
+  \sum_{k ,\, p} R_{kp} \cdot\sum_{j,\,(p',p),\, t} x_{jkp'pt}  &\text{Revenue}  \label{eq:obj-revenue} \\
+&- \sum_{i} c^{\text{est}}_i \cdot \text{AREA}_i  \cdot\sum_{(0,t) } z_{i0t} &\text{establishment cost}\\
+&- \sum_{i} c^{\text{opp}}_i \cdot \text{AREA}_i \cdot\left(\sum_{(s,T+1) } (s+1) \cdot z_{is(T+1)}  -  \sum_{(0,t)}  t \cdot z_{i0t} \right) &\text{opportunity cost}\\
+&- \sum_{i} c^{\text{main}}_{i} \cdot (t-s) \cdot \text{AREA}_i \sum_{(s,t) } z_{ist} &\text{maintenance cost}\\
+&- \sum_{i} c^{\text{harv}}_i \cdot \text{AREA}_i \cdot \sum_{(s,t) } z_{ist} &\text{harvesting cost}\\
+&- \sum_{i,\, j,\, p,\, t} c^{\text{tr-raw}}_p \cdot d_{ij} \cdot X_{ijpt} &\text{transport cost}\\
+&- \sum_{j,\, k,\,(p,p'),\, t} c^{\text{tr-pre}}_{p'} \cdot d_{jk} \cdot X_{jkpp't} &\text{transport cost}\\
+&- \sum_{j,\, p,\, t}  c^{\text{stor}}_j \cdot S_{jpt} &\text{storage cost}
+\end{aligned}
+$$
+]
 
 ---
 
 ## Constraints (C1–C4)
-
-**(C1) Single establishment per site:**
+.small[
+**Single establishment per site:**
 $$\sum_{(0,t)\in\mathcal{S}^{est}} z_{i0t} \leq 1 \qquad \forall\; i \in \mathcal{I}$$
 
-**(C2) Path connectivity — flow conservation:**
+**Path connectivity — flow conservation:**
 $$\sum_{(s,t)\in\mathcal{S}} z_{ist} = \sum_{(t,u)\in\mathcal{S}} z_{itu} \qquad \forall\; i,\; t$$
 
-**(C3) Biomass yield via Gompertz coefficients:**
+**Biomass yield via Gompertz coefficients:**
 $$\sum_{j} X_{ijpt} \leq \sum_{(s,t)\in\mathcal{S}^{harv}} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist} \qquad \forall\; i,p,t$$
 
-**(C4)/(C5) Transport linkage & inventory balance** — follows OPTIMASS network-flow structure `r Citep(bib, "DeMeyer2015_OPTIMASS")`
-
----
-
-## Constraints (C6–C8) & Cascade Logic
-
-**(C6) Storage capacity:**
-$$\sum_{p} S_{jpt} \leq \text{CAP}^{stor}_j \qquad \forall\; j,\; t$$
-
-**(C7) Processing capacity:**
-$$\sum_{i,p} X_{ijpt} \leq \text{CAP}^{proc}_j \qquad \forall\; j,\; t$$
-
-**(C8) Demand with quality cascade:**
+**Demand with quality cascade:**
 $$\sum_{j,(p',p)\in\mathcal{Q}} X_{jkp'pt} \leq D^{max}_{kpt} \qquad \forall\; k,p,t$$
 
-.callout-note[
-**Product cascade principle:** $(p',p) \in \mathcal{Q}$ allows a **higher-quality product** $p'$ (stems) to satisfy demand for a **lower-quality product** $p$ (chips for energy) — operationalising cascading use as the central economic rationale.
+**Transport & inventory capacities/balances** — follows network flow structure `r Citep(bib, "DeMeyer2015_OPTIMASS")`
+
 ]
 
 ---
@@ -740,8 +851,8 @@ class: inverse, center, middle
 **Consumers $\mathcal{K}$**
 
 - 3 biomass product types: stems (P1), branches (P2), residues (P3)
-- Industrial consumers: paper/pulp, chemical biorefinery, energy plants
-- Minimum demand threshold: $\geq$ 1.5 units/period
+- Industrial consumers: paper/pulp (Mercer), chemical biorefinery (UPM), wood industry, energy plants (biogas)
+- Minimum demand threshold: $\geq$ 1.5 kt/year
 ]
 
 
@@ -832,7 +943,7 @@ cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326) %>%
   st_transform(crs_map)
 
 # ── Plot ───────────────────────────────────────────────────────────────────────
-ggplot() +
+gg <- ggplot() +
 
   # Base map
   geom_sf(data = de_states,
@@ -909,87 +1020,28 @@ ggplot() +
     legend.title    = element_text(size = 7.5, face = "bold"),
     axis.text       = element_text(size = 7)
   )
+gg
+
 ```
 ]
 
 .col-50[
-**Data sources:**
-  - AFS sites: INVEKOS land-use register (2023)
-  - Consumers: public databases, company reports, expert interviews
-  - Distances: OpenRouteService API
-  - Cost parameters: literature review (see next slide)
+.small[
+| Parameter | Value | 
+|---|---|
+| Farms $\vert\mathcal{I}\vert$ | `r milp_instance$n_sites` (clustered from `r nrow(afs_workspace$sites)`) |
+| Hubs $\vert\mathcal{J}\vert$ | `r milp_instance$n_storages` |
+| Consumers $\vert\mathcal{K}\vert$ | `r milp_instance$n_consumers` |
+| Planning horizon $\vert\mathcal{T}\vert$ | 40 periods |
+| Max. rotation age $A_{max}$ | 15 years | 
+| Min. rotation age $A_{min}$ | 3 years | 
+| Raw biomass transport $c^{tr\text{-}raw}$ | 0.08 €/(tkm) | 
+| Pre-treated transport $c^{tr\text{-}pre}$ | 0.06 €/(tkm) | 
+| Establishment cost $c^{est}$ | 2,500 €/ha | 
+| Harvest cost $c^{harv}$ | 150 €/ha | 
+| Opportunity cost $c^{opp}$ | 450 €/ha/yr | 
 ]
-
----
-
-## MILP Model Parameters
-
-| Parameter | Value | Source |
-|---|---|---|
-| Planning horizon $\vert\mathcal{T}\vert$ | 40 periods | — |
-| Max. rotation age $A_{max}$ | 15 years | LRAFS benchmark |
-| Min. rotation age $A_{min}$ | 3 years | SRAFS minimum |
-| Raw biomass transport $c^{tr\text{-}raw}$ | 0.08 €/(tkm) | Literature |
-| Pre-treated transport $c^{tr\text{-}pre}$ | 0.06 €/(tkm) | Literature |
-| Establishment cost $c^{est}$ | 2,500 €/ha | `r Citep(bib, "Testa2014_Poplar_Economics")` |
-| Harvest cost $c^{harv}$ | 150 €/ha | Literature |
-| Opportunity cost $c^{opp}$ | 45 €/ha/yr | `r Citep(bib, "Faasch2012_SRC_Economics")` |
-| Solver | Gurobi 10, MIP gap 1 % | — |
-
----
-
-## Yield Sensitivity by Rotation Age
-
-```{r yield-sensitivity, fig.height=3.8, fig.width=10, out.width="98%"}
-ages_int <- 3:15
-
-yield_df <- tibble(
-  age         = ages_int,
-  total_yield = B_AG_max3(ages_int),
-  stem_yield  = f_stem_g(ages_int)   * B_AG_max3(ages_int),
-  branch_yield= f_branch_g(ages_int) * B_AG_max3(ages_int),
-  rest_yield  = f_rest_g(ages_int)   * B_AG_max3(ages_int),
-  stem_share  = f_stem_g(ages_int) * 100
-)
-
-p_stack <- yield_df |>
-  select(age, P1 = stem_yield, P2 = branch_yield, P3 = rest_yield) |>
-  pivot_longer(-age, names_to = "product", values_to = "yield") |>
-  mutate(product = factor(product, levels = c("P3","P2","P1")))
-
-p_bar <- ggplot(p_stack, aes(x = age, y = yield, fill = product)) +
-  geom_col(width = 0.8) +
-  scale_fill_manual(
-    values  = c("P1" = "#1b9e77", "P2" = "#d95f02", "P3" = "#7570b3"),
-    labels  = c("P1 – Stamm", "P2 – Äste", "P3 – Reste"),
-    guide   = guide_legend(reverse = TRUE)
-  ) +
-  scale_x_continuous(breaks = 3:15) +
-  labs(x = "Rotationsalter a (Jahre)",
-       y = "Ertrag (t TM/ha)",
-       fill = NULL,
-       title = "Ertragsstruktur nach Rotationsalter") +
-  theme_minimal(base_size = 9) +
-  theme(panel.grid.minor = element_blank(), legend.position = "bottom")
-
-p_share <- ggplot(yield_df, aes(x = age, y = stem_share)) +
-  geom_line(colour = "#1b9e77", linewidth = 1.2) +
-  geom_point(colour = "#1b9e77", size = 2.5) +
-  geom_hline(yintercept = c(55, 75), linetype = "dotted", colour = "grey50") +
-  annotate("text", x = 14.7, y = 56.2, label = "55 % (Alter 4)", size = 2.5,
-           colour = "grey40", hjust = 1) +
-  annotate("text", x = 14.7, y = 76.2, label = "75 % (Alter 10)", size = 2.5,
-           colour = "grey40", hjust = 1) +
-  scale_x_continuous(breaks = 3:15) +
-  scale_y_continuous(labels = function(x) paste0(x, " %")) +
-  labs(x = "Rotationsalter a (Jahre)",
-       y = "Stammanteil f₁(a)",
-       title = "Stammanteil steigt mit Bestandsalter") +
-  theme_minimal(base_size = 9) +
-  theme(panel.grid.minor = element_blank())
-
-p_bar + p_share
-```
+]
 
 ---
 class: inverse, center, middle
@@ -998,49 +1050,7 @@ class: inverse, center, middle
 
 ---
 
-*Key findings from the case study (Saxony-Anhalt):*
-
-- **Active storage nodes:** selected nodes with high accessibility to both SRC clusters and industrial consumers
-- **Dominant rotation length:** 5–8 years — balances stem share and harvest frequency
-- **Product cascade in use:** P1-stem flows partially satisfy P2/P3 demand at Mercer Stendal (pulp) and UPM Biochemicals Leuna (chemicals)
-
----
-
-## Rotation Age Distribution
-
-```{r rotation-age-dist, fig.height=4.0, fig.width=8, out.width="90%"}
-# Illustrative distribution — ersetzen durch ext$z-Daten wenn Solver-Artefakte vorhanden
-set.seed(42)
-rot_ages <- tibble(
-  rotation_age = sample(3:15,
-    size    = 180,
-    replace = TRUE,
-    prob    = c(0.03, 0.07, 0.14, 0.18, 0.16, 0.13, 0.10,
-                0.07, 0.05, 0.03, 0.02, 0.01, 0.01)
-  )
-)
-
-ggplot(rot_ages, aes(x = rotation_age)) +
-  geom_histogram(binwidth = 1, fill = "#1b9e77", colour = "white", alpha = 0.85) +
-  geom_vline(xintercept = c(3, 15), linetype = "dashed", colour = "grey40") +
-  annotate("text", x = 3.35, y = 36, label = expression(A[min]*"= 3"),
-           size = 2.8, colour = "grey40") +
-  annotate("text", x = 14.65, y = 36, label = expression(A[max]*"= 15"),
-           size = 2.8, colour = "grey40", hjust = 1) +
-  scale_x_continuous(breaks = 3:15) +
-  labs(x = "Rotationsalter (Jahre)",
-       y = "Anzahl Erntearcs",
-       title = "Optimale Rotationsalterverteilung über Standorte und Perioden") +
-  theme_minimal(base_size = 10) +
-  theme(panel.grid.minor = element_blank())
-```
-
-
-
----
-
 ## Establishment decisions
-
 
 .col-50[
 ```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, out.width="85%", cache =TRUE}
@@ -1256,16 +1266,67 @@ ggplot() +
 
 
 .col-50[
-- **Allometric parameter uncertainty:** sensitivity of optimal rotation length to Gompertz parameter ranges
-- **Price scenarios:** impact of biomass price trajectories (P1/P2/P3) on product mix and supply chain configuration
-- **Policy incentives:** effect of AFS subsidies and carbon pricing on establishment decisions
-- **Scalability:** solution quality and computation time for larger site/consumer instances
+- **total profit:** `r round(result$objval/10^6,1)` Mill. €
+- **opened super-farms:** `r length(unique(ext$z$site_id))`/`r milp_instance$n_sites`
+- **biomass produced:** `r round(sum(ext$Xij$value)/1000,1)` Mill. t 
+- **biomass consumed:** `r round(sum(ext$Xjk$value)/1000,1)` Mill. t 
+
+```{r tab-biomass-balance, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+# 1) Gesamt produzierte Biomasse nach Produkt (Xij)
+prod_by_product <- ext$Xij %>%
+  group_by(product) %>%
+  summarise(
+    produced_total = sum(value, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# 2) Gesamt konsumierte Biomasse nach Produkt (Xjk)
+cons_by_product <- ext$Xjk %>%
+  group_by(del_product) %>%
+  rename(product = del_product) %>% 
+  summarise(
+    consumed_total = sum(value, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# 3) Zusammenführen und Bilanzspalte
+biomass_balance <- prod_by_product %>%
+  full_join(cons_by_product, by = "product") %>%
+  mutate(
+    produced_total = round(if_else(is.na(produced_total), 0, produced_total)/1000,1),
+    consumed_total = round(if_else(is.na(consumed_total), 0, consumed_total)/1000,1),
+    net_surplus    = round((produced_total - consumed_total),1)
+  ) %>% 
+  mutate(
+    product = dplyr::case_when(
+      product == 1 ~ "Stems",
+      product == 2 ~ "Branches",
+      product == 3 ~ "Residues",
+      TRUE         ~ as.character(product)
+    ))
+
+# 4) Quarto/LaTeX/HTML-Tabelle
+biomass_balance %>%
+  arrange(product) %>%
+  kable(
+    caption = "Total produced vs. consumed biomass by product.",
+    col.names = c("Product", "Produced [Mill. t]", "Consumed [Mill. t]", "Surplus [Mill. t]"),
+    digits = 1,
+    format = knitr::opts_knit$get("rmarkdown.pandoc.to") %||% "html"
+  ) %>%
+  kable_styling(full_width = FALSE)
+```
+
 ]
 
 
 ---
 
-## Harvest quantities
+## Product flows by type
 
 
 ```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=4, out.width="90%", cache =TRUE}
@@ -1375,10 +1436,40 @@ ggplot(flow_df,
   )
 ```
 
+---
+
+## Rotation Age Distribution
+
+```{r rotation-age-dist, fig.height=4.0, fig.width=8, out.width="90%", cache=TRUE}
+# Illustrative distribution — ersetzen durch ext$z-Daten wenn Solver-Artefakte vorhanden
+set.seed(42)
+rot_ages <- tibble(
+  rotation_age = sample(3:15,
+    size    = 180,
+    replace = TRUE,
+    prob    = c(0.03, 0.07, 0.14, 0.18, 0.16, 0.13, 0.10,
+                0.07, 0.05, 0.03, 0.02, 0.01, 0.01)
+  )
+)
+
+ggplot(rot_ages, aes(x = rotation_age)) +
+  geom_histogram(binwidth = 1, fill = "#1b9e77", colour = "white", alpha = 0.85) +
+  geom_vline(xintercept = c(3, 15), linetype = "dashed", colour = "grey40") +
+  annotate("text", x = 3.35, y = 36, label = expression(A[min]*"= 3"),
+           size = 2.8, colour = "grey40") +
+  annotate("text", x = 14.65, y = 36, label = expression(A[max]*"= 15"),
+           size = 2.8, colour = "grey40", hjust = 1) +
+  scale_x_continuous(breaks = 3:15) +
+  labs(x = "Harvesting age (years)",
+       y = "number of harvests") +
+  theme_minimal(base_size = 10) +
+  theme(panel.grid.minor = element_blank())
+```
+
 
 ---
 
-## Product mix
+## Harvesting quantities over time
 
 
 ```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,  fig.width=8, fig.height=4, out.width="90%", cache =TRUE}
@@ -1428,18 +1519,6 @@ class: inverse, center, middle
 
 ---
 
-## Contributions & Key Findings
-
-**Novel MILP formulation (AFS-SCD):** explicit age-lag constraints link establishment and consecutive harvest decisions — first integrated AFS supply chain model of this type
-
-**Allometric Gompertz yield functions** embedded directly in the MILP via pre-computed $\eta_{p,a}$ coefficients — no exogenous biomass input needed
-
-**Multi-product cascade** operationalises cleaner production principle: high-quality material use before energy recovery
-
-**Real-world case study** (Saxony-Anhalt) demonstrates feasibility at regional scale
-
----
-
 ## Open Research Questions
 
 .callout-important[
@@ -1469,9 +1548,58 @@ thomas.kirschstein@ikts.fraunhofer.de
 
 ---
 
-## Literaturverzeichnis
+## Sets, Indices & Parameters
 
-```{r references, results='asis', echo=FALSE}
-# RefManageR: automatisches Literaturverzeichnis aus literature.bib
+.col-50[
+**Sets & indices**
+
+| Symbol | Meaning |
+|---|---|
+| $\mathcal{I}$ | AFS sites (field parcels) |
+| $\mathcal{J}$ | Storage/processing facilities |
+| $\mathcal{K}$ | Industrial consumers |
+| $\mathcal{P}$ | Biomass product types |
+| $\mathcal{Q}$ | Quality cascade pairs $(p', p)$ |
+| $\mathcal{T}$ | Planning periods |
+| $\mathcal{S}$ | Feasible activity arcs $(s, t)$ |
+]
+
+.col-50[
+**Key parameters**
+
+| Symbol | Meaning |
+|---|---|
+| $\eta_{p,a}$ | Yield (t/ha) for product $p$ at age $a$ |
+| $\text{AREA}_i$ | Site area (ha) |
+| $c^{est}_i$ | Establishment cost (€/ha) |
+| $c^{harv}_i$ | Harvest cost (€/ha) |
+| $c^{opp}_i$ | Opportunity cost (€/ha/yr) |
+| $R_{kp}$ | Revenue (€/t) at consumer $k$ |
+| $d_{ij}, d_{jk}$ | Transport distances (km) |
+]
+
+---
+
+## Decision Variables
+
+| Variable | Type | Meaning |
+|---|---|---|
+| $z_{ist} \in \{0,1\}$ | Binary | Activity arc: site $i$ from period $s$ to $t$ |
+| $X_{ijpt} \geq 0$ | Continuous | Biomass flow: site $i$ → storage $j$, product $p$, period $t$ |
+| $X_{jkp'pt} \geq 0$ | Continuous | Processed flow: storage $j$ → consumer $k$, cascade $(p',p)$ |
+| $S_{jpt} \geq 0$ | Continuous | Inventory at storage $j$, product $p$, end of period $t$ |
+
+.callout-note[
+**Age-lag structure:** Arc $(s,t) \in \mathcal{S}^{harv}$ is only feasible if $A_{min} \leq t-s \leq A_{max}$,
+enforcing rotation age bounds without additional constraints.
+]
+
+---
+class: small-slide
+## References
+
+.small[
+```{r references, results="asis", echo=FALSE}
 PrintBibliography(bib)
 ```
+]
