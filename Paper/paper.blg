@@ -5,46 +5,44 @@ Reallocating 'name_of_file' (item size: 1) to 9 items.
 The style file: plainnat.bst
 Reallocating 'name_of_file' (item size: 1) to 11 items.
 Database file #1: references.bib
-Warning--I didn't find a database entry for "Spinelli2009_SRC_Harvesting"
-You've used 16 entries,
+You've used 29 entries,
             2773 wiz_defined-function locations,
-            750 strings with 9870 characters,
-and the built_in function-call counts, 9120 in all, are:
-= -- 858
-> -- 578
-< -- 4
-+ -- 194
-- -- 178
-* -- 847
-:= -- 1445
-add.period$ -- 80
-call.type$ -- 16
-change.case$ -- 105
-chr.to.int$ -- 16
-cite$ -- 32
-duplicate$ -- 348
-empty$ -- 659
-format.name$ -- 194
-if$ -- 1875
+            843 strings with 13279 characters,
+and the built_in function-call counts, 15201 in all, are:
+= -- 1436
+> -- 948
+< -- 10
++ -- 320
+- -- 291
+* -- 1351
+:= -- 2432
+add.period$ -- 144
+call.type$ -- 29
+change.case$ -- 184
+chr.to.int$ -- 29
+cite$ -- 58
+duplicate$ -- 588
+empty$ -- 1117
+format.name$ -- 328
+if$ -- 3124
 int.to.chr$ -- 1
 int.to.str$ -- 1
-missing$ -- 17
-newline$ -- 119
-num.names$ -- 66
-pop$ -- 158
+missing$ -- 27
+newline$ -- 209
+num.names$ -- 116
+pop$ -- 279
 preamble$ -- 1
-purify$ -- 90
+purify$ -- 155
 quote$ -- 0
-skip$ -- 262
+skip$ -- 447
 stack$ -- 0
-substring$ -- 418
-swap$ -- 27
-text.length$ -- 2
+substring$ -- 608
+swap$ -- 28
+text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 171
+type$ -- 314
 warning$ -- 0
-while$ -- 78
+while$ -- 130
 width$ -- 0
-write$ -- 280
-(There was 1 warning)
+write$ -- 496

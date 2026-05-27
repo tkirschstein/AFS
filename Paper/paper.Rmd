@@ -103,6 +103,8 @@ suppressPackageStartupMessages({
 options(kableExtra.latex.load_packages = FALSE)
 options(knitr.table.format = "latex")
 
+source("../Modell/!afs_biomass_setup.R")
+
 # Chapman-Richards biomass function
 B_cr <- function(t, Bmax, k, m) {
   Bmax * (1 - exp(-k * t))^m
@@ -114,19 +116,20 @@ gomp <- function(t, A, k, t0) {
 }
 
 # Component Gompertz functions (parameters as defined above) parametrized for dry matter aboveground biomass per tree of poplar
-B_AG_max3     <- function(t) gomp(t, A = 0.8, k = 0.2, t0 = 9.0)
-h_stem_f      <- function(t) gomp(t, A = 1.2,  k = 0.25, t0 = 8.0)
-h_branch_f    <- function(t) gomp(t, A = 0.2,  k = 0.3, t0 = 5.0)
-h_rest_f      <- function(t) gomp(t, A = 0.1,  k = 0.40, t0 = 2.0)
+B_AG_max3     <- function(t) gomp(t, A = 0.8, k = 0.2, t0 = 10.0)
+h_stem_f      <- function(t) gomp(t, A = 1.2,  k = 0.5, t0 = 8.0)
+h_branch_f    <- function(t) gomp(t, A = 0.2,  k = 0.4, t0 = 5.0)
+h_rest_f      <- function(t) gomp(t, A = 0.1,  k = 0.20, t0 = 2.0)
 
-B_AG_index <- function(t,p) {
-  B_AG_max3(t) * c(f_stem_g(t), f_branch_g(t), f_rest_g(t))[p]
-}
 
 f_stem_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hs/(hs+hb+hr) }
 f_branch_g <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hb/(hs+hb+hr) }
 f_rest_g   <- function(t) { hs=h_stem_f(t); hb=h_branch_f(t); hr=h_rest_f(t); hr/(hs+hb+hr) }
 
+B_AG_index <- function(t, p) {
+  fracs <- list(f_stem_g, f_branch_g, f_rest_g)
+  B_AG_max3(t) * fracs[[p]](t)
+}
 
 
 ```
@@ -1606,7 +1609,7 @@ ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
 
 # Appendix
 
-```{r fig-results-inventory, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="End-of-period inventory levels at storage/pre-treatment hubs, disaggregated by product type. Each panel corresponds to one active hub.", fig.width=7, fig.height=3.5, dev="pdf", out.width="\\textwidth"}
+```{r fig-results-inventory, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="End-of-period inventory levels at storage/pre-treatment hubs, disaggregated by product type. Each panel corresponds to one active hub.", fig.width=7, fig.height=3.5, dev="pdf", out.width="\\textwidth", cache=TRUE}
 
 inv_ts <- ext$S %>%
   mutate(product = factor(product, labels = c("Stem", "Branches", "Residues")[seq_len(max(product))])) %>%
