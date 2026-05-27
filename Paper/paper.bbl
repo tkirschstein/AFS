@@ -14,17 +14,6 @@ Mohsen Arabi, Saeed Yaghoubi, and Hamed Tajik.
 \newblock ISSN 0098-1354.
 \newblock \doi{10.1016/j.compchemeng.2019.106530}.
 
-\bibitem[Barrio-Anta et~al.(2008)Barrio-Anta, Sixto-Blanco, Ca{\~n}ellas-Rey~de
-  Vi{\~n}as, and Castedo-Dorado]{BarrioAnta2008_Poplar_Growth}
-Marcos Barrio-Anta, Hortensia Sixto-Blanco, Isabel Ca{\~n}ellas-Rey~de
-  Vi{\~n}as, and Fernando Castedo-Dorado.
-\newblock Dynamic growth model for short-rotation poplar plantations in
-  northern and central-western {Spain}.
-\newblock \emph{Forest Ecology and Management}, 255\penalty0 (3--4):\penalty0
-  1257--1268, 2008.
-\newblock ISSN 0378-1127.
-\newblock \doi{10.1016/j.foreco.2007.10.026}.
-
 \bibitem[Cambero and Sowlati(2014)]{Cambero2014_ForestBSC_Review}
 Claudia Cambero and Taraneh Sowlati.
 \newblock Assessment and optimization of forest biomass supply chains from
@@ -33,6 +22,16 @@ Claudia Cambero and Taraneh Sowlati.
   2014.
 \newblock ISSN 1364-0321.
 \newblock \doi{10.1016/j.rser.2014.04.041}.
+
+\bibitem[Civitarese et~al.(2019)Civitarese, Acampora, Sperandio, Assirelli, and
+  Picchio]{Civitarese2019_Poplar_Harvest}
+Vincenzo Civitarese, Andrea Acampora, Giulio Sperandio, Alberto Assirelli, and
+  Rodolfo Picchio.
+\newblock Production of wood pellets from poplar trees managed as coppices with
+  different harvesting cycles.
+\newblock \emph{Energies}, 12\penalty0 (15):\penalty0 2973, 2019.
+\newblock \doi{10.3390/en12152973}.
+\newblock Open access.
 
 \bibitem[De~Meyer et~al.(2014)De~Meyer, Cattrysse, Rasinmäki, and
   Van~Orshoven]{DeMeyer2015_OPTIMASS}
