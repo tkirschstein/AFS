@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  1 MAY 2026 21:42
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  27 MAY 2026 13:20
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -901,9 +901,14 @@ LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 [8]
 
+LaTeX Warning: Reference `fig:max3-growth' on page 9 undefined on input line 25
+4.
+
+
+
 [9]
-File: figures/max3-growth-1.pdf Graphic file (type pdf)
-<use figures/max3-growth-1.pdf>
+File: figures/afs-growth-curves-1.pdf Graphic file (type pdf)
+<use figures/afs-growth-curves-1.pdf>
 
 
 [10]
@@ -981,6 +986,11 @@ LaTeX Warning: Reference `eq:C4' on page 18 undefined on input line 449.
 
 
 [18]
+
+LaTeX Warning: Reference `fig:max3-growth' on page 19 undefined on input line 4
+91.
+
+
 
 [19]
 File: figures/fig-supply-chain-network-1.pdf Graphic file (type pdf)
@@ -1068,10 +1078,10 @@ Package rerunfilecheck Info: File `paper.out' has not changed.
 (rerunfilecheck)             Checksum: 9F1B7649CCC8936455A0418F3BB90108;1418.
  ) 
 Here is how much of TeX's memory you used:
- 21675 strings out of 403246
- 390125 string characters out of 5460781
- 904912 words of memory out of 5000000
- 49804 multiletter control sequences out of 15000+600000
+ 21676 strings out of 403246
+ 390214 string characters out of 5460781
+ 905131 words of memory out of 5000000
+ 49805 multiletter control sequences out of 15000+600000
  671779 words of font info for 89 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  72i,21n,79p,1967b,553s stack positions out of 10000i,1000n,20000p,200000b,200000s
