@@ -124,7 +124,7 @@ find_cut_k <- function(hc, D, max_radius_km) {
   k_lo
 }
 
-K_opt <- find_cut_k(hc, D_geo, max_radius_km = HAC_MAX_RADIUS)
+K_opt <- find_cut_k(hc, D_geo, max_radius_km = HAC_MAX_RADIUS/2)
 cat(sprintf("  HAC cut: K = %d super-sites (max radius ≤ %.0f km)\n",
             K_opt, HAC_MAX_RADIUS))
 

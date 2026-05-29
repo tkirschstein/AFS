@@ -128,6 +128,225 @@
   
  \end{frontmatter}
 
+\begin{verbatim}
+## [1] "age"           "scenario"      "Merch. stem"   "Merch. branch"
+## [5] "Residue"
+\end{verbatim}
+
+\begin{verbatim}
+## Building sparse LP (Rcpp v10-no-Y, matching !build_AFS_milp.R)...
+##   n_vars=312907 (z:66265 Xij:177045 S:1221 Xjk:68376)
+##   C1: Path establishment
+##   C2: Path connectivity
+##   C3: Biomass yield
+##   C4: Inventory balance
+##   C5: Storage capacity
+##   C6: Processing capacity
+##   C7: Demand satisfaction
+##   Total constraints: 27183, nnz: 977322
+\end{verbatim}
+
+\begin{verbatim}
+## [solve_lp_with_gurobi] 312907 vars | 27183 constrs | 977322 nnz | sense=max | start=none
+## Set parameter Username
+## Set parameter LicenseID to value 2805714
+## Set parameter TimeLimit to value 300
+## Set parameter MIPGap to value 0.05
+## Set parameter MIPFocus to value 1
+## Set parameter Cuts to value 3
+## Academic license - for non-commercial use only - expires 2027-04-10
+## Gurobi Optimizer version 12.0.1 build v12.0.1rc0 (win64 - Windows 11+.0 (26200.2))
+## 
+## CPU model: AMD Ryzen AI 9 HX 370 w/ Radeon 890M, instruction set [SSE2|AVX|AVX2|AVX512]
+## Thread count: 12 physical cores, 24 logical processors, using up to 24 threads
+## 
+## Non-default parameters:
+## TimeLimit  300
+## MIPGap  0.05
+## MIPFocus  1
+## Cuts  3
+## LogToConsole  0
+## 
+## Optimize a model with 27183 rows, 312907 columns and 977322 nonzeros
+## Model fingerprint: 0x88cc9c6c
+## Variable types: 246642 continuous, 66265 integer (66265 binary)
+## Coefficient statistics:
+##   Matrix range     [1e+00, 6e+05]
+##   Objective range  [1e-01, 2e+07]
+##   Bounds range     [1e+00, 5e+07]
+##   RHS range        [1e+00, 7e+07]
+## Found heuristic solution: objective -0.0000000
+## Presolve removed 3513 rows and 47278 columns
+## Presolve time: 2.78s
+## Presolved: 23670 rows, 265629 columns, 844989 nonzeros
+## Variable types: 204919 continuous, 60710 integer (60710 binary)
+## Found heuristic solution: objective 520958.36106
+## Deterministic concurrent LP optimizer: primal simplex, dual simplex, and barrier
+## Showing barrier log only...
+## 
+## Root barrier log...
+## 
+## Ordering time: 0.42s
+## 
+## Barrier statistics:
+##  AA' NZ     : 5.969e+05
+##  Factor NZ  : 7.942e+06 (roughly 200 MB of memory)
+##  Factor Ops : 8.060e+09 (less than 1 second per iteration)
+##  Threads    : 10
+## 
+##                   Objective                Residual
+## Iter       Primal          Dual         Primal    Dual     Compl     Time
+##    0  -3.84038194e+16  8.48936215e+16  2.46e+09 1.05e+06  2.94e+13     4s
+##    1  -1.44618807e+16  7.53170607e+16  9.20e+08 1.96e+06  1.13e+13     4s
+##    2  -2.34221535e+15  5.73772127e+16  1.42e+08 1.40e+05  1.82e+12     4s
+##    3  -5.18549735e+14  3.27112613e+16  2.77e+07 8.87e+03  3.80e+11     4s
+##    4  -1.21943699e+14  1.60653485e+16  5.76e+06 2.43e+03  9.21e+10     4s
+##    5  -2.23407504e+13  6.40620215e+15  9.00e+05 2.24e+02  2.21e+10     4s
+##    6  -2.72211910e+12  3.51511059e+15  3.50e+04 9.02e+01  7.50e+09     4s
+##    7  -9.38749178e+11  2.62656276e+15  1.11e+04 5.03e+01  5.09e+09     5s
+##    8  -4.54594076e+11  9.69737695e+14  4.62e+03 4.06e+00  1.85e+09     5s
+##    9  -2.34511247e+11  2.16643282e+14  1.67e+03 3.51e-08  4.10e+08     5s
+##   10  -1.69142677e+11  1.74176730e+13  7.99e+02 3.72e-08  3.57e+07     5s
+##   11  -1.49034000e+11  1.00040254e+13  5.79e+02 2.33e-08  2.12e+07     5s
+##   12  -1.22707332e+11  4.69044530e+12  3.30e+02 1.68e-08  1.05e+07     5s
+##   13  -1.00929313e+11  1.32550187e+12  1.47e+02 1.77e-08  3.47e+06     5s
+##   14  -8.82134223e+10  9.55131380e+11  6.84e+01 2.24e-08  2.34e+06     5s
+##   15  -7.20684813e+10  9.17649786e+11  5.82e+01 2.28e-08  2.18e+06     5s
+##   16  -5.39143341e+10  7.16070064e+11  4.21e+01 2.25e-02  1.68e+06     5s
+##   17  -5.00621542e+10  5.58720102e+11  3.86e+01 2.23e-02  1.36e+06     6s
+##   18  -4.31443493e+10  5.30783294e+11  3.25e+01 2.18e-02  1.26e+06     6s
+##   19  -2.92723727e+10  3.87038667e+11  2.37e+01 1.31e-02  9.01e+05     6s
+##   20  -2.34158987e+10  3.43724797e+11  1.92e+01 1.12e-02  7.81e+05     6s
+##   21  -1.52479825e+10  1.60720798e+11  1.32e+01 4.62e-03  3.85e+05     6s
+##   22  -6.31955567e+09  1.38560256e+11  6.84e+00 3.75e-03  2.95e+05     6s
+##   23  -3.88789816e+09  8.10910562e+10  5.03e+00 2.09e-03  1.72e+05     6s
+##   24  -1.95792114e+09  5.74213150e+10  3.57e+00 1.01e-03  1.18e+05     6s
+##   25  -4.70188951e+08  3.93360167e+10  2.36e+00 5.84e-05  7.71e+04     6s
+##   26   5.84447447e+07  2.88494595e+10  1.92e+00 8.38e-09  5.53e+04     6s
+##   27   7.79759064e+08  2.09269492e+10  1.35e+00 6.52e-09  3.82e+04     7s
+##   28   1.65842849e+09  1.22816273e+10  6.80e-01 4.66e-09  1.97e+04     7s
+##   29   1.92331752e+09  9.27153863e+09  4.21e-01 3.26e-09  1.35e+04     7s
+##   30   2.01063775e+09  7.33557005e+09  3.25e-01 3.73e-09  9.78e+03     7s
+##   31   2.09561320e+09  6.18556736e+09  2.45e-01 2.79e-09  7.49e+03     7s
+##   32   2.13742475e+09  5.39828864e+09  2.09e-01 1.86e-09  5.96e+03     7s
+##   33   2.18985044e+09  4.82702158e+09  1.65e-01 2.79e-09  4.82e+03     7s
+##   34   2.24629651e+09  4.19453389e+09  1.35e-01 2.79e-09  3.55e+03     7s
+##   35   2.34352781e+09  3.91956724e+09  9.24e-02 2.33e-09  2.87e+03     7s
+##   36   2.42228566e+09  3.83053249e+09  5.82e-02 1.86e-09  2.57e+03     7s
+##   37   2.46406638e+09  3.47320800e+09  4.41e-02 2.33e-09  1.84e+03     8s
+##   38   2.47614745e+09  3.34628852e+09  4.04e-02 1.86e-09  1.59e+03     8s
+##   39   2.49168673e+09  3.16016434e+09  3.59e-02 1.86e-09  1.22e+03     8s
+##   40   2.55209277e+09  3.03150892e+09  2.10e-02 1.40e-09  8.74e+02     8s
+##   41   2.58475169e+09  2.92374020e+09  1.49e-02 9.31e-10  6.18e+02     8s
+##   42   2.60761610e+09  2.86353167e+09  1.09e-02 1.40e-09  4.66e+02     8s
+##   43   2.62525487e+09  2.83005178e+09  8.25e-03 1.40e-09  3.73e+02     8s
+##   44   2.63748129e+09  2.79065978e+09  6.61e-03 9.31e-10  2.79e+02     8s
+##   45   2.64673170e+09  2.76511470e+09  5.45e-03 2.56e-09  2.16e+02     9s
+##   46   2.65758010e+09  2.74375958e+09  4.16e-03 2.33e-09  1.57e+02     9s
+##   47   2.67147336e+09  2.73003344e+09  2.56e-03 9.31e-10  1.07e+02     9s
+##   48   2.67717423e+09  2.71792173e+09  1.95e-03 9.31e-10  7.43e+01     9s
+##   49   2.68269813e+09  2.71404502e+09  1.38e-03 1.40e-09  5.71e+01     9s
+##   50   2.68576181e+09  2.70967561e+09  1.07e-03 9.31e-10  4.36e+01     9s
+##   51   2.68915227e+09  2.70553154e+09  7.27e-04 9.31e-10  2.99e+01     9s
+##   52   2.69054514e+09  2.70270561e+09  5.89e-04 1.40e-09  2.22e+01     9s
+##   53   2.69362069e+09  2.70023979e+09  2.95e-04 1.86e-09  1.21e+01     9s
+##   54   2.69458454e+09  2.69900501e+09  2.06e-04 9.31e-10  8.06e+00    10s
+##   55   2.69525577e+09  2.69861820e+09  1.45e-04 9.31e-10  6.13e+00    10s
+##   56   2.69596893e+09  2.69791848e+09  7.98e-05 9.31e-10  3.55e+00    10s
+##   57   2.69618461e+09  2.69759495e+09  6.04e-05 9.31e-10  2.57e+00    10s
+##   58   2.69640556e+09  2.69736820e+09  4.15e-05 9.31e-10  1.75e+00    10s
+##   59   2.69655329e+09  2.69717956e+09  2.89e-05 9.31e-10  1.14e+00    10s
+##   60   2.69667091e+09  2.69704758e+09  1.94e-05 9.31e-10  6.87e-01    10s
+##   61   2.69681208e+09  2.69699579e+09  8.08e-06 9.31e-10  3.35e-01    10s
+##   62   2.69686647e+09  2.69694883e+09  3.90e-06 9.31e-10  1.50e-01    10s
+##   63   2.69690599e+09  2.69693828e+09  1.08e-06 1.16e-09  5.88e-02    10s
+##   64   2.69691304e+09  2.69692526e+09  9.03e-07 1.63e-09  2.23e-02    10s
+##   65   2.69691721e+09  2.69692169e+09  5.35e-07 1.63e-09  8.16e-03    10s
+##   66   2.69691943e+09  2.69692002e+09  2.05e-07 2.10e-09  1.08e-03    11s
+##   67   2.69691963e+09  2.69691978e+09  4.37e-08 2.33e-09  2.68e-04    11s
+##   68   2.69691969e+09  2.69691970e+09  5.52e-10 1.86e-09  2.17e-06    11s
+##   69   2.69691970e+09  2.69691970e+09  8.10e-09 1.43e-09  4.67e-10    11s
+## 
+## Barrier solved model in 69 iterations and 10.91 seconds (14.45 work units)
+## Optimal objective 2.69691970e+09
+## 
+## 
+## Root crossover log...
+## 
+##    19229 DPushes remaining with DInf 0.0000000e+00                11s
+##        0 DPushes remaining with DInf 0.0000000e+00                11s
+## 
+##      734 PPushes remaining with PInf 6.2386010e-05                11s
+##        0 PPushes remaining with PInf 0.0000000e+00                12s
+## 
+##   Push phase complete: Pinf 0.0000000e+00, Dinf 9.9283947e+03     12s
+## 
+## 
+## Root simplex log...
+## 
+## Iteration    Objective       Primal Inf.    Dual Inf.      Time
+##    16700    2.6969197e+09   0.000000e+00   9.928395e+03     12s
+##    16969    2.6969197e+09   0.000000e+00   0.000000e+00     12s
+## Concurrent spin time: 2.71s (can be avoided by choosing Method=3)
+## 
+## Solved with barrier
+## 
+## Root relaxation: objective 2.696920e+09, 16969 iterations, 11.48 seconds (10.80 work units)
+## Total elapsed time = 22.87s (DegenMoves)
+## Total elapsed time = 25.85s (DegenMoves)
+## 
+##     Nodes    |    Current Node    |     Objective Bounds      |     Work
+##  Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+## 
+##      0     0 2.6969e+09    0 1103 520958.361 2.6969e+09      -     -   26s
+## H    0     0                    1.939632e+09 2.6969e+09  39.0%     -   27s
+## H    0     0                    1.942688e+09 2.6969e+09  38.8%     -   27s
+## H    0     0                    1.943291e+09 2.6969e+09  38.8%     -   27s
+## H    0     0                    1.985397e+09 2.6969e+09  35.8%     -   28s
+## H    0     0                    1.999260e+09 2.6969e+09  34.9%     -   28s
+## H    0     0                    2.068574e+09 2.6969e+09  30.4%     -   28s
+## H    0     0                    2.138444e+09 2.6969e+09  26.1%     -   29s
+## H    0     0                    2.142694e+09 2.6969e+09  25.9%     -   29s
+## H    0     0                    2.142999e+09 2.6969e+09  25.8%     -   30s
+## H    0     0                    2.195887e+09 2.6969e+09  22.8%     -   30s
+## H    0     0                    2.201085e+09 2.6969e+09  22.5%     -   30s
+## H    0     0                    2.201964e+09 2.6969e+09  22.5%     -   30s
+## H    0     0                    2.203656e+09 2.6969e+09  22.4%     -   30s
+## H    0     0                    2.208855e+09 2.6969e+09  22.1%     -   30s
+## H    0     0                    2.222924e+09 2.6969e+09  21.3%     -   30s
+## H    0     0                    2.222960e+09 2.6969e+09  21.3%     -   30s
+## H    0     0                    2.225561e+09 2.6969e+09  21.2%     -   30s
+## H    0     0                    2.226317e+09 2.6969e+09  21.1%     -   31s
+##      0     0 2.6965e+09    0 1228 2.2263e+09 2.6965e+09  21.1%     -   87s
+## H    0     0                    2.340323e+09 2.6965e+09  15.2%     -  120s
+##      0     0 2.6963e+09    0 1233 2.3403e+09 2.6963e+09  15.2%     -  132s
+##      0     0 2.6963e+09    0 1237 2.3403e+09 2.6963e+09  15.2%     -  136s
+##      0     0 2.6963e+09    0 1231 2.3403e+09 2.6963e+09  15.2%     -  136s
+##      0     0 2.6963e+09    0 1245 2.3403e+09 2.6963e+09  15.2%     -  137s
+##      0     0 2.6963e+09    0 1245 2.3403e+09 2.6963e+09  15.2%     -  137s
+##      0     0 2.6959e+09    0 1410 2.3403e+09 2.6959e+09  15.2%     -  195s
+## H    0     0                    2.469006e+09 2.6959e+09  9.19%     -  252s
+##      0     0 2.6956e+09    0 1438 2.4690e+09 2.6956e+09  9.18%     -  283s
+##      0     0 2.6956e+09    0 1436 2.4690e+09 2.6956e+09  9.18%     -  299s
+##      0     0          -    0      2.4690e+09 2.6956e+09  9.18%     -  300s
+## 
+## Cutting planes:
+##   Gomory: 8
+##   MIR: 184
+##   Flow cover: 805
+## 
+## Explored 1 nodes (61288 simplex iterations) in 300.03 seconds (492.65 work units)
+## Thread count was 24 (of 24 available processors)
+## 
+## Solution count 10: 2.46901e+09 2.46901e+09 2.34032e+09 ... 2.20196e+09
+## 
+## Time limit reached
+## Warning: max constraint violation (2.0132e-06) exceeds tolerance
+## Warning: max bound violation (2.6103e-06) exceeds tolerance
+## Best objective 2.469005829163e+09, best bound 2.695578580530e+09, gap 9.1767%
+## [solve_lp_with_gurobi] Status: TIME_LIMIT | ObjVal: 2469005829.1629 | Runtime: 300.5 s
+\end{verbatim}
+
 \section{Introduction}\label{introduction}
 
 Agroforestry systems that integrate trees with agricultural crops
@@ -348,7 +567,7 @@ $C_{\mathrm{site}}$ & Site-quality constant (kg\,ha$^{\beta-1}$); conservative: 
 $\beta$ & Competition-density exponent; fitted $\hat{\beta}=0.380$\\
 $\phi_{\mathrm{ag}}$ & Aboveground fraction of total stand biomass; $\phi_{\mathrm{ag}}=0.89$\\
 $M^{ag}(t)$ & Aboveground dry biomass per ha (t\,DM\,ha$^{-1}$) at age $t$\\
-$f_p(t)$ & Fraction of AGB attributed to compartment $p \in \{s,b,r\}$ at age $t$\\
+$f_p(t)$ & asymtotic fraction of AGB attributed to compartment $p \in \{s,b,r\}$ at age $t$\\
 \addlinespace
 $\alpha_p,\,\delta_p$ & Intercept and slope of the linear fraction model for compartment $p$\\
 $q_p(t)$ & Merchantable fraction of compartment $p$ biomass at age $t$ (logistic)\\
@@ -361,72 +580,89 @@ $\omega$ & Moisture content at felling (mass fraction); $\omega = 0.55$\\
 \end{tabular}}
 \end{table}
 
-Reliable estimation of stand-level biomass quantities and their age-dependent composition is a necessary prerequisite for any strategic analysis of AFS-based supply chains.
-Individual-tree biomass is commonly approximated by species-specific allometric power laws relating shoot dry matter to stem base diameter, and these relationships have been calibrated for Central European poplar clones under SRC and SRAFS conditions \citep{Huber2016_Allometric_SRAFS, Huber2018_SRAFS_growth}.
-For supply chain planning, however, the relevant quantity is \textbf{stand-level biomass per hectare} over a multi-decade rotation horizon, which requires a temporal growth model that captures the characteristic sigmoidal accumulation trajectory of woody biomass.
+Reliable estimation of stand-level biomass quantities and their
+age-dependent composition is a necessary prerequisite for any strategic
+analysis of AFS-based supply chains. Individual-tree biomass is commonly
+approximated by species-specific allometric power laws relating shoot
+dry matter to stem base diameter, and these relationships have been
+calibrated for Central European poplar clones under SRC and SRAFS
+conditions \citep{Huber2016_Allometric_SRAFS, Huber2018_SRAFS_growth}. For
+supply chain planning, however, the relevant quantity is \textbf{stand-level
+biomass per hectare} over a multi-decade rotation horizon, which
+requires a temporal growth model that captures the characteristic
+sigmoidal accumulation trajectory of woody biomass.
 
 \subsubsection{Stand-level growth model}\label{stand-level-growth-model}
 
-Stand-level aboveground and belowground dry biomass per hectare, \(M^{sl}(t)\), accumulates in a right-skewed sigmoidal pattern with a relatively early inflection point, driven by rapid juvenile shoot growth followed by self-thinning and competitive deceleration as canopy closure intensifies \citep{Niemczyk2021_Poplar_Rotation, Testa2014_Poplar_Economics}.
-This trajectory is described by a Gompertz model:
-\begin{equation}
+Stand-level aboveground and belowground dry biomass per hectare,
+\(M^{sl}(t)\), accumulates in a right-skewed sigmoidal pattern with a
+relatively early inflection point, driven by rapid juvenile shoot growth
+followed by self-thinning and competitive deceleration as canopy closure
+intensifies \citep{Niemczyk2021_Poplar_Rotation, Testa2014_Poplar_Economics}. This trajectory is described by a Gompertz
+model: \begin{equation}
   M^{sl}(t) \;=\; A(N) \cdot \exp\!\bigl(-\exp(-k\,(t - t_0))\bigr),
   \label{eq:gomp-stand}
-\end{equation}
-where \(t_0\) is the age of maximum instantaneous biomass increment and \(k\) determines how quickly the stand approaches its site-specific asymptote \(A(N)\).
-For Central European poplar under medium-rotation AFS management (10--20 yr), calibration against empirical data from \citet{Huber2018_SRAFS_growth}, \citet{Niemczyk2021_Poplar_Rotation}, and \citet{Jha2018_Poplar_AFS_Biomass} yields \(k = 0.194\),yr\(^{-1}\) and \(t_0 = 9.7\),yr for a conservative site, and \(k = 0.173\),yr\(^{-1}\), \(t_0 = 10.1\),yr for a high-productivity site, placing the growth peak close to the biologically optimal rotation age identified by \citet{Niemczyk2021_Poplar_Rotation}.
+\end{equation} where \(t_0\) is the age of maximum instantaneous biomass
+increment and \(k\) determines how quickly the stand approaches its
+site-specific asymptote \(A(N)\). For Central European poplar under
+medium-rotation AFS management (10--20 yr), calibration against
+empirical data from \citet{Huber2018_SRAFS_growth},
+\citet{Niemczyk2021_Poplar_Rotation}, and \citet{Jha2018_Poplar_AFS_Biomass} yields
+\(k = 0.194\),yr\(^{-1}\) and \(t_0 = 9.7\),yr for a conservative site, and
+\(k = 0.173\),yr\(^{-1}\), \(t_0 = 10.1\),yr for a high-productivity site,
+placing the growth peak close to the biologically optimal rotation age
+identified by \citet{Niemczyk2021_Poplar_Rotation}.
 
-\subsubsection{Density-dependent asymptote}\label{density-dependent-asymptote}
-
-The asymptote \(A(N)\) is not a fixed species constant but depends explicitly on planting density through a competition-density power law \citep{Shinozaki1961_CD_Effect}:
-\begin{equation}
+The asymptote \(A(N)\) is not a fixed species constant but depends
+explicitly on planting density through a competition-density power law
+\citep{Shinozaki1961_CD_Effect}: \begin{equation}
   A(N) \;=\; \frac{C_{\mathrm{site}} \cdot N^{1-\beta}}{1000},
   \label{eq:A-density}
-\end{equation}
-where \(C_{\mathrm{site}}\) encodes site quality and \(\beta\) is the competition exponent.
-Equivalently, the per-tree asymptote \(A_{\mathrm{tree}}(N) = A(N)\cdot 1000/N = C_{\mathrm{site}}\cdot N^{-\beta}\) decreases with density as individual trees have access to less growing space.
-Fitting \eqref{eq:A-density} to two anchor points --- a conservative AFS calibration at 113 trees,ha\(^{-1}\) (central EU; \(A = 84\),t,DM,ha\(^{-1}\)) and SRC data at 1,333 trees,ha\(^{-1}\) from \citet{Niemczyk2021_Poplar_Rotation} --- yields \(\hat{\beta} = 0.380\), consistent with the 0.3--0.5 range reported for managed hardwood plantations \citep{Shinozaki1961_CD_Effect}.
-Two site-quality scenarios are used throughout: a \textbf{conservative scenario} (\(C_{\mathrm{site}} = 4\,475\), 113 trees,ha\(^{-1}\), \(A = 84\),t,DM,ha\(^{-1}\)) representative of sandy loam soils in northern Central Europe, and a \textbf{good-site scenario} (\(C_{\mathrm{site}} = 6\,471\), 139 trees,ha\(^{-1}\), \(A = 138\),t,DM,ha\(^{-1}\)) representative of deep loamy soils in river valleys.
+\end{equation} where \(C_{\mathrm{site}}\) encodes site quality and
+\(\beta\) is the competition exponent. Equivalently, the per-tree
+asymptote
+\(A_{\mathrm{tree}}(N) = A(N)\cdot 1000/N = C_{\mathrm{site}}\cdot N^{-\beta}\)
+decreases with density as individual trees have access to less growing
+space. Fitting \eqref{eq:A-density} to two anchor points --- a
+conservative AFS calibration at 113 trees,ha\(^{-1}\) (central EU;
+\(A = 84\),t,DM,ha\(^{-1}\)) and SRC data at 1,333 trees,ha\(^{-1}\) from
+\citet{Niemczyk2021_Poplar_Rotation} --- yields \(\hat{\beta} = 0.380\),
+consistent with the 0.3--0.5 range reported for managed hardwood
+plantations \citep{Shinozaki1961_CD_Effect}. Two site-quality scenarios are
+used throughout: a \textbf{conservative scenario}
+(\(C_{\mathrm{site}} = 4\,475\), 113 trees,ha\(^{-1}\),
+\(A = 84\),t,DM,ha\(^{-1}\)) representative of sandy loam soils in northern
+Central Europe, and a \textbf{good-site scenario}
+(\(C_{\mathrm{site}} = 6\,471\), 139 trees,ha\(^{-1}\),
+\(A = 138\),t,DM,ha\(^{-1}\)) representative of deep loamy soils in river
+valleys.
 
-\subsubsection{Aboveground biomass and compartment fractions}\label{aboveground-biomass-and-compartment-fractions}
+\begin{figure}
 
-Aboveground biomass (AGB) is obtained from total stand biomass by applying a constant aboveground fraction, \(\phi_{\mathrm{ag}} = 0.89\), derived from root-to-shoot measurements in poplar AFS trials \citep{Jha2018_Poplar_AFS_Biomass}:
-\begin{equation}
-  M^{ag}(t) \;=\; \phi_{\mathrm{ag}} \cdot M^{sl}(t).
-  \label{eq:agb}
-\end{equation}
-For supply chain modelling, AGB is disaggregated into three functionally distinct compartments: merchantable stem (\(p = s\)), merchantable branches (\(p = b\)), and fine residues (\(p = r\)).
-Empirical measurements in poplar SRC and AFS systems document a consistent age-driven shift: the stem fraction rises from roughly 55\% at age\textasciitilde4 to over 77\% at age\textasciitilde13, while branch and residue shares decline as secondary radial stem growth progressively dominates \citep{Huber2018_SRAFS_growth, Testa2014_Poplar_Economics, Jha2018_Poplar_AFS_Biomass}.
-Over the medium-rotation window (3--20 yr) this shift is well approximated by linear functions:
-\begin{equation}
-  f_p(t) \;=\; \frac{\alpha_p + \delta_p\,t}{\displaystyle\sum_{p'}\!(\alpha_{p'} + \delta_{p'}\,t)},
-  \label{eq:frac-linear}
-\end{equation}
-where the unnormalised coefficients are anchored to three empirical observations from \citet{Civitarese2019_Poplar_Harvest} (ages 3, 6, 9\textasciitilde yr) and \citet{Jha2018_Poplar_AFS_Biomass} (age 13\textasciitilde yr): \((\alpha_s, \delta_s) = (0.8396,\,-0.00524)\), \((\alpha_b, \delta_b) = (0.0562,\,+0.00643)\), \((\alpha_r, \delta_r) = (0.1042,\,-0.00119)\).
-The normalisation in \eqref{eq:frac-linear} ensures \(\sum_p f_p(t) = 1\) at all ages and absorbs measurement inconsistencies across sources.
+{\centering \includegraphics[width=\textwidth]{figures/growth-asymptote-functions-1} 
 
-\subsubsection{Diameter-class merchantability}\label{diameter-class-merchantability}
+}
 
-Within each compartment, only the biomass fraction whose element diameter exceeds a minimum threshold qualifies as merchantable product for industrial use.
-This fraction rises continuously with stand age as stems thicken and branches coarsen, and is modelled by a logistic function:
-\begin{equation}
-  q_p(t) \;=\; \frac{1}{1 + \exp\!\bigl(-r_p\,(t - t_{50,p})\bigr)},
+\caption{Stand-level Gompertz asymptote function $A(N)$ of planting density for the conservative (solid) and good-site (dashed) scenarios.}\label{fig:growth-asymptote-functions}
+\end{figure}
+
+Within each compartment, only the biomass fraction whose element
+diameter exceeds a minimum threshold qualifies as merchantable product
+for industrial use. This fraction rises continuously with stand age as
+stems thicken and branches coarsen, and is modelled by a logistic
+function: \begin{equation}
+  q_p(t) \;=\; \frac{f_p}{1 + \exp\!\bigl(-r_p\,(t - t_{50,p})\bigr)},
   \label{eq:logistic-merch}
-\end{equation}
-where \(t_{50,p}\) is the age at which 50\% of compartment \(p\) biomass surpasses the diameter threshold.
-For the merchantable stem (threshold \(d > 15\),cm), calibration to data from \citet{Civitarese2019_Poplar_Harvest} and \citet{Niemczyk2021_Poplar_Rotation} yields \(r_s = 0.467\),yr\(^{-1}\) and \(t_{50,s} = 8.19\),yr.
-For merchantable branches (threshold \(d > 7\),cm at insertion), \citet{Civitarese2019_Poplar_Harvest} and \citet{Jha2018_Poplar_AFS_Biomass} imply \(r_b = 0.698\),yr\(^{-1}\) and \(t_{50,b} = 7.55\),yr.
-
-\subsubsection{Harvest yield}\label{harvest-yield}
-
-Combining equations \eqref{eq:gomp-stand}--\eqref{eq:logistic-merch}, the merchantable dry biomass yield of compartment \(p\) per hectare at harvest age \(t\) is:
-\begin{equation}
-  Y_p(t) \;=\; q_p(t)\cdot f_p(t)\cdot M^{ag}(t),
-  \label{eq:yield}
-\end{equation}
-with all non-merchantable fractions aggregated into the residue stream.
-Fresh-weight yields at felling are obtained from dry matter yields via \(Y_p^{\mathrm{fw}} = Y_p/(1-\omega)\), where the moisture content at felling \(\omega = 0.55\) is taken from \citet{Civitarese2019_Poplar_Harvest}.
-Figure\textasciitilde\ref{fig:afs-model-functions} illustrates the shapes of \(A(N)\), \(f_p(t)\), and \(q_p(t)\); Figure\textasciitilde\ref{fig:afs-growth-curves} shows the resulting stacked AGB component trajectories compared with empirical observations.
+\end{equation} where \(t_{50,p}\) is the age at which 50\% of compartment
+\(p\) biomass surpasses the diameter threshold. \(f_p\) denotes the
+asymptotic share of component \(p\) for mature trees. For the merchantable
+stem (threshold \(d > 15\),cm), calibration to data from
+\citet{Civitarese2019_Poplar_Harvest} and \citet{Niemczyk2021_Poplar_Rotation} yields
+\(r_{stem} = 0.467\),yr\(^{-1}\), \(t_{50,stem} = 8.19\),yr, and
+\(f_{stem} = 0.75\). For merchantable branches (threshold \(d > 7\),cm at
+insertion), \citet{Civitarese2019_Poplar_Harvest} and
+\citet{Jha2018_Poplar_AFS_Biomass} imply \(r_{bran} = 0.698\),yr\(^{-1}\),
+\(t_{50,bran} = 7.55\),yr, and \(f_{bran} = 0.15\).
 
 \begin{figure}
 
@@ -434,8 +670,22 @@ Figure\textasciitilde\ref{fig:afs-model-functions} illustrates the shapes of \(A
 
 }
 
-\caption{Functional building blocks of the AFS biomass model.      \textbf{(a)} Stand-level Gompertz asymptote $A(N)$ as a function of planting density      for the conservative (solid) and good-site (dashed) scenarios; dotted vertical lines      mark the two reference densities (113 and 139 trees\,ha$^{-1}$).      \textbf{(b)} Linear compartment fractions $f_p(t)$ for merchantable stem (green),      merchantable branches (orange), and residues (purple) over stand age.      \textbf{(c)} Logistic diameter-class merchantability functions $q_p(t)$ for stem  ($d > 15$\,cm, green) and branches ($d > 7$\,cm, orange); the 50\% threshold ages     $t_{50}$ are indicated by dashed vertical lines.}\label{fig:afs-model-functions}
+\caption{Logistic diameter-class merchantability functions $q_p(t)$ for stem  ($d > 15$\,cm, green) and branches ($d > 7$\,cm, orange); the 50\% threshold ages $t_{50}$ are indicated by dashed vertical lines.}\label{fig:afs-model-functions}
 \end{figure}
+
+Combining equations \eqref{eq:gomp-stand}--\eqref{eq:logistic-merch},
+the merchantable dry biomass yield of compartment \(p\) per hectare at
+harvest age \(t\) is: \begin{equation}
+  Y_p(t) \;=\; q_p(t)\cdot M^{ag}(t),
+  \label{eq:yield}
+\end{equation} with all non-merchantable fractions aggregated into the
+residue stream. Fresh-weight yields at felling are obtained from dry
+matter yields via \(Y_p^{\mathrm{fw}} = Y_p/(1-\omega)\), where the
+moisture content at felling \(\omega = 0.55\) is taken from
+\citet{Civitarese2019_Poplar_Harvest}. Figure \ref{fig:afs-model-functions}
+illustrates the shapes of \(A(N)\), \(f_p(t)\), and \(q_p(t)\); Figure
+\ref{fig:afs-growth-curves} shows the resulting stacked AGB component
+trajectories compared with empirical observations.
 
 \begin{figure}
 
@@ -443,7 +693,7 @@ Figure\textasciitilde\ref{fig:afs-model-functions} illustrates the shapes of \(A
 
 }
 
-\caption{Stand-level aboveground biomass components for poplar under AFS      management, modelled via a density-dependent Gompertz stand model with linear      compartment fractions and logistic diameter-class merchantability (Eq.\,\ref{eq:yield}).     Shaded stacked areas: merchantable stem (green), merchantable branches (orange),     and residues (purple). Solid and dashed outlines correspond to the conservative     (113 trees\,ha$^{-1}$) and good-site (139 trees\,ha$^{-1}$) scenarios,    respectively. Empirical AGB observations compiled from     \citet{Jha2018_Poplar_AFS_Biomass}, \citet{Civitarese2019_Poplar_Harvest},     and \citet{Niemczyk2021_Poplar_Rotation} are overlaid as symbols     (circles: stem cumulative; triangles: stem+branches; diamonds: total AGB).     Grey band: typical medium-rotation harvest window (5--12 years).}\label{fig:afs-growth-curves}
+\caption{Stand-level aboveground biomass components for poplar under AFS management with $N=250$ trees\,ha$^{-1}$. Empirical AGB observations compiled from \citet{Jha2018_Poplar_AFS_Biomass}, \citet{Civitarese2019_Poplar_Harvest}, and \citet{Niemczyk2021_Poplar_Rotation}. Grey band: typical medium-rotation harvest window (5--15 years).}\label{fig:afs-growth-curves}
 \end{figure}
 
 \subsection{Biomass supply chain design}\label{sec:lit-sc}

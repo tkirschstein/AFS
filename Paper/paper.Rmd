@@ -56,7 +56,7 @@ bibliography: references.bib
 csl: elsevier-harvard.csl
 editor_options: 
   markdown: 
-    wrap: 72
+    wrap: 125
 ---
 
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
@@ -137,7 +137,7 @@ source("../Modell/!afs_biomass_setup.R")
 
 ```
 
-```{r load-model-data, echo=FALSE, message=FALSE, warning=FALSE, cache=T,cache.extra = tools::md5sum(c(     "../Modell/!helper_func.r", "../Modell/!helper_instance_builder_v8a.R","../Modell/!build_AFS_milp.r",      "../Modell/build_lp_rcpp_wrapper.R","../Modell/gurobi_adapter.R","../Modell/gurobi_warmstart.R",      "../Modell/gurobi_feascheck.R","../Modell/extract_result.R","../Modell/build_lp_rcpp.cpp","afs_workspace_red.RData",      "lp_r.RDS","lp_r_result.rds","lp_instance_data.rds" ))}
+```{r load-model-data, echo=FALSE, message=FALSE, warning=FALSE, cache=T, cache.extra = tools::md5sum(c(     "../Modell/!helper_func.r", "../Modell/!helper_instance_builder_v8a.R","../Modell/!build_AFS_milp.r",      "../Modell/build_lp_rcpp_wrapper.R","../Modell/gurobi_adapter.R","../Modell/gurobi_warmstart.R",      "../Modell/gurobi_feascheck.R","../Modell/extract_result.R","../Modell/build_lp_rcpp.cpp","afs_workspace_red.RData",      "lp_r.RDS","lp_r_result.rds","lp_instance_data.rds" ))}
 source("../Modell/!helper_func.r")
 source("../Modell/!helper_instance_builder_v8a.R")
 source("../Modell/!build_AFS_milp.r")
@@ -165,78 +165,110 @@ consumers <- consumers %>%
 consumers <- consumers %>%
   mutate(total_demand = demand_P1 + demand_P2 + demand_P3) %>%
   filter(total_demand >= 1.5) %>%
-  select(-total_demand)
+  select(-total_demand) 
 
 
 dist_jk <- afs_workspace$dist_jk[,consumers$consumer_id]
 
+yields_by_age <- build_scenario_ts(ages = 1:20 , N = 250, C_site = 6500, k = 0.194, t0 = 9.7, label = "Conservative (250 trees/ha)")
+colnames(yields_by_age)
 
-# # Yield table from Chapman-Richards (3 products)
-# yields_by_age <- expand_grid(product = 1:3, age = 1:15)
-# yields_by_age$yield_ha <- apply(yields_by_age, 1, function(row) B_AG_index(row[2] , row[1]))
+yields_by_age <- yields_by_age %>% 
+  # drop column scenario from yields_by_age
+  select(-scenario) %>% 
+  # make long --> bring columns Merch. stem Merch. branch Residue to column "product" and values to "yield_ha"
+  pivot_longer(-1 , names_to = "product", values_to = "yield_ha") %>% 
+  # rename entries in "product" to 1:3
+  mutate(product = as.integer(as.character(factor(product, labels = c(2,1,3) ))))
+
+# scale yields to fresh biomass
+yields_by_age$yield_ha <- yields_by_age$yield_ha / (1-0.5)
+
+
+set.seed(123578)
+# generate random vector of opportunity cost for clustered sites in range [0,600]
+c.opp.vec <- rnorm(nrow(sites_clustered), 1, .75)
+
+
+sites_clustered <- sites_clustered %>%
+   mutate(
+     C_est  = 2500,   # €/ha  establishment (Section 2.1 mid-range)
+     C_harv =  150,    # €/ha  harvest cost  (Section 2.1 mid-range)
+     C_main = 10, #  €/ha  maintenance cost  (Section 2.1 mid-range)
+     C_opp = 450/10*c.opp.vec, #  €/ha  opportunity cost  (Section 2.1 mid-range)
+   ) #%>%   # change column name area_ha to area if necessary  rename(area_ha = area)
+
+# sites_filt <- afs_workspace$sites %>%
+#    mutate(
+#      C_est  = 2500,   # €/ha  establishment (Section 2.1 mid-range)
+#      C_harv =  150,    # €/ha  harvest cost  (Section 2.1 mid-range)
+#      C_main = 10, #  €/ha  maintenance cost  (Section 2.1 mid-range)
+#      C_opp = 450/10, #  €/ha  opportunity cost  (Section 2.1 mid-range)
+#    ) %>%  #filter for sites larger than 100 ha
+#   filter(area > 100) %>% 
+#   rename(area_ha = area)
 # 
-# yields_by_age$yield_ha <- yields_by_age$yield_ha * 110 # scale to number of trees per ha of farm land in AFS (between 100 and 140 usually)
-# yields_by_age$yield_ha <- yields_by_age$yield_ha * 1.8 # scale to felling weight (2.2) or weight after outdoor drying (1.8)
-# 
-# sites_clustered <- afs_workspace$sites_clustered %>%
-#   mutate(
-#     C_est  = 2500,   # €/ha  establishment (Section 2.1 mid-range)
-#     C_harv =  150,    # €/ha  harvest cost  (Section 2.1 mid-range)
-#     C_main = 10, #  €/ha  maintenance cost  (Section 2.1 mid-range)
-#     C_opp = 450/10, #  €/ha  opportunity cost  (Section 2.1 mid-range)
-#   ) #%>%   # change column name area_ha to area if necessary  rename(area_ha = area)
-# 
-# 
+# # calculate distances anew
+# dist_ij_filt <- calculate_distance_matrix_osm(
+#   starts       = sites_filt %>% select(lat, lng),
+#   destinations = afs_workspace$storages %>% select(lat, lng),
+#   max_entries  = 100
+# )
+
 # # change storage costs
 # storages$c_stor <- storages$c_stor
 # # change capacities
-# storages$CAP_stor <- storages$CAP_stor * 100000
-# storages$CAP_proc <- storages$CAP_proc * 100000
+ storages$CAP_stor <- storages$CAP_stor * 100000
+ storages$CAP_proc <- storages$CAP_proc * 100000
 # 
-# data_obj <- list(
-#   sites    = sites_clustered,
-#   storages = storages,
-#   consumers = consumers,
-#   dist_ij  = afs_workspace$dist_ij_clust,
-#   #dist_ij  = afs_workspace$dist_ij,
-#   dist_jk  = dist_jk,
-#   yields_by_age = yields_by_age
-# )
+data_obj <- list(
+   sites    = sites_clustered,
+  #sites    = sites_filt,
+   storages = storages,
+   consumers = consumers,
+   dist_ij  = afs_workspace$dist_ij_clust,
+   #dist_ij  = dist_ij_filt$distance_matrix_km,
+   dist_jk  = dist_jk,
+   yields_by_age = yields_by_age
+ )
+# rescale demands in consumers to tons
+data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")]  <- data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")] * 1000
+
 # 
 # # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
-# params_obj <- list(
-#   n_periods  = 40,
-#   max_age    = 15L,    # A_max: LRAFS upper rotation bound
-#   min_age    =  3L,    # A_min: SRAFS lower rotation bound
-#   c_tr_raw   = 0.08,   # €/(t·km)  raw biomass  site → storage
-#   c_tr_pre   = 0.06   # €/(t·km)  chips        storage → consumer
-# )
+params_obj <- list(
+   n_periods  = 40,
+   max_age    = 15L,    # A_max: LRAFS upper rotation bound
+   min_age    =  3L,    # A_min: SRAFS lower rotation bound
+   c_tr_raw   = 0.08,   # €/(t·km)  raw biomass  site → storage
+   c_tr_pre   = 0.06   # €/(t·km)  chips        storage → consumer
+ )
 # 
-# # ── 4. generate instance ─────────────────────────────────────
-#  milp_instance <- build_optimization_instance(
-#    data         = data_obj,
-#    params       = params_obj
-#  ) 
+# ── 4. generate instance ─────────────────────────────────────
+milp_instance <- build_optimization_instance(
+    data         = data_obj,
+    params       = params_obj
+  ) 
 # 
-# model <- build_agroforestry_lp_rcpp(milp_instance)
+ model <- build_agroforestry_lp_rcpp(milp_instance)
 # 
-# result <- solve_lp_with_gurobi(
-#   model,
+result <- solve_lp_with_gurobi(
+   model,
 #   start  = trivial_zero_start(model),
-#   params = list(
-#     TimeLimit = 600, 
-#     MIPFocus = 1, 
-#     MIPGap = 0.01,
-#     Cuts = 3)
-# )
-# 
+   params = list(
+     TimeLimit = 300, 
+     MIPFocus = 1, 
+     MIPGap = 0.05,
+     Cuts = 3)
+ )
+ 
 # saveRDS(model, "lp_r.rds")
 # saveRDS(res, "lp_r_result.rds")
 # saveRDS(milp_instance, "lp_instance_data.rds")
 
-model <- readRDS("lp_r.RDS")
-result <- readRDS("lp_r_result.rds")
-milp_instance <- readRDS("lp_instance_data.rds")
+#model <- readRDS("lp_r.RDS")
+#result <- readRDS("lp_r_result.rds")
+#milp_instance <- readRDS("lp_instance_data.rds")
 
 ext <- extract_result(result, milp_instance)
 
@@ -503,7 +535,7 @@ notation <- tribble(
   "$\\phi_{\\mathrm{ag}}$", "Aboveground fraction of total stand biomass; $\\phi_{\\mathrm{ag}}=0.89$",
   "$M^{ag}(t)$",       "Aboveground dry biomass per ha (t\\,DM\\,ha$^{-1}$) at age $t$",
   # --- compartment fractions ---
-  "$f_p(t)$",          "Fraction of AGB attributed to compartment $p \\in \\{s,b,r\\}$ at age $t$",
+  "$f_p(t)$",          "asymtotic fraction of AGB attributed to compartment $p \\in \\{s,b,r\\}$ at age $t$",
   "$\\alpha_p,\\,\\delta_p$", "Intercept and slope of the linear fraction model for compartment $p$",
   # --- logistic merchantability ---
   "$q_p(t)$",          "Merchantable fraction of compartment $p$ biomass at age $t$ (logistic)",
@@ -526,74 +558,65 @@ kable(notation,
   column_spec(2, width = "10.8cm")
 ```
 
-Reliable estimation of stand-level biomass quantities and their age-dependent composition is a necessary prerequisite for any strategic analysis of AFS-based supply chains.
-Individual-tree biomass is commonly approximated by species-specific allometric power laws relating shoot dry matter to stem base diameter, and these relationships have been calibrated for Central European poplar clones under SRC and SRAFS conditions [@Huber2016_Allometric_SRAFS; @Huber2018_SRAFS_growth].
-For supply chain planning, however, the relevant quantity is **stand-level biomass per hectare** over a multi-decade rotation horizon, which requires a temporal growth model that captures the characteristic sigmoidal accumulation trajectory of woody biomass.
+Reliable estimation of stand-level biomass quantities and their
+age-dependent composition is a necessary prerequisite for any strategic
+analysis of AFS-based supply chains. Individual-tree biomass is commonly
+approximated by species-specific allometric power laws relating shoot
+dry matter to stem base diameter, and these relationships have been
+calibrated for Central European poplar clones under SRC and SRAFS
+conditions [@Huber2016_Allometric_SRAFS; @Huber2018_SRAFS_growth]. For
+supply chain planning, however, the relevant quantity is **stand-level
+biomass per hectare** over a multi-decade rotation horizon, which
+requires a temporal growth model that captures the characteristic
+sigmoidal accumulation trajectory of woody biomass.
 
 ### Stand-level growth model
 
-Stand-level aboveground and belowground dry biomass per hectare, $M^{sl}(t)$, accumulates in a right-skewed sigmoidal pattern with a relatively early inflection point, driven by rapid juvenile shoot growth followed by self-thinning and competitive deceleration as canopy closure intensifies [@Niemczyk2021_Poplar_Rotation; @Testa2014_Poplar_Economics].
-This trajectory is described by a Gompertz model:
-\begin{equation}
+Stand-level aboveground and belowground dry biomass per hectare,
+$M^{sl}(t)$, accumulates in a right-skewed sigmoidal pattern with a
+relatively early inflection point, driven by rapid juvenile shoot growth
+followed by self-thinning and competitive deceleration as canopy closure
+intensifies [@Niemczyk2021_Poplar_Rotation;
+@Testa2014_Poplar_Economics]. This trajectory is described by a Gompertz
+model: \begin{equation}
   M^{sl}(t) \;=\; A(N) \cdot \exp\!\bigl(-\exp(-k\,(t - t_0))\bigr),
   \label{eq:gomp-stand}
-\end{equation}
-where $t_0$ is the age of maximum instantaneous biomass increment and $k$ determines how quickly the stand approaches its site-specific asymptote $A(N)$.
-For Central European poplar under medium-rotation AFS management (10--20 yr), calibration against empirical data from @Huber2018_SRAFS_growth, @Niemczyk2021_Poplar_Rotation, and @Jha2018_Poplar_AFS_Biomass yields $k = 0.194$\,yr$^{-1}$ and $t_0 = 9.7$\,yr for a conservative site, and $k = 0.173$\,yr$^{-1}$, $t_0 = 10.1$\,yr for a high-productivity site, placing the growth peak close to the biologically optimal rotation age identified by @Niemczyk2021_Poplar_Rotation.
+\end{equation} where $t_0$ is the age of maximum instantaneous biomass
+increment and $k$ determines how quickly the stand approaches its
+site-specific asymptote $A(N)$. For Central European poplar under
+medium-rotation AFS management (10--20 yr), calibration against
+empirical data from @Huber2018_SRAFS_growth,
+@Niemczyk2021_Poplar_Rotation, and @Jha2018_Poplar_AFS_Biomass yields
+$k = 0.194$,yr$^{-1}$ and $t_0 = 9.7$,yr for a conservative site, and
+$k = 0.173$,yr$^{-1}$, $t_0 = 10.1$,yr for a high-productivity site,
+placing the growth peak close to the biologically optimal rotation age
+identified by @Niemczyk2021_Poplar_Rotation.
 
-### Density-dependent asymptote
-
-The asymptote $A(N)$ is not a fixed species constant but depends explicitly on planting density through a competition-density power law [@Shinozaki1961_CD_Effect]:
-\begin{equation}
+The asymptote $A(N)$ is not a fixed species constant but depends
+explicitly on planting density through a competition-density power law
+[@Shinozaki1961_CD_Effect]: \begin{equation}
   A(N) \;=\; \frac{C_{\mathrm{site}} \cdot N^{1-\beta}}{1000},
   \label{eq:A-density}
-\end{equation}
-where $C_{\mathrm{site}}$ encodes site quality and $\beta$ is the competition exponent.
-Equivalently, the per-tree asymptote $A_{\mathrm{tree}}(N) = A(N)\cdot 1000/N = C_{\mathrm{site}}\cdot N^{-\beta}$ decreases with density as individual trees have access to less growing space.
-Fitting \eqref{eq:A-density} to two anchor points --- a conservative AFS calibration at 113 trees\,ha$^{-1}$ (central EU; $A = 84$\,t\,DM\,ha$^{-1}$) and SRC data at 1\,333 trees\,ha$^{-1}$ from @Niemczyk2021_Poplar_Rotation --- yields $\hat{\beta} = 0.380$, consistent with the 0.3--0.5 range reported for managed hardwood plantations [@Shinozaki1961_CD_Effect].
-Two site-quality scenarios are used throughout: a **conservative scenario** ($C_{\mathrm{site}} = 4\,475$, 113 trees\,ha$^{-1}$, $A = 84$\,t\,DM\,ha$^{-1}$) representative of sandy loam soils in northern Central Europe, and a **good-site scenario** ($C_{\mathrm{site}} = 6\,471$, 139 trees\,ha$^{-1}$, $A = 138$\,t\,DM\,ha$^{-1}$) representative of deep loamy soils in river valleys.
+\end{equation} where $C_{\mathrm{site}}$ encodes site quality and
+$\beta$ is the competition exponent. Equivalently, the per-tree
+asymptote
+$A_{\mathrm{tree}}(N) = A(N)\cdot 1000/N = C_{\mathrm{site}}\cdot N^{-\beta}$
+decreases with density as individual trees have access to less growing
+space. Fitting \eqref{eq:A-density} to two anchor points --- a
+conservative AFS calibration at 113 trees,ha$^{-1}$ (central EU;
+$A = 84$,t,DM,ha$^{-1}$) and SRC data at 1,333 trees,ha$^{-1}$ from
+@Niemczyk2021_Poplar_Rotation --- yields $\hat{\beta} = 0.380$,
+consistent with the 0.3--0.5 range reported for managed hardwood
+plantations [@Shinozaki1961_CD_Effect]. Two site-quality scenarios are
+used throughout: a **conservative scenario**
+($C_{\mathrm{site}} = 4\,475$, 113 trees,ha$^{-1}$,
+$A = 84$,t,DM,ha$^{-1}$) representative of sandy loam soils in northern
+Central Europe, and a **good-site scenario**
+($C_{\mathrm{site}} = 6\,471$, 139 trees,ha$^{-1}$,
+$A = 138$,t,DM,ha$^{-1}$) representative of deep loamy soils in river
+valleys.
 
-### Aboveground biomass and compartment fractions
-
-Aboveground biomass (AGB) is obtained from total stand biomass by applying a constant aboveground fraction, $\phi_{\mathrm{ag}} = 0.89$, derived from root-to-shoot measurements in poplar AFS trials [@Jha2018_Poplar_AFS_Biomass]:
-\begin{equation}
-  M^{ag}(t) \;=\; \phi_{\mathrm{ag}} \cdot M^{sl}(t).
-  \label{eq:agb}
-\end{equation}
-For supply chain modelling, AGB is disaggregated into three functionally distinct compartments: merchantable stem ($p = s$), merchantable branches ($p = b$), and fine residues ($p = r$).
-Empirical measurements in poplar SRC and AFS systems document a consistent age-driven shift: the stem fraction rises from roughly 55\% at age~4 to over 77\% at age~13, while branch and residue shares decline as secondary radial stem growth progressively dominates [@Huber2018_SRAFS_growth; @Testa2014_Poplar_Economics; @Jha2018_Poplar_AFS_Biomass].
-Over the medium-rotation window (3--20 yr) this shift is well approximated by linear functions:
-\begin{equation}
-  f_p(t) \;=\; \frac{\alpha_p + \delta_p\,t}{\displaystyle\sum_{p'}\!(\alpha_{p'} + \delta_{p'}\,t)},
-  \label{eq:frac-linear}
-\end{equation}
-where the unnormalised coefficients are anchored to three empirical observations from @Civitarese2019_Poplar_Harvest (ages 3, 6, 9~yr) and @Jha2018_Poplar_AFS_Biomass (age 13~yr): $(\alpha_s, \delta_s) = (0.8396,\,-0.00524)$, $(\alpha_b, \delta_b) = (0.0562,\,+0.00643)$, $(\alpha_r, \delta_r) = (0.1042,\,-0.00119)$.
-The normalisation in \eqref{eq:frac-linear} ensures $\sum_p f_p(t) = 1$ at all ages and absorbs measurement inconsistencies across sources.
-
-### Diameter-class merchantability
-
-Within each compartment, only the biomass fraction whose element diameter exceeds a minimum threshold qualifies as merchantable product for industrial use.
-This fraction rises continuously with stand age as stems thicken and branches coarsen, and is modelled by a logistic function:
-\begin{equation}
-  q_p(t) \;=\; \frac{1}{1 + \exp\!\bigl(-r_p\,(t - t_{50,p})\bigr)},
-  \label{eq:logistic-merch}
-\end{equation}
-where $t_{50,p}$ is the age at which 50\% of compartment $p$ biomass surpasses the diameter threshold.
-For the merchantable stem (threshold $d > 15$\,cm), calibration to data from @Civitarese2019_Poplar_Harvest and @Niemczyk2021_Poplar_Rotation yields $r_s = 0.467$\,yr$^{-1}$ and $t_{50,s} = 8.19$\,yr.
-For merchantable branches (threshold $d > 7$\,cm at insertion), @Civitarese2019_Poplar_Harvest and @Jha2018_Poplar_AFS_Biomass imply $r_b = 0.698$\,yr$^{-1}$ and $t_{50,b} = 7.55$\,yr.
-
-### Harvest yield
-
-Combining equations \eqref{eq:gomp-stand}--\eqref{eq:logistic-merch}, the merchantable dry biomass yield of compartment $p$ per hectare at harvest age $t$ is:
-\begin{equation}
-  Y_p(t) \;=\; q_p(t)\cdot f_p(t)\cdot M^{ag}(t),
-  \label{eq:yield}
-\end{equation}
-with all non-merchantable fractions aggregated into the residue stream.
-Fresh-weight yields at felling are obtained from dry matter yields via $Y_p^{\mathrm{fw}} = Y_p/(1-\omega)$, where the moisture content at felling $\omega = 0.55$ is taken from @Civitarese2019_Poplar_Harvest.
-Figure~\@ref(fig:afs-model-functions) illustrates the shapes of $A(N)$, $f_p(t)$, and $q_p(t)$; Figure~\@ref(fig:afs-growth-curves) shows the resulting stacked AGB component trajectories compared with empirical observations.
-
-```{r afs-model-functions, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Functional building blocks of the AFS biomass model.      \\textbf{(a)} Stand-level Gompertz asymptote $A(N)$ as a function of planting density      for the conservative (solid) and good-site (dashed) scenarios; dotted vertical lines      mark the two reference densities (113 and 139 trees\\,ha$^{-1}$).      \\textbf{(b)} Linear compartment fractions $f_p(t)$ for merchantable stem (green),      merchantable branches (orange), and residues (purple) over stand age.      \\textbf{(c)} Logistic diameter-class merchantability functions $q_p(t)$ for stem  ($d > 15$\\,cm, green) and branches ($d > 7$\\,cm, orange); the 50\\% threshold ages     $t_{50}$ are indicated by dashed vertical lines.", fig.width=6.5, fig.height=6.5, out.width="\\textwidth", cache=FALSE}
+```{r growth-asymptote-functions, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Stand-level Gompertz asymptote function $A(N)$ of planting density for the conservative (solid) and good-site (dashed) scenarios.", fig.width=6.5, fig.height=3, out.width="\\textwidth", cache=FALSE}
 
 # ── Panel (a): A_stand vs N ─────────────────────────────────────────────────
 N_seq <- seq(20, 400, by = 1)
@@ -602,24 +625,17 @@ df_a  <- bind_rows(
          A = A_stand(N_seq, C_site = 4475),
          scenario = "Conservative"),
   tibble(N = N_seq,
-         A = A_stand(N_seq, C_site = 6471),
+         A = A_stand(N_seq, C_site = 6500),
          scenario = "Good site")
 )
 
 p_a <- ggplot(df_a, aes(x = N, y = A, linetype = scenario)) +
   geom_line(colour = "grey20", linewidth = 0.7) +
-  geom_vline(xintercept = c(113, 139),
-             linetype = "dotted", colour = "grey50", linewidth = 0.5) +
-  annotate("text", x = 113, y = max(df_a$A) * 0.95,
-           label = "113", size = 2.5, hjust = -0.2, colour = "grey40") +
-  annotate("text", x = 139, y = max(df_a$A) * 0.88,
-           label = "139", size = 2.5, hjust = -0.2, colour = "grey40") +
   scale_linetype_manual(
     name   = "Scenario",
     values = c("Conservative" = "solid", "Good site" = "dashed")) +
   labs(x = expression("Density "*italic(N)*" (trees ha"^{-1}*")"),
-       y = expression(italic(A(N))*" (t DM ha"^{-1}*")"),
-       tag = "(a)") +
+       y = expression(italic(A(N))*" (t DM ha"^{-1}*")")) +
   theme_minimal(base_size = 8) +
   theme(legend.position  = c(0.72, 0.82),
         legend.key.size  = unit(0.4, "cm"),
@@ -628,42 +644,32 @@ p_a <- ggplot(df_a, aes(x = N, y = A, linetype = scenario)) +
         legend.background = element_rect(fill = "white", colour = NA),
         panel.grid.minor = element_blank())
 
-# ── Panel (b): compartment fractions f_p(t) ─────────────────────────────────
-ages_b <- seq(1, 20, by = 0.1)
-fr_lst <- lapply(ages_b, fractions_agb)
 
-df_b <- tibble(
-  age             = ages_b,
-  `Merch. stem`   = sapply(fr_lst, `[[`, "stem"),
-  `Merch. branch` = sapply(fr_lst, `[[`, "merch_branch"),
-  `Residue`       = sapply(fr_lst, `[[`, "residue")
-) |>
-  pivot_longer(-age, names_to = "compartment", values_to = "fraction") |>
-  mutate(compartment = factor(compartment,
-           levels = c("Merch. stem", "Merch. branch", "Residue")))
+# ── Assemble with patchwork ─────────────────────────────────────────────────
+p_a
+```
 
-comp_cols <- c("Merch. stem"   = "#1b9e77",
-               "Merch. branch" = "#d95f02",
-               "Residue"       = "#7570b3")
+Within each compartment, only the biomass fraction whose element
+diameter exceeds a minimum threshold qualifies as merchantable product
+for industrial use. This fraction rises continuously with stand age as
+stems thicken and branches coarsen, and is modelled by a logistic
+function: \begin{equation}
+  q_p(t) \;=\; \frac{f_p}{1 + \exp\!\bigl(-r_p\,(t - t_{50,p})\bigr)},
+  \label{eq:logistic-merch}
+\end{equation} where $t_{50,p}$ is the age at which 50% of compartment
+$p$ biomass surpasses the diameter threshold. $f_p$ denotes the
+asymptotic share of component $p$ for mature trees. For the merchantable
+stem (threshold $d > 15$,cm), calibration to data from
+@Civitarese2019_Poplar_Harvest and @Niemczyk2021_Poplar_Rotation yields
+$r_{stem} = 0.467$,yr$^{-1}$, $t_{50,stem} = 8.19$,yr, and
+$f_{stem} = 0.75$. For merchantable branches (threshold $d > 7$,cm at
+insertion), @Civitarese2019_Poplar_Harvest and
+@Jha2018_Poplar_AFS_Biomass imply $r_{bran} = 0.698$,yr$^{-1}$,
+$t_{50,bran} = 7.55$,yr, and $f_{bran} = 0.15$.
 
-p_b <- ggplot(df_b, aes(x = age, y = fraction, colour = compartment)) +
-  geom_line(linewidth = 0.8) +
-  scale_colour_manual(name = "Compartment", values = comp_cols) +
-  scale_x_continuous(breaks = seq(0, 20, 2)) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
-                     limits = c(0, 1)) +
-  labs(x = "Stand age (yr)",
-       y = expression(italic(f[p])*"(t)  [fraction of AGB]"),
-       tag = "(b)") +
-  theme_minimal(base_size = 8) +
-  theme(legend.position  = c(0.60, 0.50),
-        legend.key.size  = unit(0.4, "cm"),
-        legend.text      = element_text(size = 7),
-        legend.title     = element_text(size = 7, face = "bold"),
-        legend.background = element_rect(fill = "white", colour = NA),
-        panel.grid.minor = element_blank())
+```{r afs-model-functions, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Logistic diameter-class merchantability functions $q_p(t)$ for stem  ($d > 15$\\,cm, green) and branches ($d > 7$\\,cm, orange); the 50\\% threshold ages $t_{50}$ are indicated by dashed vertical lines.", fig.width=6.5, fig.height=3, out.width="\\textwidth", cache=FALSE}
 
-# ── Panel (c): logistic merchantability q_p(t) ─────────────────────────────
+# ── Panel (b): logistic merchantability q_p(t) ─────────────────────────────
 ages_c <- seq(1, 20, by = 0.1)
 df_c <- tibble(
   age                    = ages_c,
@@ -699,12 +705,11 @@ p_c <- ggplot(df_c, aes(x = age, y = q, colour = compartment)) +
   scale_colour_manual(name = "Compartment", values = merch_cols) +
   scale_x_continuous(breaks = seq(0, 20, 2)) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1),
-                     limits = c(0, 1)) +
+                     limits = c(0, max(df_c$q)*1.1)) +
   labs(x = "Stand age (yr)",
-       y = expression(italic(q[p])*"(t)  [merchantable fraction]"),
-       tag = "(c)") +
+       y = expression(italic(q[p])*"(t)  [merchantable fraction]")) +
   theme_minimal(base_size = 8) +
-  theme(legend.position  = c(0.65, 0.25),
+  theme(legend.position  = c(0.15, 0.75),
         legend.key.size  = unit(0.4, "cm"),
         legend.text      = element_text(size = 7),
         legend.title     = element_text(size = 7, face = "bold"),
@@ -712,38 +717,30 @@ p_c <- ggplot(df_c, aes(x = age, y = q, colour = compartment)) +
         panel.grid.minor = element_blank())
 
 # ── Assemble with patchwork ─────────────────────────────────────────────────
-p_a / p_b / p_c
+p_c
 ```
 
-```{r afs-growth-curves, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Stand-level aboveground biomass components for poplar under AFS      management, modelled via a density-dependent Gompertz stand model with linear      compartment fractions and logistic diameter-class merchantability (Eq.\\,\\ref{eq:yield}).     Shaded stacked areas: merchantable stem (green), merchantable branches (orange),     and residues (purple). Solid and dashed outlines correspond to the conservative     (113 trees\\,ha$^{-1}$) and good-site (139 trees\\,ha$^{-1}$) scenarios,    respectively. Empirical AGB observations compiled from     \\citet{Jha2018_Poplar_AFS_Biomass}, \\citet{Civitarese2019_Poplar_Harvest},     and \\citet{Niemczyk2021_Poplar_Rotation} are overlaid as symbols     (circles: stem cumulative; triangles: stem+branches; diamonds: total AGB).     Grey band: typical medium-rotation harvest window (5--12 years).",    fig.width=6.5, fig.height=5.0, out.width="\\textwidth", cache=FALSE}
+Combining equations \eqref{eq:gomp-stand}--\eqref{eq:logistic-merch},
+the merchantable dry biomass yield of compartment $p$ per hectare at
+harvest age $t$ is: \begin{equation}
+  Y_p(t) \;=\; q_p(t)\cdot M^{ag}(t),
+  \label{eq:yield}
+\end{equation} with all non-merchantable fractions aggregated into the
+residue stream. Fresh-weight yields at felling are obtained from dry
+matter yields via $Y_p^{\mathrm{fw}} = Y_p/(1-\omega)$, where the
+moisture content at felling $\omega = 0.55$ is taken from
+@Civitarese2019_Poplar_Harvest. Figure \@ref(fig:afs-model-functions)
+illustrates the shapes of $A(N)$, $f_p(t)$, and $q_p(t)$; Figure
+\@ref(fig:afs-growth-curves) shows the resulting stacked AGB component
+trajectories compared with empirical observations.
 
-ages <- seq(0, 20, by = 0.1)
+```{r afs-growth-curves, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Stand-level aboveground biomass components for poplar under AFS management with $N=250$ trees\\,ha$^{-1}$. Empirical AGB observations compiled from \\citet{Jha2018_Poplar_AFS_Biomass}, \\citet{Civitarese2019_Poplar_Harvest}, and \\citet{Niemczyk2021_Poplar_Rotation}. Grey band: typical medium-rotation harvest window (5--15 years).",    fig.width=6.5, fig.height=4.0, out.width="\\textwidth", cache=FALSE}
 
-build_scenario_ts <- function(N, C_site, k, t0, label) {
-  A   <- A_stand(N, C_site)
-  agb <- gomp(ages, A, k, t0) * AGB_FRAC
-  fr  <- lapply(ages, fractions_agb)
-  f_s <- sapply(fr, `[[`, "stem")
-  f_b <- sapply(fr, `[[`, "merch_branch")
-  f_r <- sapply(fr, `[[`, "residue")
-  stem_total   <- agb * f_s
-  branch_total <- agb * f_b
-  resid_total  <- agb * f_r
-  tibble(
-    age             = ages,
-    scenario        = label,
-    `Merch. stem`   = stem_total   * f_stem_merch(ages),
-    `Merch. branch` = branch_total * f_branch_merch(ages),
-    `Residue`       = resid_total  +
-                      stem_total   * (1 - f_stem_merch(ages)) +
-                      branch_total * (1 - f_branch_merch(ages))
-  )
-}
+age.vec <- seq(0, 20, by = 0.1)
 
-cons <- build_scenario_ts(113, 4475, 0.194, 9.7,  "Conservative (113 trees/ha)")
-good <- build_scenario_ts(139, 6471, 0.173, 10.1, "Good site (139 trees/ha)")
+cons <- build_scenario_ts(ages = age.vec , N = 250, C_site = 6500, k = 0.194, t0 = 9.7, label = "Conservative (250 trees/ha)")
 
-comp_long <- bind_rows(cons, good) |>
+comp_long <- bind_rows(cons) |>
   pivot_longer(c("Merch. stem", "Merch. branch", "Residue"),
                names_to = "component", values_to = "biomass") |>
   mutate(
@@ -753,17 +750,17 @@ comp_long <- bind_rows(cons, good) |>
       levels = c("Conservative (113 trees/ha)", "Good site (139 trees/ha)"))
   )
 
-totals_long <- comp_long |>
-  group_by(age, scenario) |>
-  summarise(total = sum(biomass), .groups = "drop")
+# totals_long <- comp_long |>
+#   group_by(age, scenario) |>
+#   summarise(total = sum(biomass), .groups = "drop")
 
 emp_pts <- tribble(
   ~age, ~AGB,   ~p_stem, ~p_branch,
-   8,   134.3,  0.747,   0.166,
-   9,    74.0,  0.830,   0.110,
-   9,    51.5,  0.920,   0.040,
-  10,   105.4,  0.744,   0.130,
-  13,   152.0,  0.770,   0.220
+   8,   134.3,  0.747,   0.166, # N = 400
+   9,    74.0,  0.830,   0.110, # N = 500
+   9,    51.5,  0.920,   0.040, # N = 500
+  10,   119,    0.76,   0.210,# N = 139
+  13,   152.0,  0.770,   0.220 # N = 139
 ) |>
   mutate(stem_cum   = AGB * p_stem,
          branch_cum = AGB * (p_stem + p_branch),
@@ -784,13 +781,13 @@ emp_shape <- c("Empirical: stem"          = 21L,
                "Empirical: total AGB"     = 23L)
 
 ggplot(comp_long, aes(x = age, y = biomass)) +
-  annotate("rect", xmin = 5, xmax = 12, ymin = 0, ymax = Inf,
+  annotate("rect", xmin = 5, xmax = 15, ymin = 0, ymax = Inf,
            fill = "grey80", alpha = 0.25) +
   geom_area(aes(fill = component, linetype = scenario),
             position = "stack", alpha = 0.70, colour = "white", linewidth = 0.2) +
-  geom_line(data    = totals_long,
-            aes(x = age, y = total, linetype = scenario),
-            colour  = "grey30", linewidth = 0.45, inherit.aes = FALSE) +
+  # geom_line(data    = totals_long,
+  #           aes(x = age, y = total, linetype = scenario),
+  #           colour  = "grey30", linewidth = 0.45, inherit.aes = FALSE) +
   geom_point(data = emp_long,
              aes(x = age, y = biomass,
                  colour = series, shape = series, fill = series),
@@ -803,10 +800,10 @@ ggplot(comp_long, aes(x = age, y = biomass)) +
     breaks = c("Merch. stem", "Merch. branch", "Residue")) +
   scale_colour_manual(name = "Empirical data", values = emp_col) +
   scale_shape_manual (name = "Empirical data", values = emp_shape) +
-  scale_linetype_manual(
-    name   = "Scenario",
-    values = c("Conservative (113 trees/ha)" = "solid",
-               "Good site (139 trees/ha)"    = "dashed")) +
+  # scale_linetype_manual(
+  #   name   = "Scenario",
+  #   values = c("Conservative (113 trees/ha)" = "solid",
+  #              "Good site (139 trees/ha)"    = "dashed")) +
   guides(
     fill     = guide_legend(order = 1,
                  override.aes = list(shape = NA, colour = NA, linetype = 0)),
@@ -828,6 +825,7 @@ ggplot(comp_long, aes(x = age, y = biomass)) +
         legend.title     = element_text(size = 8, face = "bold"),
         panel.grid.minor = element_blank())
 ```
+
 ## Biomass supply chain design {#sec:lit-sc}
 
 Biomass supply chain design problems have been extensively studied in
@@ -1503,6 +1501,15 @@ sites_sf_clust <- sites_sf %>%
   left_join(cluster_assig, by = "site_id") %>%
   st_transform(crs_map)
 
+# merge opportunity cost of 
+tmp.opp <- sites_clustered %>% 
+  select(site_id, C_opp) %>% 
+  rename(hac_cluster = site_id) %>% 
+  mutate(hac_cluster = as.factor(hac_cluster))
+
+sites_sf_clust <- sites_sf_clust %>% 
+  left_join(tmp.opp,by = "hac_cluster")
+
 # ── Consumers & storages ───────────────────────────────────────────────────────
 consumers_plt <- consumers %>%
   mutate(
@@ -1540,15 +1547,28 @@ ggplot() +
 
   # KUP site polygons coloured by cluster — legend suppressed via guide = "none"
   geom_sf(data      = sites_sf_clust,
-          aes(fill  = hac_cluster),
+          aes(fill  = C_opp),
           colour    = "grey30",
           linewidth = 0.05,
           alpha     = 0.65,
           show.legend = FALSE) +
-  scale_fill_manual(
-    values = cluster_pal,
-    guide  = "none"          # colours visible on map; no legend entry printed
+  scale_fill_gradient2(
+  name     = "Opportunity cost (€/ha)",
+  low      = "#1a9641",   # green  → low / negative C_opp
+  mid      = "#ffffbf",   # pale yellow → midpoint
+  high     = "#d7191c",   # red    → high / positive C_opp
+  midpoint = 0,           # centre the diverging scale on zero
+  na.value = "grey",
+  guide    = guide_colourbar(
+    barwidth       = 0.5,
+    barheight      = 4,
+    title.position = "top"
+  ) 
   ) +
+  # scale_fill_manual(
+  #   values = cluster_pal,
+  #   guide  = "none"          # colours visible on map; no legend entry printed
+  # ) +
 
   # Pre-treatment facilities — new colour + shape scale after cluster fill
   ggnewscale::new_scale_colour() +
@@ -1866,8 +1886,7 @@ params_df %>%
 
 ## Optimization results
 
-```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Optimal agroforestry supply chain network. Green polygons: active super-sites with biomass harvest; grey polygons: non-selected sites. Pie charts at active sites show the product mix of harvested biomass (stem = P1, branches = P2, residues = P3), scaled by total harvested volume. Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub). Coloured squares: consumer sites by dominant demand category.", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth", cache=TRUE}
-
+```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Optimal agroforestry supply chain network. Green polygons: active super-sites with biomass harvest; grey polygons: non-selected sites. Pie charts at active sites show the product mix of harvested biomass (stem = P1, branches = P2, residues = P3), scaled by total harvested volume. Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub). Coloured squares: consumer sites by dominant demand category.", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth", cache=TRUE, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 crs_map <- 25833
 
 # ── Colour palette constants ─────────────────────────────────────────────────
@@ -1876,21 +1895,20 @@ COL_HUB       <- "#c05000"
 COL_P1        <- "#6a0dad"
 COL_P2        <- "#08519c"
 COL_P3        <- "#a50026"
-COL_SITE_ACT  <- "#1b9e77"
 COL_SITE_NONE <- "#bdbdbd"
 
 pal_products <- c(
-  p1 = "#1b9e77",  # stem
-  p2 = "#d95f02",  # branches
-  p3 = "#7570b3"   # residues
+  p1 = "#1b9e77",
+  p2 = "#d95f02",
+  p3 = "#7570b3"
 )
 
-# ── Map extent: define once in WGS84, transform to plotting CRS ──────────────
+# ── Map extent ────────────────────────────────────────────────────────────────
 bbox_wgs84 <- st_as_sfc(
   st_bbox(c(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8), crs = st_crs(4326))
 )
-bbox_map   <- st_transform(bbox_wgs84, crs_map)
-bbox_num   <- st_bbox(bbox_map)
+bbox_map <- st_transform(bbox_wgs84, crs_map)
+bbox_num <- st_bbox(bbox_map)
 
 # ── Base-map layers ───────────────────────────────────────────────────────────
 de_states <- ne_states(country = "Germany", returnclass = "sf") %>%
@@ -1927,17 +1945,27 @@ site_harvest <- site_harvest %>%
 
 active_site_ids <- unique(site_harvest$site_id)
 
-# ── Site polygons for background activity map ────────────────────────────────
+# ── Site polygons ─────────────────────────────────────────────────────────────
 sites_sf_map <- sites_sf %>%
   mutate(site_id = seq_len(nrow(sites_sf))) %>%
-  inner_join( afs_workspace$site_cluster_assig, "site_id" ) %>% 
+  inner_join(afs_workspace$site_cluster_assig, "site_id") %>%
   st_transform(crs_map) %>%
-  mutate(
-    active     = hac_cluster %in% active_site_ids,
-    site_class = if_else(active, "Active site", "Inactive site")
-  )
+  mutate(active = hac_cluster %in% active_site_ids)
 
-# ── Pie-chart data: use centroid coordinates in projected CRS ────────────────
+tmp.opp <- sites_clustered %>%
+  select(site_id, C_opp) %>%
+  rename(hac_cluster = site_id)
+
+sites_sf_map <- sites_sf_map %>%
+  left_join(tmp.opp, by = "hac_cluster")
+
+# Split into active and inactive subsets for separate fill scales
+# CHANGED: split polygons so inactive uses fixed grey fill and
+#          active uses a continuous C_opp colour scale
+sites_inactive <- sites_sf_map %>% filter(!active)
+sites_active   <- sites_sf_map %>% filter(active)
+
+# ── Pie-chart data ────────────────────────────────────────────────────────────
 sites_pie_sf <- milp_instance$sites %>%
   inner_join(site_harvest, by = "site_id") %>%
   st_as_sf(coords = c("lng", "lat"), crs = 4326) %>%
@@ -1955,7 +1983,6 @@ sites_pie <- sites_pie_sf %>%
 vol_med <- median(sites_pie$total_vol[sites_pie$total_vol > 0], na.rm = TRUE)
 if (is.na(vol_med) || vol_med <= 0) vol_med <- 1
 
-# radius in map units (metres); tuned for this regional extent
 sites_pie <- sites_pie %>%
   mutate(r = 3500 * sqrt(total_vol / vol_med))
 
@@ -1992,13 +2019,27 @@ ggplot() +
   geom_sf(data = rivers_eu,
           colour = "#4292c6", linewidth = 0.35, alpha = 0.7) +
 
-  # Site polygons
-  geom_sf(data = sites_sf_map,
-          aes(fill = site_class),
-          colour = NA, alpha = 0.55, show.legend = TRUE) +
-  scale_fill_manual(
-    name   = "AFS site status",
-    values = c("Active site" = COL_SITE_ACT, "Inactive site" = COL_SITE_NONE)
+  # CHANGED: Inactive site polygons — fixed grey fill, no legend scale needed
+  geom_sf(data = sites_inactive,
+          fill = COL_SITE_NONE,
+          colour = NA, alpha = 0.55, show.legend = FALSE) +
+
+  # CHANGED: Active site polygons — continuous fill mapped to C_opp
+  geom_sf(data = sites_active,
+          aes(fill = C_opp),
+          colour = NA, alpha = 0.75, show.legend = TRUE) +
+ scale_fill_gradient2(
+  name     = "Opportunity cost(€/ha)",
+  low      = "#1a9641",   # green  → low / negative C_opp
+  mid      = "#ffffbf",   # pale yellow → midpoint
+  high     = "#d7191c",   # red    → high / positive C_opp
+  midpoint = 0,           # centre the diverging scale on zero
+  na.value = COL_SITE_NONE,
+  guide    = guide_colourbar(
+    barwidth       = 0.5,
+    barheight      = 4,
+    title.position = "top"
+  ) 
   ) +
 
   # Pre-treatment facilities
@@ -2040,7 +2081,7 @@ ggplot() +
     cols         = c("p1", "p2", "p3"),
     colour       = "white",
     linewidth    = 0.15,
-    donut_radius =.5,
+    donut_radius = .5,
     alpha        = 0.7,
     show.legend  = TRUE
   ) +
@@ -2076,7 +2117,7 @@ ggplot() +
   )
 ```
 
-```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total production quantity of biomass types and its industrial usage over planning horizon (in tons).", fig.width=7, fig.height=5.5, dev="pdf", out.width="\\textwidth", cache=TRUE}
+```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total production quantity of biomass types and its industrial usage over planning horizon (in tons).", fig.width=7, fig.height=5.5, dev="pdf", out.width="\\textwidth", cache=TRUE, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 
 
 # ── Labels & colours ──────────────────────────────────────────────────────────
@@ -2183,7 +2224,7 @@ ggplot(flow_df,
   )
 ```
 
-```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Total biomass delivered to consumers by product type over the planning horizon. Stacked areas show period-level volumes of stem (P1), branches (P2), and residues (P3) flowing from storage hubs to all consumers. Dashed line: total harvested raw biomass shipped from sites to hubs.", fig.width=6.5, fig.height=4, dev="pdf", out.width="\\textwidth", cache=TRUE}
+```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Total biomass delivered to consumers by product type over the planning horizon. Stacked areas show period-level volumes of stem (P1), branches (P2), and residues (P3) flowing from storage hubs to all consumers. Dashed line: total harvested raw biomass shipped from sites to hubs.", fig.width=6.5, fig.height=4, dev="pdf", out.width="\\textwidth", cache=TRUE, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 
 prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
 
@@ -2225,7 +2266,7 @@ ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
 
 # Appendix
 
-```{r fig-results-inventory, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="End-of-period inventory levels at storage/pre-treatment hubs, disaggregated by product type. Each panel corresponds to one active hub.", fig.width=7, fig.height=3.5, dev="pdf", out.width="\\textwidth", cache=TRUE}
+```{r fig-results-inventory, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="End-of-period inventory levels at storage/pre-treatment hubs, disaggregated by product type. Each panel corresponds to one active hub.", fig.width=7, fig.height=3.5, dev="pdf", out.width="\\textwidth", cache=TRUE, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 
 inv_ts <- ext$S %>%
   mutate(product = factor(product, labels = c("Stem", "Branches", "Residues")[seq_len(max(product))])) %>%

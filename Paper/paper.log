@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  28 MAY 2026 11:23
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  29 MAY 2026 12:52
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -846,12 +846,6 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
-Overfull \hbox (0.23203pt too wide) in paragraph at lines 133--148
-\TU/lmr/m/n/10 biodiversity conservation, and rural income generation on the sa
-me hectare of land ([]Toens-
- []
-
-
 
 
 Overfull \hbox (2.22pt too wide) has occurred while \output is active
@@ -860,72 +854,734 @@ Overfull \hbox (2.22pt too wide) has occurred while \output is active
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\<def>-command' on input line 148.
+(hyperref)                removing `\<def>-command' on input line 147.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\cnotenum' on input line 148.
+(hyperref)                removing `\cnotenum' on input line 147.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\<def>-command' on input line 148.
+(hyperref)                removing `\<def>-command' on input line 147.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\@corref' on input line 148.
+(hyperref)                removing `\@corref' on input line 147.
 
 [1
 
 ]
+Overfull \hbox (93.75pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] 312907 vars | 27183 constrs | 97732
+2 nnz | sense=max | start=none[] 
+ []
+
+
+Overfull \hbox (62.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## Gurobi Optimizer version 12.0.1 build v12.0.1rc0 (win64 - 
+Windows 11+.0 (26200.2))[] 
+ []
+
+
+Overfull \hbox (88.5pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## CPU model: AMD Ryzen AI 9 HX 370 w/ Radeon 890M, instructi
+on set [SSE2|AVX|AVX2|AVX512][] 
+ []
+
+
+Overfull \hbox (41.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## Thread count: 12 physical cores, 24 logical processors, us
+ing up to 24 threads[] 
+ []
+
+
 
 [2]
+Overfull \hbox (51.75pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## Deterministic concurrent LP optimizer: primal simplex, dua
+l simplex, and barrier[] 
+ []
 
-LaTeX Warning: Reference `sec:experiments' on page 3 undefined on input line 19
-9.
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## Iter       Primal          Dual         Primal    Dual    
+ Compl     Time[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##    0  -3.84038194e+16  8.48936215e+16  2.46e+09 1.05e+06  
+2.94e+13     4s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##    1  -1.44618807e+16  7.53170607e+16  9.20e+08 1.96e+06  
+1.13e+13     4s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##    2  -2.34221535e+15  5.73772127e+16  1.42e+08 1.40e+05  
+1.82e+12     4s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##    3  -5.18549735e+14  3.27112613e+16  2.77e+07 8.87e+03  
+3.80e+11     4s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##    4  -1.21943699e+14  1.60653485e+16  5.76e+06 2.43e+03  
+9.21e+10     4s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##    5  -2.23407504e+13  6.40620215e+15  9.00e+05 2.24e+02  
+2.21e+10     4s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##    6  -2.72211910e+12  3.51511059e+15  3.50e+04 9.02e+01  
+7.50e+09     4s[] 
+ []
 
 
 
 [3]
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##    7  -9.38749178e+11  2.62656276e+15  1.11e+04 5.03e+01  
+5.09e+09     5s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##    8  -4.54594076e+11  9.69737695e+14  4.62e+03 4.06e+00  
+1.85e+09     5s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##    9  -2.34511247e+11  2.16643282e+14  1.67e+03 3.51e-08  
+4.10e+08     5s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   10  -1.69142677e+11  1.74176730e+13  7.99e+02 3.72e-08  
+3.57e+07     5s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   11  -1.49034000e+11  1.00040254e+13  5.79e+02 2.33e-08  
+2.12e+07     5s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   12  -1.22707332e+11  4.69044530e+12  3.30e+02 1.68e-08  
+1.05e+07     5s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   13  -1.00929313e+11  1.32550187e+12  1.47e+02 1.77e-08  
+3.47e+06     5s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   14  -8.82134223e+10  9.55131380e+11  6.84e+01 2.24e-08  
+2.34e+06     5s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   15  -7.20684813e+10  9.17649786e+11  5.82e+01 2.28e-08  
+2.18e+06     5s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   16  -5.39143341e+10  7.16070064e+11  4.21e+01 2.25e-02  
+1.68e+06     5s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   17  -5.00621542e+10  5.58720102e+11  3.86e+01 2.23e-02  
+1.36e+06     6s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   18  -4.31443493e+10  5.30783294e+11  3.25e+01 2.18e-02  
+1.26e+06     6s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   19  -2.92723727e+10  3.87038667e+11  2.37e+01 1.31e-02  
+9.01e+05     6s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   20  -2.34158987e+10  3.43724797e+11  1.92e+01 1.12e-02  
+7.81e+05     6s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   21  -1.52479825e+10  1.60720798e+11  1.32e+01 4.62e-03  
+3.85e+05     6s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   22  -6.31955567e+09  1.38560256e+11  6.84e+00 3.75e-03  
+2.95e+05     6s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   23  -3.88789816e+09  8.10910562e+10  5.03e+00 2.09e-03  
+1.72e+05     6s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   24  -1.95792114e+09  5.74213150e+10  3.57e+00 1.01e-03  
+1.18e+05     6s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   25  -4.70188951e+08  3.93360167e+10  2.36e+00 5.84e-05  
+7.71e+04     6s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   26   5.84447447e+07  2.88494595e+10  1.92e+00 8.38e-09  
+5.53e+04     6s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   27   7.79759064e+08  2.09269492e+10  1.35e+00 6.52e-09  
+3.82e+04     7s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   28   1.65842849e+09  1.22816273e+10  6.80e-01 4.66e-09  
+1.97e+04     7s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   29   1.92331752e+09  9.27153863e+09  4.21e-01 3.26e-09  
+1.35e+04     7s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   30   2.01063775e+09  7.33557005e+09  3.25e-01 3.73e-09  
+9.78e+03     7s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   31   2.09561320e+09  6.18556736e+09  2.45e-01 2.79e-09  
+7.49e+03     7s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   32   2.13742475e+09  5.39828864e+09  2.09e-01 1.86e-09  
+5.96e+03     7s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   33   2.18985044e+09  4.82702158e+09  1.65e-01 2.79e-09  
+4.82e+03     7s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   34   2.24629651e+09  4.19453389e+09  1.35e-01 2.79e-09  
+3.55e+03     7s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   35   2.34352781e+09  3.91956724e+09  9.24e-02 2.33e-09  
+2.87e+03     7s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   36   2.42228566e+09  3.83053249e+09  5.82e-02 1.86e-09  
+2.57e+03     7s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   37   2.46406638e+09  3.47320800e+09  4.41e-02 2.33e-09  
+1.84e+03     8s[] 
+ []
+
+
 
 [4]
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   38   2.47614745e+09  3.34628852e+09  4.04e-02 1.86e-09  
+1.59e+03     8s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   39   2.49168673e+09  3.16016434e+09  3.59e-02 1.86e-09  
+1.22e+03     8s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   40   2.55209277e+09  3.03150892e+09  2.10e-02 1.40e-09  
+8.74e+02     8s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   41   2.58475169e+09  2.92374020e+09  1.49e-02 9.31e-10  
+6.18e+02     8s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   42   2.60761610e+09  2.86353167e+09  1.09e-02 1.40e-09  
+4.66e+02     8s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   43   2.62525487e+09  2.83005178e+09  8.25e-03 1.40e-09  
+3.73e+02     8s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   44   2.63748129e+09  2.79065978e+09  6.61e-03 9.31e-10  
+2.79e+02     8s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   45   2.64673170e+09  2.76511470e+09  5.45e-03 2.56e-09  
+2.16e+02     9s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   46   2.65758010e+09  2.74375958e+09  4.16e-03 2.33e-09  
+1.57e+02     9s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   47   2.67147336e+09  2.73003344e+09  2.56e-03 9.31e-10  
+1.07e+02     9s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   48   2.67717423e+09  2.71792173e+09  1.95e-03 9.31e-10  
+7.43e+01     9s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   49   2.68269813e+09  2.71404502e+09  1.38e-03 1.40e-09  
+5.71e+01     9s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   50   2.68576181e+09  2.70967561e+09  1.07e-03 9.31e-10  
+4.36e+01     9s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   51   2.68915227e+09  2.70553154e+09  7.27e-04 9.31e-10  
+2.99e+01     9s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   52   2.69054514e+09  2.70270561e+09  5.89e-04 1.40e-09  
+2.22e+01     9s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   53   2.69362069e+09  2.70023979e+09  2.95e-04 1.86e-09  
+1.21e+01     9s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   54   2.69458454e+09  2.69900501e+09  2.06e-04 9.31e-10  
+8.06e+00    10s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   55   2.69525577e+09  2.69861820e+09  1.45e-04 9.31e-10  
+6.13e+00    10s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   56   2.69596893e+09  2.69791848e+09  7.98e-05 9.31e-10  
+3.55e+00    10s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   57   2.69618461e+09  2.69759495e+09  6.04e-05 9.31e-10  
+2.57e+00    10s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   58   2.69640556e+09  2.69736820e+09  4.15e-05 9.31e-10  
+1.75e+00    10s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   59   2.69655329e+09  2.69717956e+09  2.89e-05 9.31e-10  
+1.14e+00    10s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   60   2.69667091e+09  2.69704758e+09  1.94e-05 9.31e-10  
+6.87e-01    10s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   61   2.69681208e+09  2.69699579e+09  8.08e-06 9.31e-10  
+3.35e-01    10s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   62   2.69686647e+09  2.69694883e+09  3.90e-06 9.31e-10  
+1.50e-01    10s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   63   2.69690599e+09  2.69693828e+09  1.08e-06 1.16e-09  
+5.88e-02    10s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   64   2.69691304e+09  2.69692526e+09  9.03e-07 1.63e-09  
+2.23e-02    10s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   65   2.69691721e+09  2.69692169e+09  5.35e-07 1.63e-09  
+8.16e-03    10s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   66   2.69691943e+09  2.69692002e+09  2.05e-07 2.10e-09  
+1.08e-03    11s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   67   2.69691963e+09  2.69691978e+09  4.37e-08 2.33e-09  
+2.68e-04    11s[] 
+ []
+
+
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   68   2.69691969e+09  2.69691970e+09  5.52e-10 1.86e-09  
+2.17e-06    11s[] 
+ []
+
+
 
 [5]
+Overfull \hbox (15.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##   69   2.69691970e+09  2.69691970e+09  8.10e-09 1.43e-09  
+4.67e-10    11s[] 
+ []
 
-LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## Barrier solved model in 69 iterations and 10.91 seconds (1
+4.45 work units)[] 
+ []
+
+
+Overfull \hbox (109.5pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## Root relaxation: objective 2.696920e+09, 16969 iterations,
+ 11.48 seconds (10.80 work units)[] 
+ []
+
+
+Overfull \hbox (9.75pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##     Nodes    |    Current Node    |     Objective Bounds  
+    |     Work[] 
+ []
 
 
 
 [6]
+Overfull \hbox (30.75pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##  Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   
+Gap | It/Node Time[] 
+ []
 
-Package natbib Warning: Citation `Shinozaki1961_CD_Effect' on page 7 undefined 
-on input line 381.
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##      0     0 2.6969e+09    0 1103 520958.361 2.6969e+09   
+   -     -   26s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    1.939632e+09 2.6969e+09  3
+9.0%     -   27s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    1.942688e+09 2.6969e+09  3
+8.8%     -   27s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    1.943291e+09 2.6969e+09  3
+8.8%     -   27s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    1.985397e+09 2.6969e+09  3
+5.8%     -   28s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    1.999260e+09 2.6969e+09  3
+4.9%     -   28s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.068574e+09 2.6969e+09  3
+0.4%     -   28s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.138444e+09 2.6969e+09  2
+6.1%     -   29s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.142694e+09 2.6969e+09  2
+5.9%     -   29s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.142999e+09 2.6969e+09  2
+5.8%     -   30s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.195887e+09 2.6969e+09  2
+2.8%     -   30s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.201085e+09 2.6969e+09  2
+2.5%     -   30s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.201964e+09 2.6969e+09  2
+2.5%     -   30s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.203656e+09 2.6969e+09  2
+2.4%     -   30s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.208855e+09 2.6969e+09  2
+2.1%     -   30s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.222924e+09 2.6969e+09  2
+1.3%     -   30s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.222960e+09 2.6969e+09  2
+1.3%     -   30s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.225561e+09 2.6969e+09  2
+1.2%     -   30s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.226317e+09 2.6969e+09  2
+1.1%     -   31s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##      0     0 2.6965e+09    0 1228 2.2263e+09 2.6965e+09  2
+1.1%     -   87s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.340323e+09 2.6965e+09  1
+5.2%     -  120s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##      0     0 2.6963e+09    0 1233 2.3403e+09 2.6963e+09  1
+5.2%     -  132s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##      0     0 2.6963e+09    0 1237 2.3403e+09 2.6963e+09  1
+5.2%     -  136s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##      0     0 2.6963e+09    0 1231 2.3403e+09 2.6963e+09  1
+5.2%     -  136s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##      0     0 2.6963e+09    0 1245 2.3403e+09 2.6963e+09  1
+5.2%     -  137s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##      0     0 2.6963e+09    0 1245 2.3403e+09 2.6963e+09  1
+5.2%     -  137s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##      0     0 2.6959e+09    0 1410 2.3403e+09 2.6959e+09  1
+5.2%     -  195s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## H    0     0                    2.469006e+09 2.6959e+09  9
+.19%     -  252s[] 
+ []
+
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##      0     0 2.6956e+09    0 1438 2.4690e+09 2.6956e+09  9
+.18%     -  283s[] 
+ []
 
 
 
 [7]
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##      0     0 2.6956e+09    0 1436 2.4690e+09 2.6956e+09  9
+.18%     -  299s[] 
+ []
 
-Package natbib Warning: Citation `Shinozaki1961_CD_Effect' on page 8 undefined 
-on input line 388.
+
+Overfull \hbox (20.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ##      0     0          -    0      2.4690e+09 2.6956e+09  9
+.18%     -  300s[] 
+ []
 
 
-Overfull \hbox (21.44739pt too wide) in paragraph at lines 404--407
-\TU/lmr/m/n/10 itarese et al.[] ([]2019[]) (ages 3, 6, 9~yr) and []Jha[] ([]201
-8[]) (age 13~yr): $\OT1/lmr/m/n/10 (\OML/lmm/m/it/10 ^^K[]; ^^N[]\OT1/lmr/m/n/1
-0 ) = (0\OML/lmm/m/it/10 :\OT1/lmr/m/n/10 8396\OML/lmm/m/it/10 ;  \OMS/lmsy/m/n
-/10 ^^@\OT1/lmr/m/n/10 0\OML/lmm/m/it/10 :\OT1/lmr/m/n/10 00524)$\TU/lmr/m/n/10
- ,
+Overfull \hbox (57.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## Explored 1 nodes (61288 simplex iterations) in 300.03 seco
+nds (492.65 work units)[] 
+ []
+
+
+Overfull \hbox (36.0pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## Best objective 2.469005829163e+09, best bound 2.6955785805
+30e+09, gap 9.1767%[] 
+ []
+
+
+Overfull \hbox (83.25pt too wide) in paragraph at lines 348--348
+[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] Status: TIME_LIMIT | ObjVal: 246900
+5829.1629 | Runtime: 300.5 s[] 
+ []
+
+
+Overfull \hbox (0.23203pt too wide) in paragraph at lines 352--367
+\TU/lmr/m/n/10 biodiversity conservation, and rural income generation on the sa
+me hectare of land ([]Toens-
  []
 
 
 
 [8]
-File: figures/afs-model-functions-1.pdf Graphic file (type pdf)
-<use figures/afs-model-functions-1.pdf>
-File: figures/afs-growth-curves-1.pdf Graphic file (type pdf)
-<use figures/afs-growth-curves-1.pdf>
-
 
 [9]
+
+LaTeX Warning: Reference `sec:experiments' on page 10 undefined on input line 4
+18.
+
+
 
 [10]
 
@@ -934,47 +1590,76 @@ File: figures/afs-growth-curves-1.pdf Graphic file (type pdf)
 [12]
 
 [13]
-Overfull \hbox (1.38933pt too wide) in paragraph at lines 607--607
+
+Package natbib Warning: Citation `Shinozaki1961_CD_Effect' on page 14 undefined
+ on input line 618.
+
+
+Package natbib Warning: Citation `Shinozaki1961_CD_Effect' on page 14 undefined
+ on input line 631.
+
+
+
+[14]
+File: figures/growth-asymptote-functions-1.pdf Graphic file (type pdf)
+<use figures/growth-asymptote-functions-1.pdf>
+File: figures/afs-model-functions-1.pdf Graphic file (type pdf)
+<use figures/afs-model-functions-1.pdf>
+
+
+[15]
+File: figures/afs-growth-curves-1.pdf Graphic file (type pdf)
+<use figures/afs-growth-curves-1.pdf>
+
+
+[16]
+
+[17]
+
+[18]
+
+[19]
+Overfull \hbox (1.38933pt too wide) in paragraph at lines 857--857
 []|\TU/lmr/m/n/7 Uncertainty|  
  []
 
 
-Overfull \hbox (23.06133pt too wide) in paragraph at lines 607--607
+Overfull \hbox (23.06133pt too wide) in paragraph at lines 857--857
 []|\TU/lmr/m/n/7 Strategic/Tactical|  
  []
 
 
-Overfull \hbox (10.75542pt too wide) in paragraph at lines 607--607
+Overfull \hbox (10.75542pt too wide) in paragraph at lines 857--857
 []|\TU/lmr/m/n/7 Cost/GHG/jobs|  
  []
 
 
-Overfull \hbox (23.06133pt too wide) in paragraph at lines 607--607
+Overfull \hbox (23.06133pt too wide) in paragraph at lines 857--857
 []|\TU/lmr/m/n/7 Strategic/Tactical|  
  []
 
 
-Overfull \hbox (2.55142pt too wide) in paragraph at lines 607--607
+Overfull \hbox (2.55142pt too wide) in paragraph at lines 857--857
 []|\TU/lmr/m/n/7 Sustainability|  
  []
 
 
-Overfull \hbox (11.65132pt too wide) in paragraph at lines 607--607
+Overfull \hbox (11.65132pt too wide) in paragraph at lines 857--857
 []|\TU/lmr/m/n/7 Tactical/Oper.|  
  []
 
 
-Overfull \hbox (23.06133pt too wide) in paragraph at lines 607--607
+Overfull \hbox (23.06133pt too wide) in paragraph at lines 857--857
 []|\TU/lmr/m/n/7 Strategic/Tactical|  
  []
 
 
-Overfull \hbox (7.49332pt too wide) in paragraph at lines 607--607
+Overfull \hbox (7.49332pt too wide) in paragraph at lines 857--857
 []|\TU/lmr/bx/n/7 Endogenous|  
  []
 
 
-Overfull \hbox (23.85233pt too wide) in paragraph at lines 607--607
+Overfull \hbox (23.85233pt too wide) in paragraph at lines 857--857
 []|\TU/lmr/bx/n/7 Strategic/Multi- 
  []
 
@@ -982,120 +1667,120 @@ Overfull \hbox (23.85233pt too wide) in paragraph at lines 607--607
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 
-LaTeX Warning: Reference `eq:total-stand-biomass' on page 14 undefined on input
- line 620.
+LaTeX Warning: Reference `eq:total-stand-biomass' on page 20 undefined on input
+ line 870.
 
 
-LaTeX Warning: Reference `eq:component-share' on page 14 undefined on input lin
-e 620.
-
-
-
-[14]
-
-LaTeX Warning: Reference `eq:biomass-partial' on page 15 undefined on input lin
-e 632.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 15 undefined on input lin
-e 632.
+LaTeX Warning: Reference `eq:component-share' on page 20 undefined on input lin
+e 870.
 
 
 
-[15]
+[20]
+
+LaTeX Warning: Reference `eq:biomass-partial' on page 21 undefined on input lin
+e 882.
+
+
+LaTeX Warning: Reference `eq:component-share' on page 21 undefined on input lin
+e 882.
+
+
+
+[21]
 File: figures/fig-set-S-tikz-1.pdf Graphic file (type pdf)
 <use figures/fig-set-S-tikz-1.pdf>
-
-
-[16]
 File: figures/fig-set-S-path-1.pdf Graphic file (type pdf)
 <use figures/fig-set-S-path-1.pdf>
 
-LaTeX Warning: Reference `eq:biomass-partial' on page 17 undefined on input lin
-e 699.
+LaTeX Warning: Reference `eq:biomass-partial' on page 22 undefined on input lin
+e 949.
 
 
-LaTeX Warning: Reference `eq:component-share' on page 17 undefined on input lin
-e 699.
+LaTeX Warning: Reference `eq:component-share' on page 22 undefined on input lin
+e 949.
 
 
-LaTeX Warning: Reference `eq:total-stand-biomass' on page 17 undefined on input
- line 700.
+LaTeX Warning: Reference `eq:total-stand-biomass' on page 22 undefined on input
+ line 950.
 
 
-LaTeX Warning: Reference `tab:tab-notation' on page 17 undefined on input line 
-701.
+LaTeX Warning: Reference `tab:tab-notation' on page 22 undefined on input line 
+951.
 
 
-LaTeX Warning: Reference `eq:total-stand-biomass' on page 17 undefined on input
- line 753.
+
+[22]
+
+LaTeX Warning: Reference `eq:total-stand-biomass' on page 23 undefined on input
+ line 1003.
 
 
-LaTeX Warning: Reference `eq:component-share' on page 17 undefined on input lin
-e 753.
+LaTeX Warning: Reference `eq:component-share' on page 23 undefined on input lin
+e 1003.
 
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 
 
-[17]
+[23]
 
-[18]
+[24]
 
-LaTeX Warning: Reference `eq:biomass-partial' on page 19 undefined on input lin
-e 815.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 19 undefined on input lin
-e 815.
+LaTeX Warning: Reference `eq:biomass-partial' on page 25 undefined on input lin
+e 1065.
 
 
-LaTeX Warning: Reference `eq:C4' on page 19 undefined on input line 820.
+LaTeX Warning: Reference `eq:component-share' on page 25 undefined on input lin
+e 1065.
 
 
-
-[19]
-
-LaTeX Warning: Reference `eq:total-stand-biomass' on page 20 undefined on input
- line 876.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 20 undefined on input lin
-e 877.
-
-
-LaTeX Warning: Reference `fig:max3-growth' on page 20 undefined on input line 8
-82.
+LaTeX Warning: Reference `eq:C4' on page 25 undefined on input line 1070.
 
 
 
-[20]
+[25]
+
+LaTeX Warning: Reference `eq:total-stand-biomass' on page 26 undefined on input
+ line 1126.
+
+
+LaTeX Warning: Reference `eq:component-share' on page 26 undefined on input lin
+e 1127.
+
+
+LaTeX Warning: Reference `fig:max3-growth' on page 26 undefined on input line 1
+132.
+
+
+
+[26]
 File: figures/fig-supply-chain-network-1.pdf Graphic file (type pdf)
 <use figures/fig-supply-chain-network-1.pdf>
 
-LaTeX Warning: Reference `sec-clustering' on page 21 undefined on input line 92
-7.
+LaTeX Warning: Reference `sec-clustering' on page 27 undefined on input line 11
+77.
 
 
 
-[21]
+[27]
 
-[22]
+[28]
 
-[23]
+[29]
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 File: figures/fig-consumer-demand-1.pdf Graphic file (type pdf)
 <use figures/fig-consumer-demand-1.pdf>
 
-LaTeX Warning: Reference `sec-biomass' on page 24 undefined on input line 1073.
+LaTeX Warning: Reference `sec-biomass' on page 30 undefined on input line 1323.
 
 
 
 
-[24]
+[30]
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
@@ -1109,15 +1794,15 @@ File: figures/fig-results-inventory-1.pdf Graphic file (type pdf)
 <use figures/fig-results-inventory-1.pdf>
 (paper.bbl
 
-[25]
+[31]
 
-[26]
+[32]
 
-[27]
+[33]
 
-[28]
+[34]
 
-[29]
+[35]
 Underfull \hbox (badness 1783) in paragraph at lines 215--222
 []\TU/lmr/m/n/8 Statistisches Bundesamt (Destatis).  Kaufwerte und pachtpreise 
 für landwirtschaftliche grund-
@@ -1143,13 +1828,13 @@ Package natbib Warning: There were undefined citations.
 
 
 
-[30]
+[36]
 
-[31]
+[37]
 
-[32]
+[38]
 
-[33] (paper.aux)
+[39] (paper.aux)
  ***********
 LaTeX2e <2025-06-01> patch level 1
 L3 programming layer <2025-09-02>
@@ -1158,15 +1843,15 @@ L3 programming layer <2025-09-02>
 LaTeX Warning: There were undefined references.
 
 Package rerunfilecheck Info: File `paper.out' has not changed.
-(rerunfilecheck)             Checksum: 83ED356AD5C4663EEAE84D32EC96B9E4;1884.
+(rerunfilecheck)             Checksum: 058E34E8F4439F7C0D0B4679799C7336;1508.
  ) 
 Here is how much of TeX's memory you used:
- 21697 strings out of 403246
- 390870 string characters out of 5460781
- 906156 words of memory out of 5000000
- 49825 multiletter control sequences out of 15000+600000
- 671779 words of font info for 89 fonts, out of 8000000 for 9000
+ 21709 strings out of 403246
+ 391390 string characters out of 5460781
+ 905019 words of memory out of 5000000
+ 49834 multiletter control sequences out of 15000+600000
+ 671787 words of font info for 90 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 72i,21n,79p,1169b,553s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 72i,21n,79p,1169b,926s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on paper.pdf (33 pages).
+Output written on paper.pdf (39 pages).

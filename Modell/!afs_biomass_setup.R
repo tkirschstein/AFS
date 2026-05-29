@@ -38,6 +38,7 @@ AGB_FRAC <- 0.89   # aboveground fraction of total DM (Jha 2018)
 #' Returns named list of AGB fractions (stem, merch_branch, residue)
 #' Anchored to Civitarese 2019 (t=3,6,9) and Jha 2018 (t=13)
 #' Valid for t in [3, 20] years; winter harvest assumed (leaves shed)
+#' OLD STUFF ################################################################
 fractions_agb <- function(t) {
   s <- -0.00524 * t + 0.8396   # stem fraction (raw)
   m <-  0.00643 * t + 0.0562   # merchantable branch fraction (raw)
@@ -47,15 +48,20 @@ fractions_agb <- function(t) {
        merch_branch = m / tot,
        residue      = r / tot)
 }
-
+#' OLD STUFF End ################################################################
+#' 
 # ── 5. Diameter-class merchantable fractions (logistic) ──────────────────────
 #' Fraction of stem biomass with d > 15 cm (merchantable timber)
 #' Fitted to Civitarese 2019 / Niemczyk 2021; r=0.467, t50=8.19 yr
-f_stem_merch <- function(t) 1 / (1 + exp(-0.467 * (t - 8.19)))
+f_stem_merch <- function(t) .75 / (1 + exp(-0.467 * (t - 8.19)))
+# OlD VERSION
+#f_stem_merch <- function(t) 1 / (1 + exp(-0.467 * (t - 8.19)))
 
 #' Fraction of branch biomass with insertion d > 7 cm (merchantable)
 #' Fitted to Civitarese 2019 / Jha 2018; r=0.698, t50=7.55 yr
-f_branch_merch <- function(t) 1 / (1 + exp(-0.698 * (t - 7.55)))
+f_branch_merch <- function(t) .15 / (1 + exp(-0.698 * (t - 7.55)))
+# OlD VERSION
+#f_branch_merch <- function(t) 1 / (1 + exp(-0.698 * (t - 7.55)))
 
 # ── 6. Fresh weight conversion ───────────────────────────────────────────────
 MC_FELLING <- 0.55   # moisture content at felling (Civitarese 2019)
@@ -78,17 +84,24 @@ harvest_biomass <- function(t, N, area_ha = 1,
   total_dm <- gomp(t, A, k, t0) * area_ha       # t DM total (incl. roots)
   agb_dm   <- total_dm * AGB_FRAC               # t DM aboveground
   
-  fr       <- fractions_agb(t)
-  stem_dm   <- agb_dm * fr$stem
-  branch_dm <- agb_dm * fr$merch_branch
-  resid_dm  <- agb_dm * fr$residue
   
-  # Apply diameter-class merchantability logistic
-  stem_merch_dm   <- stem_dm   * f_stem_merch(t)
-  stem_resid_dm   <- stem_dm   * (1 - f_stem_merch(t))
-  branch_merch_dm <- branch_dm * f_branch_merch(t)
-  branch_resid_dm <- branch_dm * (1 - f_branch_merch(t))
-  total_resid_dm  <- resid_dm + stem_resid_dm + branch_resid_dm
+  #  OLD APORACH
+  # fr       <- fractions_agb(t)
+  # stem_dm   <- agb_dm * fr$stem
+  # branch_dm <- agb_dm * fr$merch_branch
+  # resid_dm  <- agb_dm * fr$residue
+  # 
+  # # Apply diameter-class merchantability logistic
+  # stem_merch_dm   <- stem_dm   * f_stem_merch(t)
+  # stem_resid_dm   <- stem_dm   * (1 - f_stem_merch(t))
+  # branch_merch_dm <- branch_dm * f_branch_merch(t)
+  # branch_resid_dm <- branch_dm * (1 - f_branch_merch(t))
+  # total_resid_dm  <- resid_dm + stem_resid_dm + branch_resid_dm
+  
+  
+   stem_dm   <- agb_dm * f_stem_merch(t)
+   branch_dm <- agb_dm * f_branch_merch(t)
+   resid_dm  <- (agb_dm - branch_dm - stem_dm)
   
   data.frame(
     compartment = c("Stem (d > 15 cm)",
@@ -99,6 +112,40 @@ harvest_biomass <- function(t, N, area_ha = 1,
       c(stem_merch_dm, branch_merch_dm, total_resid_dm)), 1)
   )
 }
+
+# ── 8. Harvest scenario ───────────────────────────────────────────────
+#' Compute full harvest breakdown per ha for an AFS stand over time
+#'
+#' @param ages      Harvest ages (years)
+#' @param N         Planting density (trees/ha)
+#' @param C_site    Site constant (4475 = conservative, 6471 = good site)
+#' @param k,t0      Gompertz shape parameters
+#' @return tibble with DM and fresh weight for each compartment (total stand)
+#' 
+build_scenario_ts <- function(ages = seq(0, 20, by = 0.1), N = 113, C_site = 4475, k = 0.194, t0 = 9.7, label = "test") {
+  A   <- A_stand(N, C_site)
+  agb <- gomp(ages, A, k, t0) * AGB_FRAC
+  # fr  <- lapply(ages, fractions_agb)
+  # f_s <- sapply(fr, `[[`, "stem")
+  # f_b <- sapply(fr, `[[`, "merch_branch")
+  # f_r <- sapply(fr, `[[`, "residue")
+  # stem_total   <- agb * f_s
+  # branch_total <- agb * f_b
+  # resid_total  <- agb * f_r
+  
+  stem_total   <- agb * f_stem_merch(ages)
+  branch_total <- agb * f_branch_merch(ages)
+  resid_total  <- (agb - branch_total - stem_total)
+  
+  tibble(
+    age             = ages,
+    scenario        = label,
+    `Merch. stem`   = stem_total,
+    `Merch. branch` = branch_total,
+    `Residue`       = resid_total
+  )
+}
+
 
 # ── 8. Quick-reference table (Table 1 in paper) ──────────────────────────────
 #' Reproduce standard Table 1: 100 ha, t=10 yr, both scenarios
