@@ -195,7 +195,7 @@ sites_clustered <- sites_clustered %>%
      C_est  = 2500,   # €/ha  establishment (Section 2.1 mid-range)
      C_harv =  150,    # €/ha  harvest cost  (Section 2.1 mid-range)
      C_main = 10, #  €/ha  maintenance cost  (Section 2.1 mid-range)
-     C_opp = 450/10*c.opp.vec, #  €/ha  opportunity cost  (Section 2.1 mid-range)
+     C_opp = 150*c.opp.vec, #  €/ha  opportunity cost  (Section 2.1 mid-range)
    ) #%>%   # change column name area_ha to area if necessary  rename(area_ha = area)
 
 # sites_filt <- afs_workspace$sites %>%
@@ -1446,7 +1446,7 @@ empirical data from SRAFS trials in Southern Germany and SRC plantations
 in Central Europe [@Huber2018_SRAFS_growth; @Trnka2008_Poplar_SRF;
 @Testa2014_Poplar_Economics].
 
-```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Coloured polygons: potential KUP/AFS sites grouped by HAC super-site (colours encode cluster membership; no legend). Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth", cache=TRUE}
+```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="AFS supply chain network in Saxony-Anhalt. Grey lines: German federal state boundaries. Blue lines: major rivers. Coloured polygons: potential KUP/AFS sites grouped by HAC super-site (colours encode cluster membership; no legend). Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub, size proportional to processing capacity). Coloured squares: consumer sites (violet: P1 chemical/pulp, blue: P2 pulp/paper, red: P3 energy/biogas, size proportional to total demand).", fig.width=6.5, fig.height=5.5, out.width="\\textwidth", cache=F}
 
 crs_map <- 25833
 
@@ -1749,7 +1749,6 @@ consumers %>%
 
 ```{r fig-consumer-demand, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total biomass demand by consumer type and grade (P1 chemical, P2 pulp \\& paper, P3 energy/biogas). Bars show aggregated annual demand in kt wood input per year across all individual plants within each consumer type.", fig.width = 5.5, fig.height = 2.8, out.width="\\textwidth"}
 
-
 # Re-use consumers_typed from above
 # create unique types of consumers
 
@@ -1886,7 +1885,8 @@ params_df %>%
 
 ## Optimization results
 
-```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Optimal agroforestry supply chain network. Green polygons: active super-sites with biomass harvest; grey polygons: non-selected sites. Pie charts at active sites show the product mix of harvested biomass (stem = P1, branches = P2, residues = P3), scaled by total harvested volume. Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub). Coloured squares: consumer sites by dominant demand category.", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth", cache=TRUE, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
+```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Optimal agroforestry supply chain network. Green polygons: active super-sites with biomass harvest; grey polygons: non-selected sites. Pie charts at active sites show the product mix of harvested biomass (stem = P1, branches = P2, residues = P3), scaled by total harvested volume. Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub). Coloured squares: consumer sites by dominant demand category.", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth", cache=F, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
+
 crs_map <- 25833
 
 # ── Colour palette constants ─────────────────────────────────────────────────
@@ -2117,8 +2117,7 @@ ggplot() +
   )
 ```
 
-```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total production quantity of biomass types and its industrial usage over planning horizon (in tons).", fig.width=7, fig.height=5.5, dev="pdf", out.width="\\textwidth", cache=TRUE, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
-
+```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total production quantity of biomass types and its industrial usage over planning horizon (in tons).", fig.width=7, fig.height=5.5, dev="pdf", out.width="\\textwidth", cache=F, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 
 # ── Labels & colours ──────────────────────────────────────────────────────────
 # Source side (axis 1): biomass fractions delivered from sites → hubs (Xij)
@@ -2224,9 +2223,10 @@ ggplot(flow_df,
   )
 ```
 
-```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Total biomass delivered to consumers by product type over the planning horizon. Stacked areas show period-level volumes of stem (P1), branches (P2), and residues (P3) flowing from storage hubs to all consumers. Dashed line: total harvested raw biomass shipped from sites to hubs.", fig.width=6.5, fig.height=4, dev="pdf", out.width="\\textwidth", cache=TRUE, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
+```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Total biomass delivered to consumers by product type over the planning horizon. Stacked areas show period-level volumes of stem (P1), branches (P2), and residues (P3) flowing from storage hubs to all consumers. Dashed line: total harvested raw biomass shipped from sites to hubs.", fig.width=6.5, fig.height=4, dev="pdf", out.width="\\textwidth", cache=F, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 
 prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
+
 
 # Deliveries aggregated by period × del_product
 delivery_ts <- ext$Xjk %>%
@@ -2262,11 +2262,688 @@ ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
         panel.grid.minor = element_blank())
 ```
 
+```{r fig-results-harvest-cycle-dist, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Distribution of harvesting cycle lengths at active agroforestry sites. Each bar represents the number of individual harvest events (over all periods and active sites) whose cycle length (stand age at harvest, i.e. $t - s$) falls in that year bin. Vertical dashed line: mean cycle length. Active sites are defined as sites with at least one selected harvest arc in the optimal solution.", fig.width=5.5, fig.height=3.5, dev="pdf", out.width="\\textwidth", cache=F, cache.extra = c("ext", "milp_instance")}
+
+# --- Extract harvest-arc cycle lengths from binary z variables ---------------
+# ext$z contains one row per selected arc; columns: site_id, s, t, arc_type
+# Harvest arcs have arc_type == "harvest" and cycle_length = t - s
+
+cycle_df <- ext$z %>%
+  filter(arc_type == "harvest") %>%
+  mutate(cycle_length = t - s)
+
+# Restrict to active sites (at least one harvest arc selected)
+active_sites <- unique(cycle_df$site_id)
+
+# Summary statistics for annotation
+mean_cl  <- mean(cycle_df$cycle_length)
+med_cl   <- median(cycle_df$cycle_length)
+n_events <- nrow(cycle_df)
+n_sites  <- length(active_sites)
+
+
+# --- Plot --------------------------------------------------------------------
+ggplot(cycle_df, aes(x = cycle_length)) +
+  geom_bar(fill = "#1b9e77", colour = "white", linewidth = 0.25, width = 0.75) +
+  geom_vline(xintercept = mean_cl,
+             linetype = "dashed", colour = "grey30", linewidth = 0.6) +
+  annotate("text",
+           x     = mean_cl + 0.25,
+           y     = Inf,
+           label = paste0("Mean = ", round(mean_cl, 1), " yr"),
+           hjust = 0, vjust = 1.5, size = 2.8, colour = "grey20") +
+  scale_x_continuous(
+    name   = "Harvesting cycle length (years)",
+    breaks = seq(params_obj$min_age, params_obj$max_age, by = 1),
+    limits = c(params_obj$min_age - 0.5, params_obj$max_age + 0.5)
+  ) +
+  scale_y_continuous(
+    name   = "Number of harvest events",
+    expand = expansion(mult = c(0, 0.12))
+  ) +
+  labs(
+    caption = paste0(
+      n_events, " harvest events across ", n_sites,
+      " active sites; median = ", med_cl, " yr"
+    )
+  ) +
+  theme_minimal(base_size = 9) +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor   = element_blank(),
+    plot.caption       = element_text(size = 7, colour = "grey40", hjust = 0)
+  )
+```
+
+```{r fig-results-cost-profit-breakdown, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total cost–profit breakdown across all active sites over the planning horizon. The left panel (waterfall) decomposes the objective value into revenue and individual cost categories; the right panel shows the period-level trajectory of revenues and stacked costs. Cultivation costs are split into establishment, harvesting, maintenance, and opportunity costs; logistics costs cover raw biomass transport (site$\\to$hub) and pre-processed transport (hub$\\to$consumer); storage costs reflect hub inventory holding charges.", fig.width = 7, fig.height = 4.5, dev = "pdf", out.width = "\\textwidth", cache = F, cache.extra = c("ext", "milp_instance", "sites_clustered", "storages", "params_obj")}
+
+
+# ── 0. Colour palette (consistent with paper) ──────────────────────────────
+COL_REV   <- "#1b9e77"   # revenue: green
+COL_EST   <- "#d95f02"   # establishment
+COL_HARV  <- "#7570b3"   # harvesting
+COL_MAIN  <- "#e7298a"   # maintenance
+COL_OPP   <- "#66a61e"   # opportunity
+COL_TR_R  <- "#e6ab02"   # transport raw
+COL_TR_P  <- "#a6761d"   # transport pre-processed
+COL_STOR  <- "#666666"   # storage
+
+# ── 1. Site meta: area_ha and cost parameters for active sites only ─────────
+active_site_ids <- ext$z %>%
+  filter(arc_type == "harvest") %>%
+  pull(site_id) %>% unique()
+
+site_meta <- milp_instance$sites %>%
+  mutate(site_id = row_number()) %>%
+  filter(site_id %in% active_site_ids)
+
+# ── 2. Cultivation costs (derived from arc decisions in ext$z) ──────────────
+cost_est <- ext$z %>%
+  filter(arc_type == "establishment") %>%
+  select(-area_ha) %>%
+  left_join(site_meta, by = "site_id") %>%
+  mutate(cost = C_est * area_ha, period = t) %>%
+  group_by(period) %>%
+  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+  mutate(component = "Establishment")
+
+cost_harv <- ext$z %>%
+  filter(arc_type == "harvest") %>%
+  select(-area_ha) %>%
+  left_join(site_meta, by = "site_id") %>%
+  mutate(cost = C_harv * area_ha, period = t) %>%
+  group_by(period) %>%
+  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+  mutate(component = "Harvesting")
+
+cost_main <- ext$z %>%
+  filter(arc_type == "harvest") %>%
+  select(-area_ha) %>%
+  left_join(site_meta, by = "site_id") %>%
+  mutate(cost = C_main * area_ha * age_len, period = t) %>%
+  group_by(period) %>%
+  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+  mutate(component = "Maintenance")
+
+est_periods  <- ext$z %>% filter(arc_type == "establishment") %>%
+                  select(site_id, t_est = t)
+term_periods <- ext$z %>% filter(arc_type == "termination") %>%
+                  select(site_id, t_term = s)
+
+opp_df <- est_periods %>%
+  left_join(term_periods, by = "site_id") %>%
+  mutate(t_term = ifelse(is.na(t_term), milp_instance$n_periods, t_term)) %>%
+  left_join(site_meta, by = "site_id") %>%
+  mutate(cost = C_opp * area_ha * (t_term - t_est), period = t_term)
+
+cost_opp <- opp_df %>%
+  group_by(period) %>%
+  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+  mutate(component = "Opportunity")
+
+# ── 3. Transport costs ───────────────────────────────────────────────────────
+dist_ij_m <- as.matrix(milp_instance$d_ij)
+
+cost_tr_raw <- ext$Xij %>%
+  mutate(
+    dist_km = mapply(function(i, j) dist_ij_m[i, j], site_id, hub_id),
+    cost    = params_obj$c_tr_raw * dist_km * value
+  ) %>%
+  group_by(period) %>%
+  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+  mutate(component = "Transport (raw)")
+
+dist_jk_m <- as.matrix(milp_instance$d_jk)
+
+cost_tr_pre <- ext$Xjk %>%
+  mutate(
+    dist_km = mapply(function(j, k) dist_jk_m[j, k], hub_id, consumer_id),
+    cost    = params_obj$c_tr_pre * dist_km * value
+  ) %>%
+  group_by(period) %>%
+  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+  mutate(component = "Transport (pre-proc.)")
+
+# ── 4. Storage costs ─────────────────────────────────────────────────────────
+cost_stor <- ext$S %>%
+  left_join(
+    milp_instance$storages %>%
+      mutate(hub_id = row_number()) %>%
+      select(hub_id, c_stor),
+    by = "hub_id"
+  ) %>%
+  mutate(cost = c_stor * value) %>%
+  group_by(period) %>%
+  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+  mutate(component = "Storage")
+
+# ── 5. Revenue per period ─────────────────────────────────────────────────────
+price_df <- as.data.frame(milp_instance$consumer_prices) %>%
+  setNames(c("consumer_id", "del_product", "price")) %>%
+  mutate(consumer_id = as.integer(consumer_id),
+         del_product  = as.integer(del_product))
+
+revenue_ts <- ext$Xjk %>%
+  left_join(price_df, by = c("consumer_id", "del_product")) %>%
+  mutate(rev = value * coalesce(price, 0)) %>%
+  group_by(period) %>%
+  summarise(rev = sum(rev, na.rm = TRUE), .groups = "drop")
+
+# ── 6. Assemble long-format time series ─────────────────────────────────────
+all_periods <- tibble(period = seq_len(milp_instance$n_periods))
+
+cost_ts <- bind_rows(
+  cost_est, cost_harv, cost_main, cost_opp,
+  cost_tr_raw, cost_tr_pre, cost_stor
+) %>%
+  right_join(crossing(period    = seq_len(milp_instance$n_periods),
+                      component = unique(.$component)),
+             by = c("period", "component")) %>%
+  replace_na(list(cost = 0)) %>%
+  mutate(component = factor(component, levels = c(
+    "Establishment", "Harvesting", "Maintenance", "Opportunity",
+    "Transport (raw)", "Transport (pre-proc.)", "Storage"
+  )))
+
+rev_ts <- all_periods %>%
+  left_join(revenue_ts, by = "period") %>%
+  replace_na(list(rev = 0))
+
+# ── 7. Waterfall totals (left panel) ─────────────────────────────────────────
+totals <- cost_ts %>%
+  group_by(component) %>%
+  summarise(value = -sum(cost), .groups = "drop") %>%
+  bind_rows(tibble(component = "Revenue", value = sum(rev_ts$rev))) %>%
+  mutate(component = factor(component, levels = c(
+    "Revenue", "Establishment", "Harvesting", "Maintenance", "Opportunity",
+    "Transport (raw)", "Transport (pre-proc.)", "Storage"
+  ))) %>%
+  arrange(component) %>%
+  mutate(
+    end      = cumsum(ifelse(component == "Revenue", value, value)),
+    start    = lag(end, default = 0),
+    bar_low  = ifelse(component == "Revenue", 0,     end),
+    bar_high = ifelse(component == "Revenue", value, start)
+  )
+
+col_map <- c(
+  "Revenue"               = COL_REV,
+  "Establishment"         = COL_EST,
+  "Harvesting"            = COL_HARV,
+  "Maintenance"           = COL_MAIN,
+  "Opportunity"           = COL_OPP,
+  "Transport (raw)"       = COL_TR_R,
+  "Transport (pre-proc.)" = COL_TR_P,
+  "Storage"               = COL_STOR
+)
+
+p_waterfall <- ggplot(totals, aes(x = component, fill = component)) +
+  geom_rect(aes(xmin = as.integer(component) - 0.38,
+                xmax = as.integer(component) + 0.38,
+                ymin = bar_low / 1e6, ymax = bar_high / 1e6),
+            colour = "white", linewidth = 0.25) +
+  geom_hline(yintercept = 0, colour = "grey40", linewidth = 0.35) +
+  scale_fill_manual(values = col_map, guide = "none") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+  scale_y_continuous(name   = "Cumulative value (M€)",
+                     labels = scales::label_number(suffix = " M")) +
+  labs(x = NULL, title = "Waterfall") +
+  theme_minimal(base_size = 8) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor   = element_blank(),
+        axis.text.x        = element_text(size = 6.5, angle = 30, hjust = 1),
+        plot.title         = element_text(size = 8, face = "bold", hjust = 0.5))
+
+# ── 8. Cumulative cash flow (right panel) ────────────────────────────────────
+# Period net cash flow = revenue - total costs in that period
+total_cost_ts <- cost_ts %>%
+  group_by(period) %>%
+  summarise(total_cost = sum(cost, na.rm = TRUE), .groups = "drop")
+
+cashflow_ts <- all_periods %>%
+  left_join(rev_ts,        by = "period") %>%
+  left_join(total_cost_ts, by = "period") %>%
+  replace_na(list(rev = 0, total_cost = 0)) %>%
+  mutate(
+    net_period  = rev - total_cost,
+    cum_rev     = cumsum(rev),
+    cum_cost    = cumsum(total_cost),
+    cum_net     = cumsum(net_period)
+  )
+
+# Identify break-even period (first period where cumulative net turns positive)
+breakeven_period <- cashflow_ts %>%
+  filter(cum_net >= 0) %>%
+  slice_min(period, n = 1) %>%
+  pull(period)
+
+p_cashflow <- ggplot(cashflow_ts, aes(x = period)) +
+  # Shaded area between cumulative cost and cumulative revenue
+  geom_ribbon(aes(ymin = pmin(cum_rev, cum_cost) / 1e6,
+                  ymax = pmax(cum_rev, cum_cost) / 1e6,
+                  fill = cum_net >= 0),
+              alpha = 0.18, show.legend = FALSE) +
+  scale_fill_manual(values = c("TRUE" = COL_REV, "FALSE" = COL_EST)) +
+  # Cumulative revenue line
+  geom_line(aes(y = cum_rev  / 1e6),
+            colour = COL_REV, linewidth = 0.9, linetype = "solid") +
+  # Cumulative cost line
+  geom_line(aes(y = cum_cost / 1e6),
+            colour = "grey30", linewidth = 0.9, linetype = "dashed") +
+  # Cumulative net cash flow line
+  geom_line(aes(y = cum_net  / 1e6),
+            colour = "grey10", linewidth = 0.65, linetype = "dotted") +
+  geom_hline(yintercept = 0, colour = "grey50", linewidth = 0.35) +
+  # Break-even marker
+  {if (length(breakeven_period) == 1)
+    list(
+      geom_vline(xintercept = breakeven_period,
+                 colour = "grey40", linewidth = 0.45, linetype = "dotdash"),
+      annotate("text",
+               x = breakeven_period + 0.4, y = 0,
+               label = paste0("BEP: t=", breakeven_period),
+               size = 2.4, hjust = 0, vjust = -0.4,
+               colour = "grey30", fontface = "italic")
+    )
+  } +
+  # Line labels at right margin
+  annotate("text",
+           x     = milp_instance$n_periods - 0.3,
+           y     = last(cashflow_ts$cum_rev)  / 1e6,
+           label = "Cum. revenue", size = 2.4, hjust = 1, vjust = -0.4,
+           colour = COL_REV, fontface = "italic") +
+  annotate("text",
+           x     = milp_instance$n_periods - 0.3,
+           y     = last(cashflow_ts$cum_cost) / 1e6,
+           label = "Cum. cost",    size = 2.4, hjust = 1, vjust =  1.3,
+           colour = "grey30",      fontface = "italic") +
+  annotate("text",
+           x     = milp_instance$n_periods - 0.3,
+           y     = last(cashflow_ts$cum_net)  / 1e6,
+           label = "Cum. net CF",  size = 2.4, hjust = 1, vjust = -0.4,
+           colour = "grey10",      fontface = "italic") +
+  scale_x_continuous(name   = "Planning period (year)",
+                     breaks = seq(1, milp_instance$n_periods, by = 2)) +
+  scale_y_continuous(name   = "Cumulative value (M€)",
+                     labels = scales::label_number(suffix = " M")) +
+  labs(title = "Cumulative cash flow") +
+  theme_minimal(base_size = 8) +
+  theme(panel.grid.minor = element_blank(),
+        plot.title       = element_text(size = 8, face = "bold", hjust = 0.5))
+
+# ── 9. Assemble with patchwork ───────────────────────────────────────────────
+p_waterfall + p_cashflow +
+  plot_layout(widths = c(1, 1.8)) +
+  plot_annotation(
+    caption = paste0(
+      "Active sites: ", length(active_site_ids),
+      "  |  Total revenue: ",
+      format(round(sum(rev_ts$rev)   / 1e6, 2), nsmall = 2), " M€",
+      "  |  Net margin: ",
+      format(round((sum(rev_ts$rev) - sum(cost_ts$cost)) / 1e6, 2),
+             nsmall = 2), " M€",
+      if (length(breakeven_period) == 1)
+        paste0("  |  Break-even: period ", breakeven_period)
+      else
+        "  |  No break-even within horizon"
+    ),
+    theme = theme(plot.caption = element_text(size = 7, colour = "grey40"))
+  )
+```
+
+```{r fig-results-site-breakdown, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total revenue and cost breakdown per active agroforestry site over the full planning horizon. Each bar represents one active site; revenue (green, above zero axis) and cost components (stacked below) are expressed in thousand euros per hectare for comparability across sites of different size. Sites are ordered by descending net margin.", fig.width = 7, fig.height = 5, dev = "pdf", out.width = "\\textwidth", cache = F, cache.extra = c("ext", "milp_instance", "sites_clustered", "params_obj")}
+
+
+# ── 0. Colour palette (reuse from previous chunk) ───────────────────────────
+COL_REV  <- "#1b9e77"
+COL_EST  <- "#d95f02"
+COL_HARV <- "#7570b3"
+COL_MAIN <- "#e7298a"
+COL_OPP  <- "#66a61e"
+COL_TR_R <- "#e6ab02"
+COL_TR_P <- "#a6761d"
+COL_STOR <- "#666666"
+
+col_map <- c(
+  "Revenue"               = COL_REV,
+  "Establishment"         = COL_EST,
+  "Harvesting"            = COL_HARV,
+  "Maintenance"           = COL_MAIN,
+  "Opportunity"           = COL_OPP,
+  "Transport (raw)"       = COL_TR_R,
+  "Transport (pre-proc.)" = COL_TR_P,
+  "Storage"               = COL_STOR
+)
+
+# ── 1. Site meta ─────────────────────────────────────────────────────────────
+active_site_ids <- ext$z %>%
+  filter(arc_type == "harvest") %>%
+  pull(site_id) %>% unique()
+
+site_meta <- milp_instance$sites %>%
+  mutate(site_id = row_number()) %>%
+  filter(site_id %in% active_site_ids)
+
+# ── 2. Per-site cultivation costs ────────────────────────────────────────────
+sc_est <- ext$z %>%
+  filter(arc_type == "establishment") %>%
+  select(-area_ha) %>%
+  left_join(site_meta, by = "site_id") %>%
+  mutate(cost = C_est * area_ha) %>%
+  group_by(site_id) %>%
+  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+  mutate(component = "Establishment")
+
+sc_harv <- ext$z %>%
+  filter(arc_type == "harvest") %>%
+  select(-area_ha) %>%
+  left_join(site_meta, by = "site_id") %>%
+  mutate(cost = C_harv * area_ha) %>%
+  group_by(site_id) %>%
+  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+  mutate(component = "Harvesting")
+
+sc_main <- ext$z %>%
+  filter(arc_type == "harvest") %>%
+  select(-area_ha) %>%
+  left_join(site_meta, by = "site_id") %>%
+  mutate(cost = C_main * area_ha * age_len) %>%
+  group_by(site_id) %>%
+  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+  mutate(component = "Maintenance")
+
+est_p  <- ext$z %>% filter(arc_type == "establishment") %>% select(site_id, t_est = t)
+term_p <- ext$z %>% filter(arc_type == "termination")  %>% select(site_id, t_term = s)
+
+sc_opp <- est_p %>%
+  left_join(term_p, by = "site_id") %>%
+  mutate(t_term = ifelse(is.na(t_term), milp_instance$n_periods, t_term)) %>%
+  left_join(site_meta, by = "site_id") %>%
+  mutate(cost = C_opp * area_ha * (t_term - t_est)) %>%
+  group_by(site_id) %>%
+  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+  mutate(component = "Opportunity")
+
+# ── 3. Per-site transport costs ───────────────────────────────────────────────
+dist_ij_m <- as.matrix(milp_instance$d_ij)
+dist_jk_m <- as.matrix(milp_instance$d_jk)
+
+sc_tr_raw <- ext$Xij %>%
+  mutate(
+    dist_km = mapply(function(i, j) dist_ij_m[i, j], site_id, hub_id),
+    cost    = params_obj$c_tr_raw * dist_km * value
+  ) %>%
+  group_by(site_id) %>%
+  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+  mutate(component = "Transport (raw)")
+
+hub_site_share <- ext$Xij %>%
+  group_by(hub_id, period) %>%
+  mutate(hub_total = sum(value)) %>%
+  ungroup() %>%
+  mutate(share = ifelse(hub_total > 0, value / hub_total, 0)) %>%
+  select(site_id, hub_id, period, share)
+
+sc_tr_pre <- ext$Xjk %>%
+  mutate(
+    dist_km  = mapply(function(j, k) dist_jk_m[j, k], hub_id, consumer_id),
+    cost_jkt = params_obj$c_tr_pre * dist_km * value
+  ) %>%
+  left_join(hub_site_share, by = c("hub_id", "period"),
+            relationship = "many-to-many") %>%
+  mutate(site_cost = cost_jkt * share) %>%
+  group_by(site_id) %>%
+  summarise(cost = sum(site_cost, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(site_id)) %>%
+  mutate(component = "Transport (pre-proc.)")
+
+# ── 4. Storage costs: apportion to sites via Xij share ───────────────────────
+hub_stor_cost <- ext$S %>%
+  left_join(
+    milp_instance$storages %>% mutate(hub_id = row_number()) %>% select(hub_id, c_stor),
+    by = "hub_id"
+  ) %>%
+  mutate(stor_cost = c_stor * value) %>%
+  select(hub_id, period, stor_cost)
+
+sc_stor <- hub_stor_cost %>%
+  left_join(hub_site_share, by = c("hub_id", "period"),
+            relationship = "many-to-many") %>%
+  mutate(site_cost = stor_cost * share) %>%
+  group_by(site_id) %>%
+  summarise(cost = sum(site_cost, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(site_id)) %>%
+  mutate(component = "Storage")
+
+# ── 5. Per-site revenue ───────────────────────────────────────────────────────
+price_df <- as.data.frame(milp_instance$consumer_prices) %>%
+  setNames(c("consumer_id", "del_product", "price")) %>%
+  mutate(consumer_id = as.integer(consumer_id),
+         del_product  = as.integer(del_product))
+
+site_revenue <- ext$Xjk %>%
+  left_join(price_df, by = c("consumer_id", "del_product")) %>%
+  mutate(rev_jkt = value * coalesce(price, 0)) %>%
+  left_join(hub_site_share, by = c("hub_id", "period"),
+            relationship = "many-to-many") %>%
+  mutate(site_rev = rev_jkt * share) %>%
+  group_by(site_id) %>%
+  summarise(revenue = sum(site_rev, na.rm = TRUE), .groups = "drop") %>%
+  filter(!is.na(site_id))
+
+# ── 6. Active production years per site & normalise to € ha⁻¹ yr⁻¹ ──────────
+# Active years = t_term - t_est; sites still running at horizon end use n_periods
+site_active_years <- est_p %>%
+  left_join(term_p, by = "site_id") %>%
+  mutate(
+    t_term       = ifelse(is.na(t_term), milp_instance$n_periods, t_term),
+    active_years = pmax(t_term - t_est, 1L)   # guard against zero-length edge case
+  ) %>%
+  select(site_id, active_years)
+
+site_area <- site_meta %>% select(site_id, area_ha)
+
+# Normalisation denominator: area_ha * active_years  →  € ha⁻¹ yr⁻¹
+site_norm_denom <- site_area %>%
+  left_join(site_active_years, by = "site_id") %>%
+  mutate(denom = area_ha * active_years)
+
+all_costs_site <- bind_rows(sc_est, sc_harv, sc_main, sc_opp,
+                             sc_tr_raw, sc_tr_pre, sc_stor) %>%
+  mutate(component = factor(component, levels = c(
+    "Establishment", "Harvesting", "Maintenance", "Opportunity",
+    "Transport (raw)", "Transport (pre-proc.)", "Storage"
+  )))
+
+cost_site_norm <- all_costs_site %>%
+  left_join(site_norm_denom, by = "site_id") %>%
+  mutate(cost_norm = cost / denom)          # € ha⁻¹ yr⁻¹
+
+rev_site_norm <- site_revenue %>%
+  left_join(site_norm_denom, by = "site_id") %>%
+  mutate(rev_norm = revenue / denom)        # € ha⁻¹ yr⁻¹
+
+# Site ordering by descending net margin (€ ha⁻¹ yr⁻¹)
+total_cost_site <- cost_site_norm %>%
+  group_by(site_id) %>%
+  summarise(total_cost_norm = sum(cost_norm, na.rm = TRUE), .groups = "drop")
+
+site_order <- rev_site_norm %>%
+  left_join(total_cost_site, by = "site_id") %>%
+  mutate(net_margin = rev_norm - total_cost_norm) %>%
+  arrange(desc(net_margin)) %>%
+  pull(site_id)
+
+cost_site_norm <- cost_site_norm %>%
+  mutate(site_id = factor(site_id, levels = site_order))
+
+rev_site_norm <- rev_site_norm %>%
+  mutate(site_id = factor(site_id, levels = site_order))
+
+total_cost_site <- total_cost_site %>%
+  mutate(site_id = factor(site_id, levels = site_order))
+
+# ── 7. Plot ───────────────────────────────────────────────────────────────────
+ggplot() +
+  geom_col(data = rev_site_norm,
+           aes(x = site_id, y = rev_norm),
+           fill = COL_REV, alpha = 0.88, width = 0.65) +
+  geom_col(data = cost_site_norm,
+           aes(x = site_id, y = -cost_norm, fill = component),
+           position = "stack", width = 0.65, alpha = 0.88) +
+  geom_point(
+    data = rev_site_norm %>%
+      left_join(total_cost_site, by = "site_id") %>%
+      mutate(net = rev_norm - total_cost_norm),
+    aes(x = site_id, y = net),
+    shape = 18, size = 1.8, colour = "grey15"
+  ) +
+  geom_hline(yintercept = 0, colour = "grey40", linewidth = 0.4) +
+  scale_fill_manual(
+    name   = "Cost component",
+    values = col_map[levels(cost_site_norm$component)],
+    guide  = guide_legend(ncol = 1, keyheight = unit(0.38, "cm"),
+                          override.aes = list(alpha = 1))
+  ) +
+  scale_y_continuous(
+    name   = "Value (€ ha⁻¹ yr⁻¹)",
+    labels = scales::label_number(big.mark = ",")
+  ) +
+  scale_x_discrete(
+    name   = "Active site (ordered by net margin ↓)",
+    labels = function(x) paste0("S", x)
+  ) +
+  annotate("text", x = 0.7, y = max(rev_site_norm$rev_norm) * 0.92,
+           label = "Revenue", size = 2.4, hjust = 0,
+           colour = COL_REV, fontface = "italic") +
+  annotate("text", x = 0.7, y = -max(total_cost_site$total_cost_norm) * 0.92,
+           label = "Costs", size = 2.4, hjust = 0,
+           colour = "grey30", fontface = "italic") +
+  labs(
+    caption = paste0(
+      length(active_site_ids), " active sites  |  ◆ = net margin  |  ",
+      "normalised to € ha⁻¹ yr⁻¹ (active production years only)"
+    )
+  ) +
+  theme_minimal(base_size = 8) +
+  theme(
+    axis.text.x        = element_text(size = 6, angle = 45, hjust = 1),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor   = element_blank(),
+    legend.position    = "right",
+    legend.text        = element_text(size = 6.5),
+    legend.title       = element_text(size = 7, face = "bold"),
+    plot.caption       = element_text(size = 7, colour = "grey40", hjust = 0)
+  )
+```
+
+```{r fig-results-site-scatter, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Scatterplot of active agroforestry sites: opportunity cost rate (€ ha⁻¹ yr⁻¹) on the x-axis versus demand-weighted average delivery distance (km) on the y-axis. Point size is proportional to the site's net margin (€ ha⁻¹ yr⁻¹); sites with negative net margin are shown as open circles. A LOESS smoothing line indicates the joint trend.", fig.width = 5.5, fig.height = 4, dev = "pdf", out.width = "0.72\\textwidth", cache = F, cache.extra = c("ext", "milp_instance", "params_obj")}
+
+
+
+# ── 1. Opportunity cost rate per site (€ ha⁻¹ yr⁻¹) ─────────────────────────
+# C_opp is already a per-ha-per-year rate stored in site_meta
+opp_rate <- site_meta %>%
+  select(site_id, opp_rate = C_opp)   # unit: € ha⁻¹ yr⁻¹
+
+# ── 2. Demand-weighted average distance to customers per site ─────────────────
+# Step 1: for each (site → hub) shipment, find the downstream (hub → consumer)
+#         volume routed onward in the same period — use hub_site_share to
+#         attribute the hub→consumer distance back to the originating site.
+dist_jk_m <- as.matrix(milp_instance$d_jk)
+
+# Demand-weighted mean distance over all periods:
+#   d̄_i = Σ_{j,k,t}  share_{i,j,t} * X_{jk,t} * d_{jk}
+#          ─────────────────────────────────────────────
+#          Σ_{j,k,t}  share_{i,j,t} * X_{jk,t}
+site_avg_dist <- ext$Xjk %>%
+  mutate(dist_km = mapply(function(j, k) dist_jk_m[j, k], hub_id, consumer_id)) %>%
+  left_join(hub_site_share, by = c("hub_id", "period"),
+            relationship = "many-to-many") %>%
+  filter(!is.na(site_id)) %>%
+  mutate(
+    weighted_dist = share * value * dist_km,
+    weight        = share * value
+  ) %>%
+  group_by(site_id) %>%
+  summarise(
+    avg_dist_km = sum(weighted_dist, na.rm = TRUE) /
+                  pmax(sum(weight,        na.rm = TRUE), 1e-9),
+    .groups = "drop"
+  )
+
+# ── 3. Net margin per site (€ ha⁻¹ yr⁻¹) — reuse from previous chunk ─────────
+# (site_norm_denom, rev_site_norm, total_cost_site already computed above)
+net_margin_site <- rev_site_norm %>%
+  left_join(total_cost_site, by = "site_id") %>%
+  mutate(net_margin = rev_norm - total_cost_norm) %>%
+  select(site_id, net_margin)
+
+# ── 4. Assemble scatter data ──────────────────────────────────────────────────
+scatter_df <- opp_rate %>%
+  left_join(site_avg_dist,   by = "site_id") %>%
+  left_join(net_margin_site %>% mutate(site_id = as.integer(as.character(site_id))), by = "site_id") %>%
+  mutate(
+    profitable   = net_margin >= 0,
+    # size scale: use absolute net margin; negatives shown as open circles
+    abs_margin   = abs(net_margin)
+  )
+
+# ── 5. Plot ───────────────────────────────────────────────────────────────────
+ggplot(scatter_df,
+       aes(x = opp_rate, y = avg_dist_km)) +
+  # LOESS trend (all sites)
+  geom_smooth(method = "loess", formula = y ~ x,
+              colour = "grey60", fill = "grey88",
+              linewidth = 0.55, alpha = 0.35, se = TRUE) +
+  # Profitable sites: filled circles
+  geom_point(data = filter(scatter_df,  profitable),
+             aes(size = abs_margin),
+             shape = 16, colour = "#1b9e77", alpha = 0.75) +
+  # Loss-making sites: open circles
+  geom_point(data = filter(scatter_df, !profitable),
+             aes(size = abs_margin),
+             shape = 1, colour = "#d95f02", stroke = 0.6, alpha = 0.85) +
+  # Size legend — both shapes share the same scale
+   scale_size_area(
+     name     = "|Net margin|\n(€ ha⁻¹ yr⁻¹)",
+     max_size = 8,
+     breaks   = scales::breaks_extended(n = 4),
+     labels   = scales::label_number(big.mark = ",")
+   ) +
+  scale_x_continuous(
+    name   = "Opportunity cost rate (€ ha⁻¹ yr⁻¹)",
+    labels = scales::label_number(big.mark = ",")
+  ) +
+  scale_y_continuous(
+    name   = "Demand-weighted avg. delivery distance (km)",
+    labels = scales::label_number(accuracy = 1)
+  ) +
+  # Colour legend annotation (manual, avoids a redundant colour scale)
+  annotate("point", x = -Inf, y = Inf, size = 0, alpha = 0) +  # spacer
+  labs(
+    caption = paste0(
+      length(active_site_ids), " active sites  |  ",
+      "point size ~ |net margin| (€ ha⁻¹ yr⁻¹)  |  ",
+      "green filled = profitable, orange open = loss-making"
+    )
+  ) +
+  theme_minimal(base_size = 8) +
+  theme(
+    panel.grid.minor  = element_blank(),
+    legend.position   = "right",
+    legend.text       = element_text(size = 6.5),
+    legend.title      = element_text(size = 7, face = "bold"),
+    plot.caption      = element_text(size = 7, colour = "grey40", hjust = 0)
+  )
+```
+
 # Conclusion
 
 # Appendix
 
-```{r fig-results-inventory, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="End-of-period inventory levels at storage/pre-treatment hubs, disaggregated by product type. Each panel corresponds to one active hub.", fig.width=7, fig.height=3.5, dev="pdf", out.width="\\textwidth", cache=TRUE, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
+```{r fig-results-inventory, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="End-of-period inventory levels at storage/pre-treatment hubs, disaggregated by product type. Each panel corresponds to one active hub.", fig.width=7, fig.height=3.5, dev="pdf", out.width="\\textwidth", cache=F, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
+
 
 inv_ts <- ext$S %>%
   mutate(product = factor(product, labels = c("Stem", "Branches", "Residues")[seq_len(max(product))])) %>%
