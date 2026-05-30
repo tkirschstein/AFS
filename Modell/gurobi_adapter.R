@@ -163,7 +163,7 @@ solve_lp_with_gurobi <- function(lp,
                                   params     = list(),
                                   modelsense = "max",
                                   add_names  = FALSE,
-                                  verbose    = TRUE) {
+                                  verbose    = F) {
   .check_pkgs()
 
   model <- lp_to_gurobi_model(
