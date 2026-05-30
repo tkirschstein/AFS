@@ -272,41 +272,84 @@ result <- solve_lp_with_gurobi(
 
 ext <- extract_result(result, milp_instance)
 
-# 
-# # 2. Inspect the LP
-# lp <- build_lp_rcpp(instance)
-# summarise_lp(lp)
-# 
-# # 3. Validate trivial start (should be feasible)
-# x0 <- trivial_zero_start(lp)
-# check_start_feasibility(lp, x0)
-# 
-# # 4. Check C3 linkage on any prior solution
-# check_c3_linkage(lp, x0)
-# 
-# # 5. Solve natively with Gurobi
-# 
-# # 6. Re-use solution as start for a refined solve
-# x1  <- start_from_solution(res)
-# res2 <- solve_lp_with_gurobi(lp, start = x1,
-#                               params = list(
-#                                 MIPFocus = 2, 
-#                                 MIPGap = 0.001,
-#                                 Cuts = 3))
-# 
-# 
-# # Extract + print KPI summary
+# sensitivity analysis ##########################################
 
-# print(ext)
-# 
-# # Validate decoded solution
-# chk <- validate_extracted(ext)
-# if (!chk$pass) View(chk$violations$V2_inventory_balance)
-# 
-# # Analysis examples
-# ext$z   |> filter(arc_type == "harvest") |> count(site_id, t)
-# ext$Xjk |> group_by(consumer_id, period) |> summarise(vol = sum(value))
-# 
+scen.mat <- expand.grid(opp = c(150, 300), cost = c(.5, 2), revenue = c(.5, 1.5)  )
+
+res.sens.list <- vector("list", nrow(scen.mat))
+
+for(i in seq_len(nrow(scen.mat))){
+  tmp.setting <- list(opp = scen.mat$opp[i], cost = scen.mat$cost[i], revenue = scen.mat$revenue[i])
+  
+  # opportunity cost
+  tmp.c.opp.vec <- c.opp.vec + tmp.setting$opp
+  
+  # site details
+  tmp.sites_clustered <- sites_clustered %>%
+     mutate(
+       C_est  = 2500 * tmp.setting$cost,   # €/ha  establishment (Section 2.1 mid-range)
+       C_harv =  150 * tmp.setting$cost,    # €/ha  harvest cost  (Section 2.1 mid-range)
+       C_main = 10 * tmp.setting$cost, #  €/ha  maintenance cost  (Section 2.1 mid-range)
+       C_opp = tmp.c.opp.vec #  €/ha  opportunity cost  (Section 2.1 mid-range)
+     )
+  # storage cost
+  tmp.storages <- storages
+  tmp.storages$c_stor <- tmp.storages$c_stor * tmp.setting$cost
+  
+  # consumers
+  tmp.consumers <- consumers
+  tmp.consumers$P1 <- tmp.consumers$P1 * tmp.setting$revenue
+  tmp.consumers$P2 <- tmp.consumers$P2 * tmp.setting$revenue
+  tmp.consumers$P3 <- tmp.consumers$P3 * tmp.setting$revenue
+  # 
+  tmp.data_obj <- list(
+     sites    = tmp.sites_clustered,
+     storages = tmp.storages,
+     consumers = tmp.consumers,
+     dist_ij  = afs_workspace$dist_ij_clust,
+     #dist_ij  = dist_ij_filt$distance_matrix_km,
+     dist_jk  = dist_jk,
+     yields_by_age = yields_by_age
+   )
+  # rescale demands in consumers to tons
+  tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")]  <- tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")] * 1000
+  
+  # 
+  # # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
+  tmp.params_obj <- list(
+     n_periods  = 40,
+     max_age    = 15L,    # A_max: LRAFS upper rotation bound
+     min_age    =  3L,    # A_min: SRAFS lower rotation bound
+     c_tr_raw   = 0.08 * tmp.setting$cost,   # €/(t·km)  raw biomass  site → storage
+     c_tr_pre   = 0.06 * tmp.setting$cost   # €/(t·km)  chips        storage → consumer
+   )
+  # 
+  # ── 4. generate instance ─────────────────────────────────────
+  tmp.milp_instance <- build_optimization_instance(
+      data         = tmp.data_obj,
+      params       = tmp.params_obj
+    ) 
+  # 
+   tmp.model <- build_agroforestry_lp_rcpp(tmp.milp_instance)
+  # 
+  tmp.result <- solve_lp_with_gurobi(
+     tmp.model,
+  #   start  = trivial_zero_start(model),
+     params = list(
+       TimeLimit = 300, 
+       MIPFocus = 1, 
+       MIPGap = 0.05,
+       Cuts = 3)
+   )
+   
+  tmp.ext <- extract_result(tmp.result, tmp.milp_instance)
+  
+  
+  res.sens.list[[i]] <- list(setting = tmp.setting, ext = tmp.ext , result = tmp.result)
+}
+
+saveRDS(result, "result.rds")
+saveRDS(res.sens.list, "res_sens_list.rds")
 
 ```
 
@@ -2937,6 +2980,10 @@ ggplot(scatter_df,
     plot.caption      = element_text(size = 7, colour = "grey40", hjust = 0)
   )
 ```
+
+# Sensitivity analysis
+
+
 
 # Conclusion
 
