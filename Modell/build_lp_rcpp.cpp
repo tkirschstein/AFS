@@ -127,29 +127,55 @@ List build_lp_rcpp(List instance) {
   // FIX (v2): The previous guard `t <= Tm` for s==0 arcs incorrectly excluded
   // the arc (0, Tm+1), producing 1 missing arc per site (39 fewer z variables
   // for a 39-site instance). Changed to `t <= Tm + 1` to include (0, Tm+1).
+  // struct Arc { int s, t; };
+  // std::vector<Arc> arcs;
+  // arcs.reserve((Tm + 2) * (Amax - Amin + 2));
+  // 
+  // for (int s = 0; s <= Tm + 1; s++) {
+  //   for (int t = s + 1; t <= Tm + 1; t++) {
+  //     if (s == 0) {
+  //       // Establishment arcs: s=0, t in 1..(Tm+1) — no age check (matches R).
+  //       // t = Tm+1 is the "never-plant" arc: site flows from node 0 directly to
+  //       // the terminal node without any plantation, preserving path feasibility.
+  //       if (t >= 1 && t <= Tm + 1)
+  //         arcs.push_back({s, t});
+  //     } else {
+  //       // All arcs with s >= 1 (harvest AND termination):
+  //       // apply the same Amin/Amax filter as R
+  //       int len = t - s;
+  //       if (len >= Amin && len <= Amax)
+  //         arcs.push_back({s, t});
+  //     }
+  //   }
+  // }
+  // int n_arcs = (int)arcs.size();
+
   struct Arc { int s, t; };
   std::vector<Arc> arcs;
-  arcs.reserve((Tm + 2) * (Amax - Amin + 2));
-
-  for (int s = 0; s <= Tm + 1; s++) {
-    for (int t = s + 1; t <= Tm + 1; t++) {
-      if (s == 0) {
-        // Establishment arcs: s=0, t in 1..(Tm+1) — no age check (matches R).
-        // t = Tm+1 is the "never-plant" arc: site flows from node 0 directly to
-        // the terminal node without any plantation, preserving path feasibility.
-        if (t >= 1 && t <= Tm + 1)
-          arcs.push_back({s, t});
-      } else {
-        // All arcs with s >= 1 (harvest AND termination):
-        // apply the same Amin/Amax filter as R
-        int len = t - s;
-        if (len >= Amin && len <= Amax)
-          arcs.push_back({s, t});
+  arcs.reserve( (Tm + 2) * (Amax - Amin + 2) );
+  
+  // 1) Establishment-Arcs: S^est = {(0,t) | t = 1..Tmax - Amin}
+  for (int t = 1; t <= Tm - Amin; ++t) {
+    arcs.push_back({0, t});
+  }
+  
+  // 2) Harvest-Arcs: S^harv = {(s,t) | s,t in {1..Tmax}, t-s in [Amin..Amax]}
+  for (int s = 1; s <= Tm; ++s) {
+    for (int len = Amin; len <= Amax; ++len) {
+      int t = s + len;
+      if (t >= 1 && t <= Tm) {   // nur innerhalb 1..Tmax
+        arcs.push_back({s, t});
       }
     }
   }
-  int n_arcs = (int)arcs.size();
-
+  
+  // 3) Termination-Arcs: S^term = {(s, Tmax+1) | s = Amin+1..Tmax}
+  for (int s = Amin + 1; s <= Tm; ++s) {
+    arcs.push_back({s, Tm + 1});
+  }
+  
+  int n_arcs = static_cast<int>(arcs.size());
+  
   // ── Harvest periods: Tset[Tset > max(1, Amin)] ────────────────────────────
   std::vector<int> Tharv;
   int t_min_harv = std::max(1, Amin) + 1;

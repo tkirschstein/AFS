@@ -3015,19 +3015,12 @@ cost_main <- ext$z %>%
   summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop")
 
 # Opportunitätskosten: wie im C++‑Modell bis zum Horizont Tm
-est_p <- ext$z %>%
-  filter(arc_type == "establishment") %>%
-  select(site_id, t_est = t)
 
-opp_df <- est_p %>%
+cost_opp <- ext$z %>%
+  filter(arc_type == "harvest") %>%
+  select(-area_ha) %>%
   left_join(site_meta, by = "site_id") %>%
-  mutate(
-    # Tm = milp_instance$n_periods  (Planungshorizont)
-    cost   = C_opp * area_ha * (milp_instance$n_periods - t_est),
-    period = t_est    # Opportunitätskosten der Fläche im Establishmentjahr verbuchen
-  )
-
-cost_opp <- opp_df %>%
+  mutate(cost = C_opp * area_ha * age_len, period = t) %>%
   group_by(period) %>%
   summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop")
 
