@@ -259,7 +259,7 @@ solve_afs_gurobi <- function(instance,
       # Unwrap: the wrapper returns list(model=ROI_OP, instance_info=...)
       # We need the raw cpp_out; re-call the C++ builder directly.
       # Rebuild via the C++ function to get the raw triplet LP.
-      cpp_out <- build_lp_rcpp(instance)
+      cpp_out <- build_lp_rcpp_v2(instance)
       cpp_out
     },
     r = {

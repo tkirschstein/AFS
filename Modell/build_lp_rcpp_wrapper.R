@@ -41,7 +41,7 @@ build_agroforestry_lp_rcpp_ROI <- function(instance) {
   instance$yield_matrix <- ym
 
   # ── Call C++ builder ──────────────────────────────────────────────────────
-  cpp_out <- build_lp_rcpp(instance)
+  cpp_out <- build_lp_rcpp_v2(instance)
 
   # ── Assemble sparse constraint matrix ────────────────────────────────────
   A <- slam::simple_triplet_matrix(
@@ -108,8 +108,8 @@ build_agroforestry_lp_rcpp <- function(instance) {
   instance$yield_matrix <- ym
   
   # ── Call C++ builder ──────────────────────────────────────────────────────
-  cpp_out <- build_lp_rcpp(instance)
-  
+  #cpp_out <- build_lp_rcpp(instance)
+  cpp_out <- build_lp_rcpp_v2(instance)
   
   return(cpp_out)
 }

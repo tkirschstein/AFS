@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  30 MAY 2026 18:53
-=======
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  30 MAY 2026 15:18
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  3 JUN 2026 12:23
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -881,173 +877,24 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 [1
 
 ]
-<<<<<<< HEAD
-Overfull \hbox (93.75pt too wide) in paragraph at lines 152--152
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] 312907 vars | 27183 constrs | 97732
-2 nnz | sense=max | start=none[] 
- []
-
-
-Overfull \hbox (83.25pt too wide) in paragraph at lines 152--152
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] Status: TIME_LIMIT | ObjVal: 217230
-2978.9760 | Runtime: 300.8 s[] 
- []
-
-
-Overfull \hbox (93.75pt too wide) in paragraph at lines 167--167
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] 312907 vars | 27183 constrs | 97732
-2 nnz | sense=max | start=none[] 
- []
-
-
-Overfull \hbox (78.0pt too wide) in paragraph at lines 167--167
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] Status: TIME_LIMIT | ObjVal: 862078
-696.8305 | Runtime: 600.7 s[] 
- []
-
-
-
-[2]
-Overfull \hbox (93.75pt too wide) in paragraph at lines 182--182
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] 312907 vars | 27183 constrs | 97732
-2 nnz | sense=max | start=none[] 
- []
-
-
-Overfull \hbox (78.0pt too wide) in paragraph at lines 182--182
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] Status: TIME_LIMIT | ObjVal: 559197
-354.0061 | Runtime: 600.6 s[] 
- []
-
-
-Overfull \hbox (93.75pt too wide) in paragraph at lines 197--197
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] 312907 vars | 27183 constrs | 97732
-2 nnz | sense=max | start=none[] 
- []
-
-
-Overfull \hbox (78.0pt too wide) in paragraph at lines 197--197
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] Status: TIME_LIMIT | ObjVal: 433242
-307.5054 | Runtime: 600.4 s[] 
- []
-
-
-Overfull \hbox (93.75pt too wide) in paragraph at lines 212--212
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] 312907 vars | 27183 constrs | 97732
-2 nnz | sense=max | start=none[] 
- []
-
-
-Overfull \hbox (78.0pt too wide) in paragraph at lines 212--212
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] Status: TIME_LIMIT | ObjVal: 195770
-846.6888 | Runtime: 600.3 s[] 
- []
-=======
 
 [2]
 
 LaTeX Warning: Reference `sec:experiments' on page 3 undefined on input line 20
 4.
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 
 
 
 [3]
-<<<<<<< HEAD
-Overfull \hbox (93.75pt too wide) in paragraph at lines 227--227
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] 312907 vars | 27183 constrs | 97732
-2 nnz | sense=max | start=none[] 
- []
-
-
-Overfull \hbox (67.5pt too wide) in paragraph at lines 227--227
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] Status: OPTIMAL | ObjVal: 402917292
-9.5997 | Runtime: 119.0 s[] 
- []
-
-
-Overfull \hbox (93.75pt too wide) in paragraph at lines 242--242
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] 312907 vars | 27183 constrs | 97732
-2 nnz | sense=max | start=none[] 
- []
-
-
-Overfull \hbox (67.5pt too wide) in paragraph at lines 242--242
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] Status: OPTIMAL | ObjVal: 353092526
-3.0044 | Runtime: 103.2 s[] 
- []
-
-
-Overfull \hbox (93.75pt too wide) in paragraph at lines 257--257
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] 312907 vars | 27183 constrs | 97732
-2 nnz | sense=max | start=none[] 
- []
-
-
-
-[4]
-Overfull \hbox (83.25pt too wide) in paragraph at lines 257--257
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] Status: TIME_LIMIT | ObjVal: 330800
-4952.4830 | Runtime: 600.4 s[] 
- []
-
-
-Overfull \hbox (93.75pt too wide) in paragraph at lines 272--272
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] 312907 vars | 27183 constrs | 97732
-2 nnz | sense=max | start=none[] 
- []
-
-
-Overfull \hbox (67.5pt too wide) in paragraph at lines 272--272
-[]\TU/lmtt/m/n/10 ## [solve_lp_with_gurobi] Status: OPTIMAL | ObjVal: 305234955
-7.0877 | Runtime: 129.8 s[] 
- []
-
-
-Overfull \hbox (0.23203pt too wide) in paragraph at lines 276--291
-\TU/lmr/m/n/10 biodiversity conservation, and rural income generation on the sa
-me hectare of land ([]Toens-
- []
-
-
-
-[5]
-
-LaTeX Warning: Reference `sec:experiments' on page 6 undefined on input line 34
-2.
-
-
-
-[6]
-
-[7]
-
-[8]
-=======
 
 [4]
 
 [5]
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 
-[9]
-
-[10]
-
-Package natbib Warning: Citation `Shinozaki1961_CD_Effect' on page 11 undefined
- on input line 542.
-
-
-Package natbib Warning: Citation `Shinozaki1961_CD_Effect' on page 11 undefined
- on input line 555.
+LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 
 
-<<<<<<< HEAD
-[11]
-File: figures/growth-asymptote-functions-1.pdf Graphic file (type pdf)
-<use figures/growth-asymptote-functions-1.pdf>
-=======
 [6]
 
 [7]
@@ -1064,26 +911,12 @@ File: figures/growth-asymptote-functions-1.pdf Graphic file (type pdf)
 
 
 [8]
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 File: figures/afs-model-functions-1.pdf Graphic file (type pdf)
 <use figures/afs-model-functions-1.pdf>
-
-
-[12]
 File: figures/afs-growth-curves-1.pdf Graphic file (type pdf)
 <use figures/afs-growth-curves-1.pdf>
 
 
-<<<<<<< HEAD
-[13]
-
-[14]
-
-[15]
-
-[16]
-Overfull \hbox (1.38933pt too wide) in paragraph at lines 781--781
-=======
 [9]
 
 [10]
@@ -1092,79 +925,46 @@ Overfull \hbox (1.38933pt too wide) in paragraph at lines 781--781
 
 [12]
 Overfull \hbox (1.38933pt too wide) in paragraph at lines 643--643
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 []|\TU/lmr/m/n/7 Uncertainty|  
  []
 
 
-<<<<<<< HEAD
-Overfull \hbox (23.06133pt too wide) in paragraph at lines 781--781
-=======
 Overfull \hbox (23.06133pt too wide) in paragraph at lines 643--643
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 []|\TU/lmr/m/n/7 Strategic/Tactical|  
  []
 
 
-<<<<<<< HEAD
-Overfull \hbox (10.75542pt too wide) in paragraph at lines 781--781
-=======
 Overfull \hbox (10.75542pt too wide) in paragraph at lines 643--643
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 []|\TU/lmr/m/n/7 Cost/GHG/jobs|  
  []
 
 
-<<<<<<< HEAD
-Overfull \hbox (23.06133pt too wide) in paragraph at lines 781--781
-=======
 Overfull \hbox (23.06133pt too wide) in paragraph at lines 643--643
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 []|\TU/lmr/m/n/7 Strategic/Tactical|  
  []
 
 
-<<<<<<< HEAD
-Overfull \hbox (2.55142pt too wide) in paragraph at lines 781--781
-=======
 Overfull \hbox (2.55142pt too wide) in paragraph at lines 643--643
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 []|\TU/lmr/m/n/7 Sustainability|  
  []
 
 
-<<<<<<< HEAD
-Overfull \hbox (11.65132pt too wide) in paragraph at lines 781--781
-=======
 Overfull \hbox (11.65132pt too wide) in paragraph at lines 643--643
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 []|\TU/lmr/m/n/7 Tactical/Oper.|  
  []
 
 
-<<<<<<< HEAD
-Overfull \hbox (23.06133pt too wide) in paragraph at lines 781--781
-=======
 Overfull \hbox (23.06133pt too wide) in paragraph at lines 643--643
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 []|\TU/lmr/m/n/7 Strategic/Tactical|  
  []
 
 
-<<<<<<< HEAD
-Overfull \hbox (7.49332pt too wide) in paragraph at lines 781--781
-=======
 Overfull \hbox (7.49332pt too wide) in paragraph at lines 643--643
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 []|\TU/lmr/bx/n/7 Endogenous|  
  []
 
 
-<<<<<<< HEAD
-Overfull \hbox (23.85233pt too wide) in paragraph at lines 781--781
-=======
 Overfull \hbox (23.85233pt too wide) in paragraph at lines 643--643
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 []|\TU/lmr/bx/n/7 Strategic/Multi- 
  []
 
@@ -1172,58 +972,6 @@ Overfull \hbox (23.85233pt too wide) in paragraph at lines 643--643
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 
-<<<<<<< HEAD
-LaTeX Warning: Reference `eq:total-stand-biomass' on page 17 undefined on input
- line 794.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 17 undefined on input lin
-e 794.
-
-
-LaTeX Warning: Reference `eq:biomass-partial' on page 17 undefined on input lin
-e 806.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 17 undefined on input lin
-e 806.
-
-
-
-[17]
-
-[18]
-File: figures/fig-set-S-tikz-1.pdf Graphic file (type pdf)
-<use figures/fig-set-S-tikz-1.pdf>
-File: figures/fig-set-S-path-1.pdf Graphic file (type pdf)
-<use figures/fig-set-S-path-1.pdf>
-
-
-[19]
-
-LaTeX Warning: Reference `eq:biomass-partial' on page 20 undefined on input lin
-e 873.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 20 undefined on input lin
-e 873.
-
-
-LaTeX Warning: Reference `eq:total-stand-biomass' on page 20 undefined on input
- line 874.
-
-
-LaTeX Warning: Reference `tab:tab-notation' on page 20 undefined on input line 
-875.
-
-
-LaTeX Warning: Reference `eq:total-stand-biomass' on page 20 undefined on input
- line 927.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 20 undefined on input lin
-e 927.
-=======
 
 [13]
 
@@ -1275,58 +1023,12 @@ LaTeX Warning: Reference `eq:total-stand-biomass' on page 16 undefined on input
 
 LaTeX Warning: Reference `eq:component-share' on page 16 undefined on input lin
 e 789.
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 
 
-<<<<<<< HEAD
-[20]
-
-LaTeX Warning: Reference `eq:biomass-partial' on page 21 undefined on input lin
-e 989.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 21 undefined on input lin
-e 989.
-
-
-LaTeX Warning: Reference `eq:C4' on page 21 undefined on input line 994.
-
-
-
-[21]
-
-LaTeX Warning: Reference `eq:total-stand-biomass' on page 22 undefined on input
- line 1050.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 22 undefined on input lin
-e 1051.
-
-
-LaTeX Warning: Reference `fig:max3-growth' on page 22 undefined on input line 1
-056.
-
-
-
-[22]
-File: figures/fig-supply-chain-network-1.pdf Graphic file (type pdf)
-<use figures/fig-supply-chain-network-1.pdf>
-
-LaTeX Warning: Reference `sec-clustering' on page 23 undefined on input line 11
-01.
-
-
-
-[23]
-
-[24]
-
-[25]
-=======
 [16]
 
 [17]
@@ -1372,27 +1074,18 @@ LaTeX Warning: Reference `sec-clustering' on page 20 undefined on input line 96
 [21]
 
 [22]
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 File: figures/fig-consumer-demand-1.pdf Graphic file (type pdf)
 <use figures/fig-consumer-demand-1.pdf>
 
-<<<<<<< HEAD
-LaTeX Warning: Reference `sec-biomass' on page 26 undefined on input line 1247.
-=======
 LaTeX Warning: Reference `sec-biomass' on page 23 undefined on input line 1109.
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 
 
 
 
-<<<<<<< HEAD
-[26]
-=======
 [23]
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
@@ -1418,38 +1111,10 @@ Missing character: There is no ⁻ in font [lmroman8-regular]:mapping=tex-text;!
 Missing character: There is no ⁻ in font [lmroman8-regular]:mapping=tex-text;!
 Missing character: There is no ⁻ in font [lmroman8-regular]:mapping=tex-text;!
 Missing character: There is no ⁻ in font [lmroman8-regular]:mapping=tex-text;!
-
-<<<<<<< HEAD
-Overfull \hbox (545.74004pt too wide) in paragraph at lines 1373--1389
-=======
-Overfull \hbox (545.74004pt too wide) in paragraph at lines 1235--1251
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
- [][] 
- []
-
 File: figures/fig-results-inventory-1.pdf Graphic file (type pdf)
 <use figures/fig-results-inventory-1.pdf>
 (paper.bbl
 
-<<<<<<< HEAD
-[27]
-
-[28]
-
-[29]
-
-[30]
-
-[31]
-
-[32]
-
-[33]
-
-[34]
-
-[35]
-=======
 [24]
 
 [25]
@@ -1467,7 +1132,6 @@ File: figures/fig-results-inventory-1.pdf Graphic file (type pdf)
 [31]
 
 [32]
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
 Underfull \hbox (badness 1783) in paragraph at lines 215--222
 []\TU/lmr/m/n/8 Statistisches Bundesamt (Destatis).  Kaufwerte und pachtpreise 
 für landwirtschaftliche grund-
@@ -1487,25 +1151,12 @@ Underfull \hbox (badness 10000) in paragraph at lines 215--222
 [][][][][][][][][] []
  []
 
-
-
-[36])
+)
 
 Package natbib Warning: There were undefined citations.
 
 
 
-<<<<<<< HEAD
-[37]
-
-[38]
-
-[39]
-
-[40]
-
-[41] (paper.aux)
-=======
 [33]
 
 [34]
@@ -1515,7 +1166,6 @@ Package natbib Warning: There were undefined citations.
 [36]
 
 [37] (paper.aux)
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
  ***********
 LaTeX2e <2025-06-01> patch level 1
 L3 programming layer <2025-09-02>
@@ -1529,20 +1179,10 @@ Package rerunfilecheck Info: File `paper.out' has not changed.
 Here is how much of TeX's memory you used:
  21759 strings out of 403246
  393671 string characters out of 5460781
-<<<<<<< HEAD
- 917174 words of memory out of 5000000
- 49880 multiletter control sequences out of 15000+600000
- 671787 words of font info for 90 fonts, out of 8000000 for 9000
- 1348 hyphenation exceptions out of 8191
- 72i,21n,79p,1169b,586s stack positions out of 10000i,1000n,20000p,200000b,200000s
-
-Output written on paper.pdf (41 pages).
-=======
- 915364 words of memory out of 5000000
+ 910989 words of memory out of 5000000
  49880 multiletter control sequences out of 15000+600000
  671787 words of font info for 90 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  72i,21n,79p,1169b,553s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on paper.pdf (37 pages).
->>>>>>> f90a773743928b8660c0e8a9a5a407774946377b
