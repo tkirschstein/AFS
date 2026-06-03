@@ -1230,24 +1230,29 @@ Parameter & Description & Base-case value & Unit\\
 
 \begin{table}
 \centering
-\caption{\label{tab:tab-scenario-kpis}Key performance indicators for benchmark and sensitivity scenarios. Total profit is computed as total revenue minus all costs over the full planning horizon; the demand satisfaction indicator reports the share of total customer demand that is served.}
+\caption{\label{tab:tab-scenario-kpis}Key performance indicators for benchmark and sensitivity scenarios.
+               Opp.~cost: opportunity cost per hectare; Cost/Rev.~mult.: multipliers
+               relative to the baseline scenario (1.0 = baseline).
+               Total profit is net revenue minus all costs over the full planning
+               horizon; demand satisfaction reports the share of total customer
+               demand served.}
 \centering
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
 \fontsize{8}{10}\selectfont
-\begin{tabular}[t]{lrrrl}
+\begin{tabular}[t]{lrrrrrrr}
 \toprule
-Scen. & Profit (€/ha-year) & Act. sites & Wood (kt/a) & demand satis. (\%)\\
+Scen. & Opp. cost (€/ha) & Cost mult. & Rev. mult. & Profit (€/ha·a) & Act. sites & Wood (kt/a) & Demand sat. (\%)\\
 \midrule
-\cellcolor{gray!10}{Bench.} & \cellcolor{gray!10}{641} & \cellcolor{gray!10}{59} & \cellcolor{gray!10}{913} & \cellcolor{gray!10}{78.6\%}\\
-1 & 262 & 58 & 837 & 72.0\%\\
-\cellcolor{gray!10}{2} & \cellcolor{gray!10}{192} & \cellcolor{gray!10}{50} & \cellcolor{gray!10}{747} & \cellcolor{gray!10}{64.3\%}\\
-3 & 66 & 44 & 695 & 59.8\%\\
-\cellcolor{gray!10}{4} & \cellcolor{gray!10}{107} & \cellcolor{gray!10}{15} & \cellcolor{gray!10}{169} & \cellcolor{gray!10}{14.5\%}\\
+\cellcolor{gray!10}{Bench.} & \cellcolor{gray!10}{150} & \cellcolor{gray!10}{1.0} & \cellcolor{gray!10}{1.0} & \cellcolor{gray!10}{641} & \cellcolor{gray!10}{59} & \cellcolor{gray!10}{913} & \cellcolor{gray!10}{78.6\%}\\
+1 & 150 & 0.5 & 0.5 & 262 & 58 & 837 & 72.0\%\\
+\cellcolor{gray!10}{2} & \cellcolor{gray!10}{300} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{192} & \cellcolor{gray!10}{50} & \cellcolor{gray!10}{747} & \cellcolor{gray!10}{64.3\%}\\
+3 & 150 & 2.0 & 0.5 & 66 & 44 & 695 & 59.8\%\\
+\cellcolor{gray!10}{4} & \cellcolor{gray!10}{300} & \cellcolor{gray!10}{2.0} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{107} & \cellcolor{gray!10}{15} & \cellcolor{gray!10}{169} & \cellcolor{gray!10}{14.5\%}\\
 \addlinespace
-5 & 686 & 95 & 911 & 78.4\%\\
-\cellcolor{gray!10}{6} & \cellcolor{gray!10}{785} & \cellcolor{gray!10}{78} & \cellcolor{gray!10}{904} & \cellcolor{gray!10}{77.8\%}\\
-7 & 886 & 64 & 911 & 78.3\%\\
-\cellcolor{gray!10}{8} & \cellcolor{gray!10}{893} & \cellcolor{gray!10}{54} & \cellcolor{gray!10}{798} & \cellcolor{gray!10}{68.6\%}\\
+5 & 150 & 0.5 & 1.5 & 686 & 95 & 911 & 78.4\%\\
+\cellcolor{gray!10}{6} & \cellcolor{gray!10}{300} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{1.5} & \cellcolor{gray!10}{785} & \cellcolor{gray!10}{78} & \cellcolor{gray!10}{904} & \cellcolor{gray!10}{77.8\%}\\
+7 & 150 & 2.0 & 1.5 & 886 & 64 & 911 & 78.3\%\\
+\cellcolor{gray!10}{8} & \cellcolor{gray!10}{300} & \cellcolor{gray!10}{2.0} & \cellcolor{gray!10}{1.5} & \cellcolor{gray!10}{893} & \cellcolor{gray!10}{54} & \cellcolor{gray!10}{798} & \cellcolor{gray!10}{68.6\%}\\
 \bottomrule
 \end{tabular}}
 \end{table}

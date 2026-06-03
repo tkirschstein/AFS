@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  3 JUN 2026 12:23
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  3 JUN 2026 13:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1163,9 +1163,7 @@ Package natbib Warning: There were undefined citations.
 
 [35]
 
-[36]
-
-[37] (paper.aux)
+[36] (paper.aux)
  ***********
 LaTeX2e <2025-06-01> patch level 1
 L3 programming layer <2025-09-02>
@@ -1179,10 +1177,10 @@ Package rerunfilecheck Info: File `paper.out' has not changed.
 Here is how much of TeX's memory you used:
  21759 strings out of 403246
  393671 string characters out of 5460781
- 910989 words of memory out of 5000000
+ 917462 words of memory out of 5000000
  49880 multiletter control sequences out of 15000+600000
  671787 words of font info for 90 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  72i,21n,79p,1169b,553s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on paper.pdf (37 pages).
+Output written on paper.pdf (36 pages).

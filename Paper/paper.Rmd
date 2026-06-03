@@ -2869,7 +2869,7 @@ ggplot() +
 # ── 1. Opportunity cost rate per site (€ ha⁻¹ yr⁻¹) ─────────────────────────
 # C_opp is already a per-ha-per-year rate stored in site_meta
 opp_rate <- site_meta %>%
-  select(site_id, opp_rate = C_opp)   # unit: € ha⁻¹ yr⁻¹
+  select(site_id, opp_rate = C_opp, area_ha)   # unit: € ha⁻¹ yr⁻¹
 
 # ── 2. Demand-weighted average distance to customers per site ─────────────────
 # Step 1: for each (site → hub) shipment, find the downstream (hub → consumer)
@@ -2916,22 +2916,22 @@ scatter_df <- opp_rate %>%
 
 # ── 5. Plot ───────────────────────────────────────────────────────────────────
 ggplot(scatter_df,
-       aes(x = opp_rate, y = avg_dist_km)) +
+       aes(x = opp_rate, y = abs_margin)) +
   # LOESS trend (all sites)
   geom_smooth(method = "loess", formula = y ~ x,
               colour = "grey60", fill = "grey88",
               linewidth = 0.55, alpha = 0.35, se = TRUE) +
   # Profitable sites: filled circles
   geom_point(data = filter(scatter_df,  profitable),
-             aes(size = abs_margin),
+             aes(size = area_ha),
              shape = 16, colour = "#1b9e77", alpha = 0.75) +
   # Loss-making sites: open circles
   geom_point(data = filter(scatter_df, !profitable),
-             aes(size = abs_margin),
+             aes(size = area_ha),
              shape = 1, colour = "#d95f02", stroke = 0.6, alpha = 0.85) +
   # Size legend — both shapes share the same scale
    scale_size_area(
-     name     = "|Net margin|\n(€ ha⁻¹ yr⁻¹)",
+     name     = "avg. delivery distance (km)",
      max_size = 8,
      breaks   = scales::breaks_extended(n = 4),
      labels   = scales::label_number(big.mark = ",")
@@ -2941,7 +2941,7 @@ ggplot(scatter_df,
     labels = scales::label_number(big.mark = ",")
   ) +
   scale_y_continuous(
-    name   = "Demand-weighted avg. delivery distance (km)",
+    name   = "|Net margin| (€ ha⁻¹ yr⁻¹)",
     labels = scales::label_number(accuracy = 1)
   ) +
   # Colour legend annotation (manual, avoids a redundant colour scale)
@@ -2949,7 +2949,7 @@ ggplot(scatter_df,
   labs(
     caption = paste0(
       length(active_site_ids), " active sites  |  ",
-      "point size ~ |net margin| (€ ha⁻¹ yr⁻¹)  |  ",
+      "point size ~ site size (ha)  |  ",
       "green filled = profitable, orange open = loss-making"
     )
   ) +
@@ -2964,18 +2964,23 @@ ggplot(scatter_df,
 ```
 
 # Sensitivity analysis
-
 ```{r tab-scenario-kpis, echo=FALSE, message=FALSE, warning=FALSE}
 # Helper to compute KPIs for one scenario result ------------------------------
 compute_kpis <- function(res, scenario_name = NA_character_) {
   
   milp_instance <- res$milp_instance
   ext           <- res$ext
-  result           <- res$result
-  obj.val <-  result$objective_value
+  result        <- res$result
+  obj.val       <- result$objective_value
+
+  # [NEU] Szenario-Definitions-Parameter aus res$setting extrahieren ----------
+  setting       <- res$setting
+  scen_opp      <- if (!any(is.na(setting)))  setting$opp      else 150   # €/ha Opportunitätskosten-Basiswert
+  scen_cost     <- if (!any(is.na(setting)))  setting$cost     else 1.0   # Kostenmultiplikator (1 = Basis)
+  scen_revenue  <- if (!any(is.na(setting)))  setting$revenue  else 1.0   # Erlösmultiplikator  (1 = Basis)
+  # ---------------------------------------------------------------------------
 
   # 1) Total profit over horizon (revenue – all costs)
-  # Revenue: as in main analysis
   price_df <- as.data.frame(milp_instance$consumer_prices) %>%
     setNames(c("consumer_id", "del_product", "price")) %>%
     mutate(
@@ -2989,7 +2994,7 @@ compute_kpis <- function(res, scenario_name = NA_character_) {
     group_by(period) %>%
     summarise(rev = sum(rev, na.rm = TRUE), .groups = "drop")
 
-  # Site meta & active sites (consistent with other chunks)
+  # Site meta & active sites
   active_site_ids <- ext$z %>%
     filter(arc_type == "harvest") %>%
     pull(site_id) %>% unique()
@@ -2999,45 +3004,40 @@ compute_kpis <- function(res, scenario_name = NA_character_) {
     filter(site_id %in% active_site_ids)
 
   # Establishment, harvest, maintenance, opportunity costs
-cost_est <- ext$z %>%
-  filter(arc_type == "establishment") %>%
-  #select(-area_ha) %>%
-  left_join(site_meta, by = "site_id") %>%
-  mutate(cost = C_est * area_ha, period = t) %>%
-  group_by(period) %>%
-  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop")
+  cost_est <- ext$z %>%
+    filter(arc_type == "establishment") %>%
+    left_join(site_meta, by = "site_id") %>%
+    mutate(cost = C_est * area_ha, period = t) %>%
+    group_by(period) %>%
+    summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop")
 
-cost_harv <- ext$z %>%
-  filter(arc_type == "harvest") %>%
-  #select(-area_ha) %>%
-  mutate(age_len = t-s) %>% 
-  left_join(site_meta, by = "site_id") %>%
-  mutate(cost = C_harv * area_ha, period = t) %>%
-  group_by(period) %>%
-  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop")
+  cost_harv <- ext$z %>%
+    filter(arc_type == "harvest") %>%
+    mutate(age_len = t - s) %>%
+    left_join(site_meta, by = "site_id") %>%
+    mutate(cost = C_harv * area_ha, period = t) %>%
+    group_by(period) %>%
+    summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop")
 
-cost_main <- ext$z %>%
-  filter(arc_type == "harvest") %>%
-  #select(-area_ha) %>%
-  mutate(age_len = t-s) %>% 
-  left_join(site_meta, by = "site_id") %>%
-  mutate(cost = C_main * area_ha * age_len, period = t) %>%
-  group_by(period) %>%
-  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop")
+  cost_main <- ext$z %>%
+    filter(arc_type == "harvest") %>%
+    mutate(age_len = t - s) %>%
+    left_join(site_meta, by = "site_id") %>%
+    mutate(cost = C_main * area_ha * age_len, period = t) %>%
+    group_by(period) %>%
+    summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop")
 
-cost_opp <- ext$z %>%
-  filter(arc_type == "harvest") %>%
-  #select(-area_ha) %>%
-  mutate(age_len = t-s) %>% 
-  left_join(site_meta, by = "site_id") %>%
-  mutate(cost = C_opp * area_ha * age_len, period = t) %>%
-  group_by(period) %>%
-  summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop")
+  cost_opp <- ext$z %>%
+    filter(arc_type == "harvest") %>%
+    mutate(age_len = t - s) %>%
+    left_join(site_meta, by = "site_id") %>%
+    mutate(cost = C_opp * area_ha * age_len, period = t) %>%
+    group_by(period) %>%
+    summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop")
 
   # Transport costs
   dist_ij_m <- as.matrix(milp_instance$d_ij)
   dist_jk_m <- as.matrix(milp_instance$d_jk)
-  
 
   cost_tr_raw <- ext$Xij %>%
     mutate(
@@ -3069,86 +3069,84 @@ cost_opp <- ext$z %>%
 
   # Combine all cost components
   cost_ts <- bind_rows(
-    cost_est  %>% mutate(component = "Establishment"),
-    cost_harv %>% mutate(component = "Harvesting"),
-    cost_main %>% mutate(component = "Maintenance"),
-    cost_opp  %>% mutate(component = "Opportunity"),
+    cost_est    %>% mutate(component = "Establishment"),
+    cost_harv   %>% mutate(component = "Harvesting"),
+    cost_main   %>% mutate(component = "Maintenance"),
+    cost_opp    %>% mutate(component = "Opportunity"),
     cost_tr_raw %>% mutate(component = "Transport (raw)"),
     cost_tr_pre %>% mutate(component = "Transport (pre-proc.)"),
     cost_stor   %>% mutate(component = "Storage")
   )
 
-  total_rev  <- sum(rev_ts$rev, na.rm = TRUE)
-  total_cost <- sum(cost_ts$cost, na.rm = TRUE)
+  total_rev    <- sum(rev_ts$rev,   na.rm = TRUE)
+  total_cost   <- sum(cost_ts$cost, na.rm = TRUE)
   total_profit <- total_rev - total_cost
 
-  # 2) Number of active sites (with at least one harvest arc)
-  n_active_sites <- length(active_site_ids)
-  
+  # 2) Number of active sites
+  n_active_sites    <- length(active_site_ids)
   area_active_sites <- sum(site_meta$area_ha)
 
-  # 3) Total quantity of wood produced (sum of harvested area * yield proxy)
-  # Here we use harvested area_ha * age_len as a proxy for volume if no explicit
-  # wood variable is available. Replace with the correct expression if you have
-  # a dedicated production variable.
+  # 3) Total quantity of wood produced
   total_wood <- ext$Xij %>%
-    group_by(p) %>% 
-    summarise(prod_total = sum(value, na.rm = TRUE), .groups = "drop") %>% 
+    group_by(p) %>%
+    summarise(prod_total = sum(value, na.rm = TRUE), .groups = "drop") %>%
     rename(product = p)
 
   # 4) Share of total customer demand satisfied
-  # Total demand over all periods and consumers
-  demand_df <- as.data.frame(milp_instance$consumers)
-  
-  demand_df <- milp_instance$consumers %>% 
-    select(starts_with("demand")) %>% 
-    colSums() %>% 
-    as.data.frame() %>% 
-    rownames_to_column("product") 
-  
+  demand_df <- milp_instance$consumers %>%
+    select(starts_with("demand")) %>%
+    colSums() %>%
+    as.data.frame() %>%
+    rownames_to_column("product")
+
   colnames(demand_df)[2] <- "demand"
-  
-  demand_df <- demand_df %>% 
-    mutate(product = as.integer(as.character(factor(product, labels=1:3))), demand = demand * milp_instance$n_periods)
-  
-  
+
+  demand_df <- demand_df %>%
+    mutate(
+      product = as.integer(as.character(factor(product, labels = 1:3))),
+      demand  = demand * milp_instance$n_periods
+    )
+
   total_delivered <- ext$Xjk %>%
     group_by(del_product) %>%
-    summarise(total_consume = sum(value, na.rm = TRUE), .groups = "drop") %>% 
-    rename( product = del_product)
-  
-  # merge demand and production
+    summarise(total_consume = sum(value, na.rm = TRUE), .groups = "drop") %>%
+    rename(product = del_product)
+
   dem_prod_df <- demand_df %>%
-    left_join(total_wood, by ="product") %>% 
-    left_join(total_delivered, by ="product") %>% 
-    mutate(share_demand = total_consume / demand , share_prod = total_consume / prod_total )
-  
+    left_join(total_wood,      by = "product") %>%
+    left_join(total_delivered, by = "product") %>%
+    mutate(
+      share_demand = total_consume / demand,
+      share_prod   = total_consume / prod_total
+    )
+
   Share_demand_satisfied <- sum(dem_prod_df$total_consume) / sum(dem_prod_df$demand)
 
   tibble(
-    Scenario                = scenario_name,
-    Rep_Total_profit_MEUR   = obj.val / 1e6,
-    Total_profit_MEUR       = total_profit / 1e6,
-    rel_profit              = total_profit/ area_active_sites / milp_instance$n_periods,
-    Active_sites            = n_active_sites,
-    Total_wood_units_kt     = sum(total_wood$prod_total)/milp_instance$n_periods/1000,
-    Share_demand_satisfied_P1  = dem_prod_df$share_demand[1],
-    Share_demand_satisfied_P2  = dem_prod_df$share_demand[2],
+    Scenario                   = scenario_name,
+    Opp_cost_EUR_ha            = scen_opp,       # Opportunitätskosten €/ha
+    Cost_multiplier            = scen_cost,       # Kostenmultiplikator  (Basis = 1)
+    Revenue_multiplier         = scen_revenue,    # Erlösmultiplikator   (Basis = 1)
+    Rep_Total_profit_MEUR      = obj.val / 1e6,
+    Total_profit_MEUR          = total_profit / 1e6,
+    rel_profit                 = total_profit / area_active_sites / milp_instance$n_periods,
+    Active_sites               = n_active_sites,
+    Total_wood_units_kt        = sum(total_wood$prod_total) / milp_instance$n_periods / 1000,
+    Share_demand_satisfied_P1  = dem_prod_df$share_demand[2],
+    Share_demand_satisfied_P2  = dem_prod_df$share_demand[1],
     Share_demand_satisfied_P3  = dem_prod_df$share_demand[3],
-    Share_demand_satisfied  =  Share_demand_satisfied
+    Share_demand_satisfied     = Share_demand_satisfied
   )
 }
 
 # ------------------------------------------------------------------
 #  Compute KPIs for benchmark and all sensitivity scenarios
 # ------------------------------------------------------------------
-res_bench <- list(setting = NA, milp_instance = milp_instance, ext = ext , result = result)
-# Benchmark (reference) scenario; rename 'res_bench' as needed
+res_bench <- list(setting = NA, milp_instance = milp_instance, ext = ext, result = result)
 kpi_bench <- compute_kpis(res_bench, scenario_name = "Bench.")
 
 names(res.sens.list) <- 1:length(res.sens.list)
 
-# Sensitivity runs in res_sens_list (named list)
 kpi_sens <- purrr::imap_dfr(
   res.sens.list,
   ~ compute_kpis(.x, scenario_name = .y)
@@ -3156,29 +3154,46 @@ kpi_sens <- purrr::imap_dfr(
 
 kpi_all <- bind_rows(kpi_bench, kpi_sens) %>%
   mutate(
-    Rep_Total_profit_MEUR     = round(Rep_Total_profit_MEUR, 0),
-    Total_profit_MEUR         = round(Total_profit_MEUR, 0),
-    rel_profit                = round(rel_profit, 0),
-    Total_wood_units_kt       = round(Total_wood_units_kt, 0),
-    Share_demand_satisfied_P1 = scales::percent(Share_demand_satisfied_P1, accuracy = 0.0),
-    Share_demand_satisfied_P2 = scales::percent(Share_demand_satisfied_P2, accuracy = 0.0),
-    Share_demand_satisfied_P3 = scales::percent(Share_demand_satisfied_P3, accuracy = 0.0),
-    Share_demand_satisfied = scales::percent(Share_demand_satisfied, accuracy = 0.0)
-  ) %>% 
-  select(Scenario , rel_profit, Active_sites, Total_wood_units_kt, Share_demand_satisfied)
+    Rep_Total_profit_MEUR      = round(Rep_Total_profit_MEUR, 0),
+    Total_profit_MEUR          = round(Total_profit_MEUR, 0),
+    rel_profit                 = round(rel_profit, 0),
+    Total_wood_units_kt        = round(Total_wood_units_kt, 0),
+    Opp_cost_EUR_ha            = round(Opp_cost_EUR_ha, 0),
+    Cost_multiplier            = round(Cost_multiplier, 2),
+    Revenue_multiplier         = round(Revenue_multiplier, 2),
+    Share_demand_satisfied_P1  = scales::percent(Share_demand_satisfied_P1, accuracy = 0.1),
+    Share_demand_satisfied_P2  = scales::percent(Share_demand_satisfied_P2, accuracy = 0.1),
+    Share_demand_satisfied_P3  = scales::percent(Share_demand_satisfied_P3, accuracy = 0.1),
+    Share_demand_satisfied     = scales::percent(Share_demand_satisfied,    accuracy = 0.1)
+  ) %>%
+  select(
+    Scenario, Opp_cost_EUR_ha, Cost_multiplier, Revenue_multiplier,
+    rel_profit, Active_sites, Total_wood_units_kt, Share_demand_satisfied
+  )
 
 kpi_all %>%
   knitr::kable(
     format   = "latex",
     booktabs = TRUE,
-    #digits   = c(NA, 0, 0, 0, NA, NA, NA, NA),
-    align     = c("l", "r", "r", "r","r"),
+    align    = c("l", "r", "r", "r", "r", "r", "r", "r"),
     col.names = c(
-      "Scen.", "Profit (€/ha-year)", "Act. sites", "Wood (kt/a)", "demand satis. (%)"
+      "Scen.",
+      "Opp. cost (€/ha)",   # [NEU]
+      "Cost mult.",         # [NEU]
+      "Rev. mult.",         # [NEU]
+      "Profit (€/ha·a)",
+      "Act. sites",
+      "Wood (kt/a)",
+      "Demand sat. (%)"
     ),
-    caption = "Key performance indicators for benchmark and sensitivity scenarios. Total profit is computed as total revenue minus all costs over the full planning horizon; the demand satisfaction indicator reports the share of total customer demand that is served."
-   ) %>%
-  kable_styling(font_size = 8, latex_options = c("striped","scale_down") )
+    caption = "Key performance indicators for benchmark and sensitivity scenarios.
+               Opp.~cost: opportunity cost per hectare; Cost/Rev.~mult.: multipliers
+               relative to the baseline scenario (1.0 = baseline).
+               Total profit is net revenue minus all costs over the full planning
+               horizon; demand satisfaction reports the share of total customer
+               demand served."
+  ) %>%
+  kable_styling(font_size = 8, latex_options = c("striped", "scale_down"))
 ```
 
 # Conclusion
