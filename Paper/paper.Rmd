@@ -3160,10 +3160,10 @@ kpi_all <- bind_rows(kpi_bench, kpi_sens) %>%
     Total_profit_MEUR         = round(Total_profit_MEUR, 0),
     rel_profit                = round(rel_profit, 0),
     Total_wood_units_kt       = round(Total_wood_units_kt, 0),
-    Share_demand_satisfied_P1 = scales::percent(Share_demand_satisfied_P1, accuracy = 0.1),
-    Share_demand_satisfied_P2 = scales::percent(Share_demand_satisfied_P2, accuracy = 0.1),
-    Share_demand_satisfied_P3 = scales::percent(Share_demand_satisfied_P3, accuracy = 0.1),
-    Share_demand_satisfied = scales::percent(Share_demand_satisfied, accuracy = 0.1)
+    Share_demand_satisfied_P1 = scales::percent(Share_demand_satisfied_P1, accuracy = 0.0),
+    Share_demand_satisfied_P2 = scales::percent(Share_demand_satisfied_P2, accuracy = 0.0),
+    Share_demand_satisfied_P3 = scales::percent(Share_demand_satisfied_P3, accuracy = 0.0),
+    Share_demand_satisfied = scales::percent(Share_demand_satisfied, accuracy = 0.0)
   ) %>% 
   select(Scenario , rel_profit, Active_sites, Total_wood_units_kt, Share_demand_satisfied)
 
@@ -3172,6 +3172,7 @@ kpi_all %>%
     format   = "latex",
     booktabs = TRUE,
     #digits   = c(NA, 0, 0, 0, NA, NA, NA, NA),
+    align     = c("l", "r", "r", "r","r"),
     col.names = c(
       "Scen.", "Profit (€/ha-year)", "Act. sites", "Wood (kt/a)", "demand satis. (%)"
     ),
