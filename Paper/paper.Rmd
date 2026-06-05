@@ -405,9 +405,8 @@ The remainder of the paper is structured as follows. Section
 biomass systems, allometric biomass modelling, and biomass supply chain
 optimisation. Section \@ref(sec:milp) summarises the MILP formulation
 for the agroforestry supply chain with age-lag constraints. Section
-\@ref(sec:experiments) outlines the planned computational experiments
-for the case study and discusses expected insights for cleaner
-production strategies.
+\@ref(sec-casestudy) presents the case study instantiation, the base-case optimisation results,
+and the sensitivity analysis, examining the implications for cleaner production strategies.
 
 # Literature review {#sec:litreview}
 
@@ -473,11 +472,11 @@ economic viability. Thus, in the present paper SRAFS and LRAFS are not
 considered as separate AFS systems, but the interplay of intended use,
 establishment, and harvesting decisions is analysed.
 
-### Economic rationale of landowners
+## Economic rationale of landowners
 
 The decision of a landowner to establish an AFS involves weighing
 substantial up-front costs and long-term opportunity costs against a
-diversified revenue stream. On the **cost side**, establishment requires
+diversified revenue stream. On the cost side, establishment requires
 site preparation, planting material, and planting labour, typically
 amounting to 1,500--3,500 \euro/ha for SRC or SRAFS
 [@Faasch2012_SRC_Economics; @Testa2014_Poplar_Economics]. Recurrent
@@ -518,11 +517,11 @@ Nonetheless, economic attractiveness of AFS depends primarily on
 revenues of AFS biomass. Thereby, revenues are different for the types
 of biomass and in which value chain it is used. Often AFS biomasses are
 used energetically, i.e. for heat and power generation, or anaerobic
-digestion, which typically creates low prices per tonne of biomass.
+digestion, which typically creates low prices per tonne of biomass.[REF]
 Alternatively, woody parts of the biomass (i.e., the stem and large
 branches) can also be used as pulp and paper grade material as well as
 feedstock for chemical industry or as timber achieving higher prices
-[@Lamers2015_Feedstock_Design; @DeMeyer2015_OPTIMASS]. Thus, fostering
+[@Lamers2015_Feedstock_Design] [EXTEND REFS]. Thus, fostering
 AFS establishment by maximizing economic returns from AFS biomass
 requires a strategic approach to product cascading that allocates
 different biomass fractions to the highest-value applications, while
@@ -606,28 +605,25 @@ followed by self-thinning and competitive deceleration as canopy closure
 intensifies [@Niemczyk2021_Poplar_Rotation;
 @Testa2014_Poplar_Economics]. This trajectory is described by a Gompertz
 model: \begin{equation}
-  M^{sl}(t) \;=\; A(N) \cdot \exp\!\bigl(-\exp(-k\,(t - t_0))\bigr),
+  M^{sl}(t) \;=\; A(N) \cdot \exp\!\bigl(-\exp(-k \cdot (t - t_0))\bigr),
   \label{eq:gomp-stand}
 \end{equation} where $t_0$ is the age of maximum instantaneous biomass
 increment and $k$ determines how quickly the stand approaches its
 site-specific asymptote $A(N)$. For Central European poplar under
-medium-rotation AFS management (10--20 yr), calibration against
+medium-rotation AFS management (10--20 yr), analysing
 empirical data from @Huber2018_SRAFS_growth,
-@Niemczyk2021_Poplar_Rotation, and @Jha2018_Poplar_AFS_Biomass yields
-$k = 0.194$,yr$^{-1}$ and $t_0 = 9.7$,yr for a conservative site, and
-$k = 0.173$,yr$^{-1}$, $t_0 = 10.1$,yr for a high-productivity site,
-placing the growth peak close to the biologically optimal rotation age
-identified by @Niemczyk2021_Poplar_Rotation.
+@Niemczyk2021_Poplar_Rotation, and @Jha2018_Poplar_AFS_Biomass yields parameter intervals of 
+$k \in [0.17,0.2]$ and $t_0 \in [9,10]$ years, depending on local specifications of the AFS under study.
+Parameter $t_0$ indicates an upper bound on the optimal rotation age
+as growth slows down or diminishes entirely close to this age. 
 
-The asymptote $A(N)$ is not a fixed species constant but depends
-explicitly on planting density through a competition-density power law
+The asymptote $A(N)$ depends largerly on planting density and can be modelled by a competition-density power law
 [@Shinozaki1961_CD_Effect]: \begin{equation}
-  A(N) \;=\; \frac{C_{\mathrm{site}} \cdot N^{1-\beta}}{1000},
+  A(N) \;=\; C_{\mathrm{site}} \cdot N^{1-\beta},
   \label{eq:A-density}
-\end{equation} where $C_{\mathrm{site}}$ encodes site quality and
+\end{equation} where $C_{\mathrm{site}}$ encodes site quality, $N$ indiactes tree density (e.g. trees per hectar), and
 $\beta$ is the competition exponent. Equivalently, the per-tree
-asymptote
-$A_{\mathrm{tree}}(N) = A(N)\cdot 1000/N = C_{\mathrm{site}}\cdot N^{-\beta}$
+asymptote $A_{\mathrm{tree}}(N) = A(N)/N = C_{\mathrm{site}}\cdot N^{-\beta}$
 decreases with density as individual trees have access to less growing
 space. Fitting \eqref{eq:A-density} to two anchor points --- a
 conservative AFS calibration at 113 trees,ha$^{-1}$ (central EU;
@@ -1872,6 +1868,58 @@ params_df %>%
 
 ## Optimization results
 
+The AFS-SCD model is solved for the Saxony-Anhalt base-case instance
+described in Section \@ref(sec-casestudy). All results presented in
+this section refer to the base-case parametrisation summarised in
+Table \@ref(tab:tab-milp-params). The model selects a subset of KUP
+super-sites for establishment and identifies the optimal harvest
+schedule, intermediate facility utilisation, and product allocation
+across the 15-period planning horizon.
+
+Figure \@ref(fig:fig-results-sc-map) shows the spatial configuration of
+the optimal supply chain. Active super-sites are concentrated in the
+Elbe and Saale floodplains, where high biomass yields and proximity to
+major processing facilities create the most favourable economics. Sites
+in the Harz foothills and peripheral areas with high opportunity costs
+are not selected. The pie charts overlaid on each active site indicate
+the product-mix composition: sites closer to P1 consumers (chemical/pulp
+grade) allocate a larger stem fraction, while more remote sites rely
+more heavily on P3 (energy) grade biomass.
+
+Figures \@ref(fig:fig-results-alluvial)
+and \@ref(fig:fig-results-deliveries) report the biomass flows over the
+planning horizon. Total annual biomass throughput rises steeply in the
+first five periods as newly established sites reach minimum harvest age,
+stabilises during the middle of the horizon, and undergoes a partial
+decline towards the end as rotation cycles exhaust the planning window.
+The product cascade is clearly visible: stem biomass (P1) dominates the
+early harvest periods when young stands deliver the highest merchantable
+stem fraction, while branch and residue shares increase as stands mature
+and are harvested at longer rotation lengths.
+
+The distribution of harvesting cycle lengths at active sites is
+illustrated in Figure \@ref(fig:fig-results-harvest-cycles). The
+majority of harvest events occur at stand ages between the minimum age
+$a^{\min} = 4$ years and approximately 8--10 years, reflecting the
+trade-off between cumulative yield growth and the opportunity cost of
+delayed harvesting. A secondary peak at longer rotation lengths
+(12--15 years) corresponds to sites with lower opportunity costs and
+higher P1 demand in their vicinity.
+
+Figure \@ref(fig:fig-results-costs-profit) presents the aggregate
+cost--profit waterfall over the full horizon. Total revenue is dominated
+by P1 deliveries to the two large pulp mills. Opportunity costs and
+transport costs are the two largest cost drivers; establishment costs
+are one-time and comparatively modest. The site-level revenue--cost
+decomposition in Figure \@ref(fig:fig-results-site-profit) confirms that
+profitability is highly heterogeneous: a small number of large sites
+with low opportunity costs and short distances to P1 consumers account
+for the bulk of total net profit, while several marginal sites operate
+near break-even. Figure \@ref(fig:fig-results-opp-dist) reveals a clear
+negative relationship between opportunity cost rate and site
+profitability, with sites exceeding 300 \euro\ ha$^{-1}$ yr$^{-1}$ rarely
+selected in the optimal solution.
+
 ```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Optimal agroforestry supply chain network. Green polygons: active super-sites with biomass harvest; grey polygons: non-selected sites. Pie charts at active sites show the product mix of harvested biomass (stem = P1, branches = P2, residues = P3), scaled by total harvested volume. Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub). Coloured squares: consumer sites by dominant demand category.", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth", cache=T, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 
 crs_map <- 25833
@@ -2926,6 +2974,46 @@ ggplot(scatter_df,
 ```
 
 # Sensitivity analysis
+
+To assess the robustness of the baseline results and to identify the
+principal drivers of supply chain profitability, a factorial sensitivity
+analysis is conducted. The analysis follows a full-factorial design over
+three scenario dimensions: opportunity cost level
+(\euro\ ha$^{-1}$ yr$^{-1}$), a cost multiplier applied to all variable
+cost parameters (establishment, harvest, transport, and storage), and a
+revenue multiplier applied to all gate prices. The resulting
+$2 \times 2 \times 2 = 8$ scenarios are solved independently in
+addition to the baseline, yielding nine comparable instances
+(Table \@ref(tab:tab-scenario-kpis)).
+
+Table \@ref(tab:tab-scenario-kpis) summarises the key performance
+indicators across all scenarios. Total profit per hectare per year is
+most sensitive to the revenue multiplier: elevated gate prices
+(revenue multiplier = 1.5) substantially improve profitability, while
+reduced prices (multiplier = 0.5) push marginal sites into loss
+territory. The supply chain remains profitable in all scenarios with
+full or elevated revenue even when opportunity costs are high. Scenarios
+combining reduced revenue (multiplier = 0.5) with high opportunity costs
+consistently yield negative net profits, indicating that the economic
+viability of AFS-based supply chains is critically conditional on
+achieving sufficient product-quality premiums from P1 offtakers.
+The number of active sites and total wood throughput respond
+monotonically to the revenue multiplier, confirming that higher gate
+prices incentivise the activation of marginal sites.
+
+The OLS regression reported in Figure \@ref(fig:fig-effects-ols) and
+Table \@ref(tab:tab-lm-profit) decomposes profit variation across
+scenarios and sites into effects of four explanatory variables:
+opportunity cost rate, cost level, revenue level, and log-transformed
+site area. The revenue multiplier carries the largest absolute
+coefficient, followed by opportunity cost rate; site area exerts a
+positive but diminishing marginal effect consistent with economies of
+scale in logistics and harvesting. Rotation length is positively
+associated with profit in low-opportunity-cost settings but negatively
+so when foregone agricultural revenue is high, confirming the
+rotation-length trade-off in the AFS-SCD formulation
+(Section \@ref(sec:milp)).
+
 ```{r tab-scenario-kpis, echo=FALSE, message=FALSE, warning=FALSE}
 # Helper to compute KPIs for one scenario result ------------------------------
 compute_kpis <- function(res, scenario_name = NA_character_) {
@@ -3159,7 +3247,7 @@ kpi_all %>%
 ```
 
 
-```{r lm-site-profit-sensitivity, echo=F, message=FALSE, warning=FALSE, fig.cap="Effect plot of explainig variables of OLS regression model.", fig.width = 5.5, fig.height = 4, dev = "pdf", out.width = "0.72\\textwidth"}
+```{r lm-site-profit-sensitivity, echo=F, message=FALSE, warning=FALSE, fig.cap="Effect plot of explaining variables of OLS regression model.", fig.width = 5.5, fig.height = 4, dev = "pdf", out.width = "0.72\\textwidth"}
 
 # ── 1. Hilfsfunktion: Site-Level KPIs für ein Szenario extrahieren ──────────
 extract_site_profit <- function(res, scenario_name = NA_character_) {
@@ -3402,7 +3490,7 @@ tidy(lm_full, conf.int = TRUE) %>%
     booktabs  = TRUE,
     escape    = FALSE,
     caption   = paste("Overview on OLS regression result (adj. R$^2$:", tmp.lm.adj.r2, "\\%, \\# obervations: ", tmp.lm.nobs, ", $\\sigma$: ",tmp.lm.sigma, ")", sep=""),
-    col.names = c("variable", "estimate", "std. error", "t vaue", "p value",
+    col.names = c("variable", "estimate", "std. error", "t value", "p value",
                   "CI 2.5\\%", "CI 97.5\\%"),
     label     = "tab-lm-profit"
   ) %>%
@@ -3448,6 +3536,61 @@ tidy(lm_full, conf.int = TRUE) %>%
 
 
 # Conclusion
+
+This paper has developed and applied the AFS-SCD model, a MILP
+formulation for the integrated design and operation of agroforestry
+biomass supply chains. The model endogenises stand age dynamics through
+binary arc-based age-lag variables, couples component-specific Gompertz
+yield coefficients for stem, branch, and residue fractions with
+multi-echelon logistics decisions, and embeds a product quality cascade
+that allocates biomass grades to chemical, pulp, and energy markets
+within a unified optimisation framework. The formulation is, to the best
+of our knowledge, the first supply chain model to simultaneously
+optimise AFS establishment timing, consecutive harvest scheduling under
+rotation-age constraints, and product-grade allocation across spatially
+heterogeneous consumer markets.
+
+The case study for the Saxony-Anhalt tri-state region demonstrates the
+practical relevance of the approach. The optimal supply chain
+concentrates AFS establishments in the Elbe and Saale floodplains,
+where high biomass productivity and proximity to large pulp mills create
+the most favourable economics. The sensitivity analysis confirms that
+profitability depends primarily on achievable gate prices for
+high-quality (P1) biomass grades: scenarios combining reduced revenue
+with high opportunity costs yield negative net profits, whereas
+scenarios with full or elevated prices remain viable under cost pressure.
+Opportunity cost is the dominant site-level discriminator, with parcels
+exceeding approximately 300 \euro\ ha$^{-1}$ yr$^{-1}$ rarely selected
+in the optimal solution. These findings underscore the importance of
+product cascading as a strategic lever for AFS viability: maximising
+the share of stem biomass directed to high-value chemical and pulp
+applications substantially improves profitability compared to
+energy-only offtake strategies.
+
+Methodologically, the AFS-SCD model bridges the gap between stand-level
+growth modelling and regional supply chain optimisation identified in
+the literature [@Zahraee2020_BSC_review; @Lamers2015_Feedstock_Design].
+The age-lag constraint structure generalises to other perennial biomass
+crops with periodic coppice cycles, such as willow or black locust, and
+to long-rotation silvoarable systems in which rotation length is a
+strategic variable. The model is extensible to stochastic settings by
+replacing deterministic yield coefficients with scenario-weighted
+counterparts or by incorporating robust optimisation over yield
+uncertainty intervals [@Sharma2013_BSC_review].
+
+Several limitations point to directions for future research. First,
+consumer demand is treated as exogenous and time-invariant; endogenising
+demand responses to biomass price changes would require a
+partial-equilibrium extension. Second, the case study uses a single
+allometric scenario calibrated to Central European poplar; propagating
+Gompertz parameter uncertainty through to supply chain outcomes would
+strengthen the robustness analysis. Third, environmental co-benefits of
+AFS --- including carbon sequestration, nitrate leaching reduction, and
+biodiversity enhancement --- are not monetised in the current objective.
+Integrating life cycle assessment indicators as additional objectives
+or constraints would support a more comprehensive sustainability
+evaluation, consistent with the cleaner production framing of this work.
+
 
 # Appendix
 

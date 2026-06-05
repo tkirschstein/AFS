@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  5 JUN 2026 14:36
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  5 JUN 2026 19:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -885,11 +885,6 @@ Package natbib Warning: Citation `DEFAF' on page 2 undefined on input line 158.
 
 [2]
 
-LaTeX Warning: Reference `sec:experiments' on page 3 undefined on input line 20
-4.
-
-
-
 [3]
 
 [4]
@@ -905,11 +900,11 @@ LaTeX Warning: `!h' float specifier changed to `!ht'.
 [7]
 
 Package natbib Warning: Citation `Shinozaki1961_CD_Effect' on page 8 undefined 
-on input line 404.
+on input line 401.
 
 
 Package natbib Warning: Citation `Shinozaki1961_CD_Effect' on page 8 undefined 
-on input line 417.
+on input line 413.
 
 File: figures/growth-asymptote-functions-1.pdf Graphic file (type pdf)
 <use figures/growth-asymptote-functions-1.pdf>
@@ -929,68 +924,68 @@ File: figures/afs-growth-curves-1.pdf Graphic file (type pdf)
 [11]
 
 [12]
-Overfull \hbox (1.38933pt too wide) in paragraph at lines 605--605
+Overfull \hbox (1.38933pt too wide) in paragraph at lines 601--601
 []|\TU/lmr/m/n/7 Uncertainty|  
  []
 
 
-Overfull \hbox (23.06133pt too wide) in paragraph at lines 605--605
+Overfull \hbox (23.06133pt too wide) in paragraph at lines 601--601
 []|\TU/lmr/m/n/7 Strategic/Tactical|  
  []
 
 
-Overfull \hbox (10.75542pt too wide) in paragraph at lines 605--605
+Overfull \hbox (10.75542pt too wide) in paragraph at lines 601--601
 []|\TU/lmr/m/n/7 Cost/GHG/jobs|  
  []
 
 
-Overfull \hbox (23.06133pt too wide) in paragraph at lines 605--605
+Overfull \hbox (23.06133pt too wide) in paragraph at lines 601--601
 []|\TU/lmr/m/n/7 Strategic/Tactical|  
  []
 
 
-Overfull \hbox (2.55142pt too wide) in paragraph at lines 605--605
+Overfull \hbox (2.55142pt too wide) in paragraph at lines 601--601
 []|\TU/lmr/m/n/7 Sustainability|  
  []
 
 
-Overfull \hbox (11.65132pt too wide) in paragraph at lines 605--605
+Overfull \hbox (11.65132pt too wide) in paragraph at lines 601--601
 []|\TU/lmr/m/n/7 Tactical/Oper.|  
  []
 
 
-Overfull \hbox (23.06133pt too wide) in paragraph at lines 605--605
+Overfull \hbox (23.06133pt too wide) in paragraph at lines 601--601
 []|\TU/lmr/m/n/7 Strategic/Tactical|  
  []
 
 
-Overfull \hbox (7.49332pt too wide) in paragraph at lines 605--605
+Overfull \hbox (7.49332pt too wide) in paragraph at lines 601--601
 []|\TU/lmr/bx/n/7 Endogenous|  
  []
 
 
-Overfull \hbox (23.85233pt too wide) in paragraph at lines 605--605
+Overfull \hbox (23.85233pt too wide) in paragraph at lines 601--601
 []|\TU/lmr/bx/n/7 Strategic/Multi- 
  []
 
 
 LaTeX Warning: Reference `eq:total-stand-biomass' on page 13 undefined on input
- line 618.
+ line 614.
 
 
 LaTeX Warning: Reference `eq:component-share' on page 13 undefined on input lin
-e 618.
+e 614.
 
 
 
 [13]
 
 LaTeX Warning: Reference `eq:biomass-partial' on page 14 undefined on input lin
-e 630.
+e 626.
 
 
 LaTeX Warning: Reference `eq:component-share' on page 14 undefined on input lin
-e 630.
+e 626.
 
 File: figures/fig-set-S-tikz-1.pdf Graphic file (type pdf)
 <use figures/fig-set-S-tikz-1.pdf>
@@ -1001,27 +996,27 @@ File: figures/fig-set-S-path-1.pdf Graphic file (type pdf)
 <use figures/fig-set-S-path-1.pdf>
 
 LaTeX Warning: Reference `eq:biomass-partial' on page 15 undefined on input lin
-e 697.
+e 693.
 
 
 LaTeX Warning: Reference `eq:component-share' on page 15 undefined on input lin
-e 697.
+e 693.
 
 
 LaTeX Warning: Reference `eq:total-stand-biomass' on page 15 undefined on input
- line 698.
+ line 694.
 
 
 LaTeX Warning: Reference `tab:tab-notation' on page 15 undefined on input line 
-699.
+695.
 
 
 LaTeX Warning: Reference `eq:total-stand-biomass' on page 15 undefined on input
- line 751.
+ line 747.
 
 
 LaTeX Warning: Reference `eq:component-share' on page 15 undefined on input lin
-e 751.
+e 747.
 
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
@@ -1033,29 +1028,29 @@ LaTeX Warning: `!h' float specifier changed to `!ht'.
 [16]
 
 LaTeX Warning: Reference `eq:biomass-partial' on page 17 undefined on input lin
-e 813.
+e 809.
 
 
 LaTeX Warning: Reference `eq:component-share' on page 17 undefined on input lin
-e 813.
+e 809.
 
 
-LaTeX Warning: Reference `eq:C4' on page 17 undefined on input line 818.
+LaTeX Warning: Reference `eq:C4' on page 17 undefined on input line 814.
 
 
 
 [17]
 
 LaTeX Warning: Reference `eq:total-stand-biomass' on page 18 undefined on input
- line 874.
+ line 870.
 
 
 LaTeX Warning: Reference `eq:component-share' on page 18 undefined on input lin
-e 875.
+e 871.
 
 
 LaTeX Warning: Reference `fig:max3-growth' on page 18 undefined on input line 8
-80.
+76.
 
 
 
@@ -1080,6 +1075,33 @@ File: figures/fig-consumer-demand-1.pdf Graphic file (type pdf)
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
+
+LaTeX Warning: Reference `fig:fig-results-alluvial' on page 23 undefined on inp
+ut line 1142.
+
+
+LaTeX Warning: Reference `fig:fig-results-deliveries' on page 23 undefined on i
+nput line 1143.
+
+
+
+[23]
+
+LaTeX Warning: Reference `fig:fig-results-harvest-cycles' on page 24 undefined 
+on input line 1154.
+
+
+LaTeX Warning: Reference `fig:fig-results-costs-profit' on page 24 undefined on
+ input line 1162.
+
+
+LaTeX Warning: Reference `fig:fig-results-site-profit' on page 24 undefined on 
+input line 1167.
+
+
+LaTeX Warning: Reference `fig:fig-results-opp-dist' on page 24 undefined on inp
+ut line 1171.
+
 File: figures/fig-results-sc-map-1.pdf Graphic file (type pdf)
 <use figures/fig-results-sc-map-1.pdf>
 File: figures/fig-results-harvest-gantt-1.pdf Graphic file (type pdf)
@@ -1103,13 +1125,6 @@ Missing character: There is no ⁻ in font [lmroman8-regular]:mapping=tex-text;!
 Missing character: There is no ⁻ in font [lmroman8-regular]:mapping=tex-text;!
 Missing character: There is no ⁻ in font [lmroman8-regular]:mapping=tex-text;!
 
-LaTeX Warning: `!h' float specifier changed to `!ht'.
-
-File: figures/lm-efffect-plot-1.pdf Graphic file (type pdf)
-<use figures/lm-efffect-plot-1.pdf>
-
-
-[23]
 
 [24]
 
@@ -1122,17 +1137,33 @@ File: figures/lm-efffect-plot-1.pdf Graphic file (type pdf)
 [28]
 
 [29]
+
+[30]
+
+LaTeX Warning: Reference `fig:fig-effects-ols' on page 31 undefined on input li
+ne 1267.
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+File: figures/lm-efffect-plot-1.pdf Graphic file (type pdf)
+<use figures/lm-efffect-plot-1.pdf>
+
+
+[31]
+
+[32]
 File: figures/fig-results-inventory-1.pdf Graphic file (type pdf)
 <use figures/fig-results-inventory-1.pdf>
 File: figures/lm-diagnostics-1.pdf Graphic file (type pdf)
 <use figures/lm-diagnostics-1.pdf>
 (paper.bbl
 
-[30]
+[33]
 
-[31]
+[34]
 
-[32]
+[35]
 Underfull \hbox (badness 1783) in paragraph at lines 215--222
 []\TU/lmr/m/n/8 Statistisches Bundesamt (Destatis).  Kaufwerte und pachtpreise 
 für landwirtschaftliche grund-
@@ -1152,21 +1183,23 @@ Underfull \hbox (badness 10000) in paragraph at lines 215--222
 [][][][][][][][][] []
  []
 
-)
+
+
+[36])
 
 Package natbib Warning: There were undefined citations.
 
 
 
-[33]
+[37]
 
-[34]
+[38]
 
-[35]
+[39]
 
-[36]
+[40]
 
-[37] (paper.aux)
+[41] (paper.aux)
  ***********
 LaTeX2e <2025-06-01> patch level 1
 L3 programming layer <2025-09-02>
@@ -1175,15 +1208,15 @@ L3 programming layer <2025-09-02>
 LaTeX Warning: There were undefined references.
 
 Package rerunfilecheck Info: File `paper.out' has not changed.
-(rerunfilecheck)             Checksum: C37B34905B04B03297473A3769677E7B;1481.
+(rerunfilecheck)             Checksum: 2B71B2750E554ED54BEAAF7F7402C7E5;1471.
  ) 
 Here is how much of TeX's memory you used:
- 21780 strings out of 403246
- 394399 string characters out of 5460781
- 921623 words of memory out of 5000000
- 49899 multiletter control sequences out of 15000+600000
+ 21785 strings out of 403246
+ 394558 string characters out of 5460781
+ 918221 words of memory out of 5000000
+ 49904 multiletter control sequences out of 15000+600000
  671787 words of font info for 90 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 72i,21n,79p,1169b,553s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 72i,21n,79p,1169b,572s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on paper.pdf (37 pages).
+Output written on paper.pdf (41 pages).
