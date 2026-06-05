@@ -1138,25 +1138,25 @@ Parameter & Description & Base-case value & Unit\\
 \midrule
 \addlinespace[0.3em]
 \multicolumn{4}{l}{\textbf{Index sets}}\\
-\hspace{1em}\cellcolor{gray!10}{$|\mathcal{T}|$} & \cellcolor{gray!10}{Planning periods} & \cellcolor{gray!10}{15} & \cellcolor{gray!10}{yr}\\
-\hspace{1em}$|\mathcal{I}|$ & KUP super-sites (post-clustering) & $K$ (clustering-dependent) & –\\
+\hspace{1em}\cellcolor{gray!10}{$|\mathcal{T}|$} & \cellcolor{gray!10}{Planning periods} & \cellcolor{gray!10}{40} & \cellcolor{gray!10}{yr}\\
+\hspace{1em}$|\mathcal{I}|$ & KUP super-sites (post-clustering) & 145 & –\\
 \hspace{1em}\cellcolor{gray!10}{$|\mathcal{J}|$} & \cellcolor{gray!10}{Pre-treatment / storage nodes} & \cellcolor{gray!10}{11} & \cellcolor{gray!10}{–}\\
-\hspace{1em}$|\mathcal{K}|$ & Consumer sites & 9 & –\\
+\hspace{1em}$|\mathcal{K}|$ & Consumer sites & 28 & –\\
 \hspace{1em}\cellcolor{gray!10}{$|\mathcal{P}|$} & \cellcolor{gray!10}{Product grades} & \cellcolor{gray!10}{3} & \cellcolor{gray!10}{–}\\
 \addlinespace[0.3em]
 \multicolumn{4}{l}{\textbf{Biomass dynamics}}\\
-\hspace{1em}$a^{\min}$ & Minimum harvest age (years) & 4 & yr\\
+\hspace{1em}$a^{\min}$ & Minimum harvest age (years) & 3 & yr\\
 \hspace{1em}\cellcolor{gray!10}{$a^{\max}$} & \cellcolor{gray!10}{Maximum stand age (years)} & \cellcolor{gray!10}{15} & \cellcolor{gray!10}{yr}\\
 \addlinespace[0.3em]
 \multicolumn{4}{l}{\textbf{Cost parameters}}\\
 \hspace{1em}$c^{tr\text{-}raw}$ & Raw transport cost & 0.08 & € t$^{-1}$ km$^{-1}$\\
-\hspace{1em}\cellcolor{gray!10}{$c^{tr\text{-}pre}$} & \cellcolor{gray!10}{Pre-processed transport cost} & \cellcolor{gray!10}{0.05} & \cellcolor{gray!10}{€ t$^{-1}$ km$^{-1}$}\\
-\hspace{1em}$c^{opp}$ & Opportunity cost (foregone arable rent) & 280 & € ha$^{-1}$ yr$^{-1}$\\
+\hspace{1em}\cellcolor{gray!10}{$c^{tr\text{-}pre}$} & \cellcolor{gray!10}{Pre-processed transport cost} & \cellcolor{gray!10}{0.06} & \cellcolor{gray!10}{€ t$^{-1}$ km$^{-1}$}\\
+\hspace{1em}$c^{opp}$ & Opportunity cost & 166 & € ha$^{-1}$ yr$^{-1}$\\
 \addlinespace[0.3em]
 \multicolumn{4}{l}{\textbf{Revenue parameters}}\\
-\hspace{1em}\cellcolor{gray!10}{$\bar{R}_{P1}$} & \cellcolor{gray!10}{Mean gate price P1} & \cellcolor{gray!10}{99} & \cellcolor{gray!10}{€ t$^{-1}$}\\
-\hspace{1em}$\bar{R}_{P2}$ & Mean gate price P2 & 69 & € t$^{-1}$\\
-\hspace{1em}\cellcolor{gray!10}{$\bar{R}_{P3}$} & \cellcolor{gray!10}{Mean gate price P3} & \cellcolor{gray!10}{36} & \cellcolor{gray!10}{€ t$^{-1}$}\\
+\hspace{1em}\cellcolor{gray!10}{$\bar{R}_{P1}$} & \cellcolor{gray!10}{Mean gate price P1} & \cellcolor{gray!10}{90} & \cellcolor{gray!10}{€ t$^{-1}$}\\
+\hspace{1em}$\bar{R}_{P2}$ & Mean gate price P2 & 66 & € t$^{-1}$\\
+\hspace{1em}\cellcolor{gray!10}{$\bar{R}_{P3}$} & \cellcolor{gray!10}{Mean gate price P3} & \cellcolor{gray!10}{35} & \cellcolor{gray!10}{€ t$^{-1}$}\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1257,6 +1257,29 @@ Scen. & Opp. cost (€/ha) & Cost mult. & Rev. mult. & Profit (€/ha·a) & Act.
 \end{tabular}}
 \end{table}
 
+\begin{table}[!h]
+\centering
+\caption{\label{tab:tab-lm-profit}Overview on OLS regression result (adj. R$^2$:52\%, \# obervations: 511, $\sigma$: 474)}
+\centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
+\fontsize{8}{10}\selectfont
+\begin{tabular}[t]{lrrrrrr}
+\toprule
+variable & estimate & std. error & t vaue & p value & CI 2.5\% & CI 97.5\%\\
+\midrule
+\(Intercept\) & -1085.542 & 354.374 & -3.063 & 0.002 & -1781.752 & -389.332\\
+opp\_cost & -1.446 & 0.294 & -4.913 & 0.000 & -2.025 & -0.868\\
+cost\_level & -200.973 & 32.242 & -6.233 & 0.000 & -264.316 & -137.629\\
+revenue\_level & 1164.231 & 50.931 & 22.859 & 0.000 & 1064.170 & 1264.291\\
+avg\_rotation\_yr & 169.831 & 12.081 & 14.058 & 0.000 & 146.096 & 193.565\\
+\addlinespace
+log\(area\_ha\) & -155.698 & 41.653 & -3.738 & 0.000 & -237.531 & -73.866\\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\begin{center}\includegraphics[width=\textwidth]{figures/lm-efffect-plot-1} \end{center}
+
 \section{Conclusion}\label{conclusion}
 
 \section{Appendix}\label{appendix}
@@ -1268,6 +1291,15 @@ Scen. & Opp. cost (€/ha) & Cost mult. & Rev. mult. & Profit (€/ha·a) & Act.
 }
 
 \caption{End-of-period inventory levels at storage/pre-treatment hubs, disaggregated by product type. Each panel corresponds to one active hub.}\label{fig:fig-results-inventory}
+\end{figure}
+
+\begin{figure}
+
+{\centering \includegraphics[width=\textwidth]{figures/lm-diagnostics-1} 
+
+}
+
+\caption{OLS-Diagnostik: Residuen vs. Fitted, Q-Q-Plot, Scale-Location und Cook's Distance.}\label{fig:lm-diagnostics}
 \end{figure}
 
 \bibliography{references.bib}

@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  3 JUN 2026 13:54
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  5 JUN 2026 14:19
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1111,9 +1111,12 @@ Missing character: There is no ⁻ in font [lmroman8-regular]:mapping=tex-text;!
 Missing character: There is no ⁻ in font [lmroman8-regular]:mapping=tex-text;!
 Missing character: There is no ⁻ in font [lmroman8-regular]:mapping=tex-text;!
 Missing character: There is no ⁻ in font [lmroman8-regular]:mapping=tex-text;!
-File: figures/fig-results-inventory-1.pdf Graphic file (type pdf)
-<use figures/fig-results-inventory-1.pdf>
-(paper.bbl
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+File: figures/lm-efffect-plot-1.pdf Graphic file (type pdf)
+<use figures/lm-efffect-plot-1.pdf>
+
 
 [24]
 
@@ -1128,10 +1131,17 @@ File: figures/fig-results-inventory-1.pdf Graphic file (type pdf)
 [29]
 
 [30]
+File: figures/fig-results-inventory-1.pdf Graphic file (type pdf)
+<use figures/fig-results-inventory-1.pdf>
+File: figures/lm-diagnostics-1.pdf Graphic file (type pdf)
+<use figures/lm-diagnostics-1.pdf>
+(paper.bbl
 
 [31]
 
 [32]
+
+[33]
 Underfull \hbox (badness 1783) in paragraph at lines 215--222
 []\TU/lmr/m/n/8 Statistisches Bundesamt (Destatis).  Kaufwerte und pachtpreise 
 für landwirtschaftliche grund-
@@ -1157,13 +1167,15 @@ Package natbib Warning: There were undefined citations.
 
 
 
-[33]
-
 [34]
 
 [35]
 
-[36] (paper.aux)
+[36]
+
+[37]
+
+[38] (paper.aux)
  ***********
 LaTeX2e <2025-06-01> patch level 1
 L3 programming layer <2025-09-02>
@@ -1175,12 +1187,12 @@ Package rerunfilecheck Info: File `paper.out' has not changed.
 (rerunfilecheck)             Checksum: 7373A304B2BF530B16C0743A632BA148;1567.
  ) 
 Here is how much of TeX's memory you used:
- 21759 strings out of 403246
- 393671 string characters out of 5460781
- 917462 words of memory out of 5000000
- 49880 multiletter control sequences out of 15000+600000
+ 21783 strings out of 403246
+ 394457 string characters out of 5460781
+ 921669 words of memory out of 5000000
+ 49902 multiletter control sequences out of 15000+600000
  671787 words of font info for 90 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  72i,21n,79p,1169b,553s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on paper.pdf (36 pages).
+Output written on paper.pdf (38 pages).
