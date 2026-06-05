@@ -5,10 +5,11 @@ Reallocating 'name_of_file' (item size: 1) to 9 items.
 The style file: plainnat.bst
 Reallocating 'name_of_file' (item size: 1) to 11 items.
 Database file #1: references.bib
+Warning--I didn't find a database entry for "DEFAF"
 Warning--I didn't find a database entry for "Shinozaki1961_CD_Effect"
 You've used 29 entries,
             2773 wiz_defined-function locations,
-            845 strings with 13279 characters,
+            847 strings with 13289 characters,
 and the built_in function-call counts, 15189 in all, are:
 = -- 1429
 > -- 957
@@ -47,4 +48,4 @@ warning$ -- 0
 while$ -- 129
 width$ -- 0
 write$ -- 496
-(There was 1 warning)
+(There were 2 warnings)
