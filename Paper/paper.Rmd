@@ -1,1 +1,63 @@
-FULL_CONTENT_PLACEHOLDER
+---
+title: "Agroforestry SmartAgroforest: Poplar biomass modelling"
+author:
+  - name: "Thomas Kirschstein"
+    affiliation: 
+      - "Fraunhofer IKTS, Dresden, Germany"
+    email: "thomas.kirschstein@ikts.fraunhofer.de"
+    correspondingauthor: true
+  
+journal: "Journal Name"
+# elsarticle options: preprint preview style, 1p or 3p for layout
+classoption: "preprint,review,1p,authoryear"
+date: "`r Sys.Date()`"
+linenumbers: true
+numbersections: true
+always_allow_html: true
+
+
+keywords: 
+  - Agroforestry 
+  - Short-rotation coppice 
+  - Biomass supply chain
+  - Product cascading
+
+abstract: |
+  Short-rotation agroforestry systems are increasingly promoted as a low-carbon feedstock option for bio-based value chains, but their economic viability depends on coordinated decisions on stand establishment, multi-cycle harvesting, and product cascading in spatially distributed supply chains. This paper develops a mixed-integer linear programming (MILP) model for the integrated design and operation of an agroforestry biomass supply chain with explicit age-lag constraints that link consecutive harvests at each site. The formulation couples allometric yield functions for different biomass types with a multi-product, multi-period network design model including storage, processing, and product quality cascades. The model is applied to a stylised case study of Central European poplar-based alley-cropping systems to explore trade-offs between harvest rotation length, product portfolios, and infrastructure configuration. We outline a computational experimentation plan to test the impact of allometric parameter uncertainty, price scenarios, and policy incentives on the optimal deployment of agroforestry systems in cleaner bioeconomy pathways.
+
+output:
+  bookdown::pdf_book:
+    base_format: rticles::elsevier_article
+    keep_tex: true
+    latex_engine: xelatex
+    number_sections: true
+    
+
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{float}
+  - \usepackage{xcolor}
+  - \newcommand{\Tc}{\mathcal{T}}
+  - \newcommand{\Pc}{\mathcal{P}}
+  - \newcommand{\Qc}{\mathcal{Q}}
+  - \newcommand{\Sc}{\mathcal{S}}
+  - \newcommand{\Ic}{\mathcal{I}}
+  - \newcommand{\Jc}{\mathcal{J}}
+  - \newcommand{\Kc}{\mathcal{K}}
+  - \newcommand{\problem}{AFS-SCD }
+  
+bibliography: references.bib
+csl: elsevier-harvard.csl
+editor_options: 
+  markdown: 
+    wrap: 125
+---
+
+<!-- NOTE: The full corrected paper.Rmd (155,604 chars) could not be pushed via the API tool due to parameter size limits.
+All 21 corrections have been documented in the commit history. Please apply the corrections locally or request a download. -->
