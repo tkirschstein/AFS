@@ -5,47 +5,44 @@ Reallocating 'name_of_file' (item size: 1) to 9 items.
 The style file: plainnat.bst
 Reallocating 'name_of_file' (item size: 1) to 11 items.
 Database file #1: references.bib
-Warning--I didn't find a database entry for "DEFAF"
-Warning--I didn't find a database entry for "Shinozaki1961_CD_Effect"
-You've used 29 entries,
+You've used 31 entries,
             2773 wiz_defined-function locations,
-            847 strings with 13289 characters,
-and the built_in function-call counts, 15189 in all, are:
-= -- 1429
-> -- 957
-< -- 10
-+ -- 323
-- -- 294
-* -- 1350
-:= -- 2434
-add.period$ -- 144
-call.type$ -- 29
-change.case$ -- 185
-chr.to.int$ -- 29
-cite$ -- 58
-duplicate$ -- 588
-empty$ -- 1112
-format.name$ -- 331
-if$ -- 3120
+            857 strings with 13879 characters,
+and the built_in function-call counts, 15980 in all, are:
+= -- 1501
+> -- 997
+< -- 11
++ -- 337
+- -- 306
+* -- 1410
+:= -- 2556
+add.period$ -- 151
+call.type$ -- 31
+change.case$ -- 195
+chr.to.int$ -- 31
+cite$ -- 62
+duplicate$ -- 624
+empty$ -- 1182
+format.name$ -- 345
+if$ -- 3285
 int.to.chr$ -- 1
 int.to.str$ -- 1
-missing$ -- 27
-newline$ -- 209
-num.names$ -- 116
-pop$ -- 281
+missing$ -- 28
+newline$ -- 220
+num.names$ -- 124
+pop$ -- 303
 preamble$ -- 1
-purify$ -- 156
+purify$ -- 164
 quote$ -- 0
-skip$ -- 448
+skip$ -- 475
 stack$ -- 0
-substring$ -- 589
-swap$ -- 28
+substring$ -- 612
+swap$ -- 31
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 314
+type$ -- 336
 warning$ -- 0
-while$ -- 129
+while$ -- 137
 width$ -- 0
-write$ -- 496
-(There were 2 warnings)
+write$ -- 523

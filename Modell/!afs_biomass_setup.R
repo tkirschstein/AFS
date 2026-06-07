@@ -18,10 +18,10 @@ gomp <- function(t, A, k = 0.194, t0 = 9.7) {
 #' Fitted exponent beta = 0.380 from Niemczyk 2021 & calibration data
 #' @param N      Planting density (trees/ha)
 #' @param C_site Site constant: 4475 (conservative), 6471 (good site)
-A_tree <- function(N, C_site = 4475) C_site * N^(-0.380)
+A_tree <- function(N, C_site = 4475, beta = -0.38) C_site * N^beta
 
 #' Stand-level asymptote (t DM/ha) = A_tree * N / 1000
-A_stand <- function(N, C_site = 4475) A_tree(N, C_site) * N / 1000
+A_stand <- function(N, C_site = 4475, beta = -.38) A_tree(N, C_site , beta) * N #/ 1000
 
 # Scenario presets
 SCENARIOS <- list(

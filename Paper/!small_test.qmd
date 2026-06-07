@@ -1,0 +1,381 @@
+---
+title: "AFS-MILP Testinstanz – Ausgangsdaten"
+author: "Projekt Agroforestry SmartAgroforst"
+date: "`r format(Sys.Date(), '%d.%m.%Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    theme: cosmo
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = F,
+  message = FALSE,
+  warning = FALSE
+)
+
+setwd("C:/Users/th_ki/Fraunhofer/DiP - Agroforst/!AFS-SCD/AFS/Paper")
+
+library(tidyverse)
+library(dplyr)
+library(kableExtra)
+library(sf)
+```
+
+
+
+```{r load-environment, echo=F}
+source("../Modell/!afs_biomass_setup.r")
+source("../Modell/!helper_func.r")
+source("../Modell/!helper_instance_builder_v8a.R")
+source("../Modell/!build_AFS_milp.r")
+source("../Modell/build_lp_rcpp_wrapper.R")
+source("../Modell/gurobi_adapter.R")
+source("../Modell/gurobi_warmstart.R")
+source("../Modell/gurobi_feascheck.R")
+source("../Modell/extract_result.R")
+#load("../Modell/afs_workspace.RData")
+load("afs_workspace_red.RData")
+
+
+sites_sf   <- afs_workspace$sites_sf
+sites      <- afs_workspace$sites
+sites_clustered      <- afs_workspace$sites_clustered
+storages   <- afs_workspace$storages
+consumers  <- afs_workspace$consumers
+
+# scale down industrial demand quantities by dividing by 5
+consumers <- consumers %>%
+  mutate(demand_P1 = demand_P1 / 5)
+
+# drop small Biogas plants --> compute total demand and drop all consumer with D<2
+consumers <- consumers %>%
+  mutate(total_demand = demand_P1 + demand_P2 + demand_P3) %>%
+  filter(total_demand >= 95) %>%
+  select(-total_demand) 
+
+
+yields_by_age <- build_scenario_ts(ages = 1:20 , N = 250, C_site = 6500, k = 0.194, t0 = 9.7, label = "Conservative (250 trees/ha)")
+colnames(yields_by_age)
+
+yields_by_age <- yields_by_age %>% 
+  # drop column scenario from yields_by_age
+  select(-scenario) %>% 
+  # make long --> bring columns Merch. stem Merch. branch Residue to column "product" and values to "yield_ha"
+  pivot_longer(-1 , names_to = "product", values_to = "yield_ha") %>% 
+  # rename entries in "product" to 1:3
+  mutate(product = as.integer(as.character(factor(product, labels = c(2,1,3) ))))
+
+# scale yields to fresh biomass
+yields_by_age$yield_ha <- yields_by_age$yield_ha / (1-0.5)
+
+
+sites_filt <- afs_workspace$sites %>%
+  filter(area > 400) %>%
+  rename(area_ha = area)
+
+set.seed(123578)
+# generate random vector of opportunity cost for clustered sites in range [0,600]
+c.opp.vec <- rnorm(nrow(sites_filt), 1, .75)
+
+
+sites_filt <- sites_filt %>% 
+  mutate(
+  C_est  = 2500,   # €/ha  establishment (Section 2.1 mid-range)
+  C_harv =  150,    # €/ha  harvest cost  (Section 2.1 mid-range)
+  C_main = 10 + 150*c.opp.vec, #  €/ha  maintenance cost  (Section 2.1 mid-range)
+  C_opp = 0, #  €/ha  opportunity cost  (Section 2.1 mid-range)
+) 
+
+
+# # change storage costs
+# storages$c_stor <- storages$c_stor
+storages <- storages[1:3,] 
+  
+# # change capacities
+storages$CAP_stor <- storages$CAP_stor * 100000
+storages$CAP_proc <- storages$CAP_proc * 100000
+# 
+
+
+# calculate distances anew
+dist_ij_filt <- calculate_distance_matrix_osm(
+  starts       = sites_filt %>% select(lat, lng),
+  destinations = storages %>% select(lat, lng),
+  max_entries  = 100
+)
+
+
+dist_jk <- afs_workspace$dist_jk[1:3,consumers$consumer_id]
+
+
+data_obj <- list(
+  sites    = sites_filt,
+  storages = storages,
+  consumers = consumers,
+  dist_ij  = dist_ij_filt$distance_matrix_km,
+  dist_jk  = dist_jk,
+  yields_by_age = yields_by_age
+)
+# rescale demands in consumers to tons
+data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")]  <- data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")] * 1000
+
+# 
+# # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
+params_obj <- list(
+  n_periods  = 15,
+  max_age    = 6L,    # A_max: LRAFS upper rotation bound
+  min_age    =  3L,    # A_min: SRAFS lower rotation bound
+  c_tr_raw   = 0.08,   # €/(t·km)  raw biomass  site → storage
+  c_tr_pre   = 0.06   # €/(t·km)  chips        storage → consumer
+)
+# 
+# ── 4. generate instance ─────────────────────────────────────
+milp_instance <- build_optimization_instance(
+  data         = data_obj,
+  params       = params_obj
+) 
+
+```
+
+# Überblick über Daten- und Parameterobjekt
+
+## Datenobjekt `data_obj`
+
+```{r data-obj-structure}
+str(data_obj, max.level = 1)
+```
+
+Kurzbeschreibung der enthaltenen Komponenten:
+
+- `sites`: Kandidatenflächen mit Flächengröße und Kostenparametern.[file:1]  
+- `storages`: Lager- und Prozessknoten mit Kapazitäten und Lagerkosten.[file:1]  
+- `consumers`: industrielle Nachfrager mit Nachfrage pro Produkt.[file:1]  
+- `dist_ij`: Distanzmatrix von Sites zu Lagerknoten.[file:1]  
+- `dist_jk`: Distanzmatrix von Lagerknoten zu Nachfragern.[file:1]  
+- `yields_by_age`: Ertragsfunktionen nach Alter und Produkt.[file:1]
+
+## Parameterobjekt `params_obj`
+
+```{r params-obj}
+params_tbl <- tibble(
+  Parameter = names(params_obj),
+  Wert      = unlist(params_obj)
+)
+
+kable(params_tbl, digits = 3,
+      caption = "Skalare Modellparameter in params_obj") %>%
+  kable_styling(full_width = FALSE)
+```
+
+# Standorte (Sites)
+
+## Flächen und Kostenparameter
+
+```{r sites-table}
+sites_tbl <- data_obj$sites %>%
+  select(site_id, area_ha, C_est, C_harv, C_main, C_opp)
+
+kable(sites_tbl, digits = 2,
+      caption = "Sites: Flächen (ha) und Kostenparameter (€/ha)") %>%
+  kable_styling(full_width = FALSE) %>%
+  scroll_box(height = "300px")
+```
+
+## Weitere Site-Attribute (falls vorhanden)
+
+```{r sites-extra, echo=TRUE}
+extra_cols <- setdiff(colnames(data_obj$sites),
+                      c("site_id","area_ha","C_est","C_harv","C_main","C_opp"))
+if (length(extra_cols) > 0) {
+  kable(head(data_obj$sites[, c("site_id", extra_cols)], 20),
+        caption = "Zusätzliche Site-Attribute (Ausschnitt)") %>%
+    kable_styling(full_width = FALSE) %>%
+    scroll_box(height = "300px")
+}
+```
+
+# Lager- und Prozessknoten
+
+```{r storages-table}
+stor_tbl <- data_obj$storages %>%
+  select(storage_id, CAP_stor, CAP_proc, c_stor)
+
+kable(stor_tbl, digits = 0,
+      caption = "Lager-/Prozessstandorte: Kapazitäten und Lagerkosten") %>%
+  kable_styling(full_width = FALSE)
+```
+
+# Nachfrager
+
+## Grundlegende Nachfragerdaten aus `data_obj$consumers`
+
+```{r consumers-data}
+cons_tbl <- data_obj$consumers %>%
+  select(consumer_id, demand_P1, demand_P2, demand_P3)
+
+kable(cons_tbl, digits = 0,
+      caption = "Nachfrager: Nachfrage je Produkt (t)") %>%
+  kable_styling(full_width = FALSE) %>%
+  scroll_box(height = "300px")
+```
+
+```{r consumers-extra}
+extra_cons_cols <- setdiff(colnames(data_obj$consumers),
+                           c("consumer_id", "demand_P1", "demand_P2", "demand_P3"))
+if (length(extra_cons_cols) > 0) {
+  kable(head(data_obj$consumers[, c("consumer_id", extra_cons_cols)], 20),
+        caption = "Weitere Nachfragerattribute (Ausschnitt)") %>%
+    kable_styling(full_width = FALSE) %>%
+    scroll_box(height = "300px")
+}
+```
+
+# Ertragsfunktionen
+
+Die Ertragsdaten werden in `proof.R` über `build_scenario_ts(...)` generiert, in Langformat transformiert und auf Frischmasse umgerechnet.[file:1]
+
+```{r yields-table}
+yields_tbl <- data_obj$yields_by_age %>%
+  arrange(product, age)
+
+kable(yields_tbl, digits = 1,
+      caption = "Erträge je Alter und Produkt (t Frischmasse/ha)") %>%
+  kable_styling(full_width = FALSE) %>%
+  scroll_box(height = "300px")
+```
+
+```{r yields-plot}
+ggplot(yields_tbl, aes(x = age, y = yield_ha, color = factor(product))) +
+  geom_line(size = 1) +
+  labs(x = "Bestandesalter (Jahre)",
+       y = "Ertrag (t/ha)",
+       color = "Produkt",
+       title = "Ertragsfunktionen nach Alter und Produkt") +
+  theme_minimal()
+```
+
+# Distanzdaten
+
+## Sites → Lager (`dist_ij`)
+
+```{r dist-ij}
+dist_ij <- as.data.frame(data_obj$dist_ij)
+colnames(dist_ij) <- paste0("Storage_", seq_len(ncol(dist_ij)))
+dist_ij <- dist_ij %>%
+  mutate(Site = paste0("Site_", seq_len(nrow(dist_ij)))) %>%
+  relocate(Site)
+
+kable(head(dist_ij, 15), digits = 1,
+      caption = "Entfernungen Site → Lager (km), Ausschnitt") %>%
+  kable_styling(full_width = FALSE) %>%
+  scroll_box(height = "300px")
+```
+
+## Lager → Nachfrager (`dist_jk`)
+
+```{r dist-jk}
+dist_jk <- as.data.frame(data_obj$dist_jk)
+colnames(dist_jk) <- paste0("Cons_", seq_len(ncol(dist_jk)))
+dist_jk <- dist_jk %>%
+  mutate(Storage = paste0("Storage_", seq_len(nrow(dist_jk)))) %>%
+  relocate(Storage)
+
+kable(head(dist_jk, 15), digits = 1,
+      caption = "Entfernungen Lager → Nachfrager (km), Ausschnitt") %>%
+  kable_styling(full_width = FALSE) %>%
+  scroll_box(height = "300px")
+```
+
+# Aus MILP-Instanz abgeleitete Eingabestrukturen
+
+Im Folgenden werden diejenigen Datenstrukturen aus `milp_instance` gezeigt, die interpretierbare Eingangsgrößen darstellen (keine Lösung).
+
+## Globale Instanzparameter
+
+```{r milp-summary}
+inst <- milp_instance
+
+inst_summary <- tibble(
+  Kennzahl              = c("Anzahl Sites", "Anzahl Lager/Prozesse",
+                            "Anzahl Nachfrager", "Anzahl Produkte",
+                            "Anzahl Perioden", "Mindestalter (A_min)",
+                            "Höchstalter (A_max)"),
+  Wert                  = c(inst$n_sites, inst$n_storages, inst$n_consumers,
+                            inst$n_products, inst$n_periods,
+                            inst$min_age, inst$max_age)
+)
+
+kable(inst_summary,
+      caption = "Strukturgrößen der MILP-Instanz") %>%
+  kable_styling(full_width = FALSE)
+```
+
+## Periodisierte Nachfrage `milp_instance$demand`
+
+```{r demand-table}
+demand_tbl <- inst$demand %>%
+  arrange(consumer_id, product, period)
+
+kable(head(demand_tbl, 30), digits = 0,
+      caption = "Demand-Tabelle (erste 30 Zeilen)") %>%
+  kable_styling(full_width = FALSE) %>%
+  scroll_box(height = "300px")
+```
+
+## Preise `milp_instance$consumer_prices`
+
+```{r prices-table}
+prices_tbl <- inst$consumer_prices %>%
+  arrange(consumer_id, product)
+
+kable(prices_tbl, digits = 2,
+      caption = "Produktpreise je Nachfrager und Produkt (€/t)") %>%
+  kable_styling(full_width = FALSE) %>%
+  scroll_box(height = "300px")
+```
+
+## Erträge in Instanzstruktur
+
+```{r yields-instance}
+yields_inst <- inst$yields_by_age %>%
+  arrange(product, age)
+
+kable(yields_inst, digits = 1,
+      caption = "Ertragsmatrix in milp_instance (t/ha)") %>%
+  kable_styling(full_width = FALSE) %>%
+  scroll_box(height = "300px")
+```
+
+## Distanzen in Instanzstruktur
+
+```{r dists-instance}
+d_ij_inst <- as.data.frame(inst$d_ij)
+colnames(d_ij_inst) <- paste0("Storage_", seq_len(ncol(d_ij_inst)))
+d_ij_inst <- d_ij_inst %>%
+  mutate(Site = paste0("Site_", seq_len(nrow(d_ij_inst)))) %>%
+  relocate(Site)
+
+kable(head(d_ij_inst, 15), digits = 1,
+      caption = "inst$d_ij: Distanzen Site → Lager (km), Ausschnitt") %>%
+  kable_styling(full_width = FALSE) %>%
+  scroll_box(height = "300px")
+```
+
+```{r dists-jk-instance}
+d_jk_inst <- as.data.frame(inst$d_jk)
+colnames(d_jk_inst) <- paste0("Cons_", seq_len(ncol(d_jk_inst)))
+d_jk_inst <- d_jk_inst %>%
+  mutate(Storage = paste0("Storage_", seq_len(nrow(d_jk_inst)))) %>%
+  relocate(Storage)
+
+kable(head(d_jk_inst, 15), digits = 1,
+      caption = "inst$d_jk: Distanzen Lager → Nachfrager (km), Ausschnitt") %>%
+  kable_styling(full_width = FALSE) %>%
+  scroll_box(height = "300px")
+```

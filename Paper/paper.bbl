@@ -1,4 +1,4 @@
-\begin{thebibliography}{29}
+\begin{thebibliography}{31}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -52,6 +52,16 @@ Anouck De~Meyer, Dirk Cattrysse, and Jos Van~Orshoven.
   (1):\penalty0 293--307, 2016.
 \newblock ISSN 0377-2217.
 \newblock \doi{10.1016/j.ejor.2015.08.003}.
+
+\bibitem[{Deutscher Fachverband f{\"{u}}r Agroforstwirtschaft (DeFAF)
+  e.V.}(2026)]{DEFAF}
+{Deutscher Fachverband f{\"{u}}r Agroforstwirtschaft (DeFAF) e.V.}
+\newblock Annual review of the {Agroforestry Map of Germany} 2025, February
+  2026.
+\newblock URL
+  \url{https://agroforst-info.de/wp-content/uploads/2026/02/DeFAF-2026-Annual-review-of-the-Agroforestry-Map-of-Germany-2025.pdf}.
+\newblock Available at:
+  \url{https://agroforst-info.de/wp-content/uploads/2026/02/DeFAF-2026-Annual-review-of-the-Agroforestry-Map-of-Germany-2025.pdf}.
 
 \bibitem[Ekşioğlu et~al.(2009)Ekşioğlu, Acharya, Leightley, and
   Arora]{Eksioglu2009_Biorefinery_SC}
@@ -132,6 +142,13 @@ Kaushalendra~Kumar Jha.
   1689--1701, 2018.
 \newblock ISSN 1007-662X.
 \newblock \doi{10.1007/s11676-017-0555-3}.
+
+\bibitem[Kira et~al.(1961)Kira, Shinozaki, and Hozumi]{Shinozaki1961_CD_Effect}
+Tatuo Kira, Kichiro Shinozaki, and Kikuo Hozumi.
+\newblock The {C-D} rule, its theory and practical uses. ({Intraspecific
+  competition among higher plants. X.}).
+\newblock \emph{Journal of Biology, Osaka City University}, 12:\penalty0
+  69--82, 1961.
 
 \bibitem[Lamers et~al.(2011)Lamers, Junginger, Hamelinck, and
   Faaij]{Lamers2015_Feedstock_Design}

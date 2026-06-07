@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  5 JUN 2026 19:33
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2026.2.17)  7 JUN 2026 10:02
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -700,33 +700,33 @@ Package: makecell 2009/08/03 V0.1e Managing of Tab Column Heads and Cells
 ) (paper.aux)
 \openout1 = `paper.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 109.
-LaTeX Font Info:    ... okay on input line 109.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 109.
-LaTeX Font Info:    ... okay on input line 109.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 109.
-LaTeX Font Info:    ... okay on input line 109.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 109.
-LaTeX Font Info:    ... okay on input line 109.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 109.
-LaTeX Font Info:    ... okay on input line 109.
-LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 109.
-LaTeX Font Info:    ... okay on input line 109.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 109.
-LaTeX Font Info:    ... okay on input line 109.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 109.
-LaTeX Font Info:    ... okay on input line 109.
-LaTeX Font Info:    Checking defaults for T3/cmr/m/n on input line 109.
-LaTeX Font Info:    Trying to load font information for T3+cmr on input line 10
-9.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 110.
+LaTeX Font Info:    ... okay on input line 110.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 110.
+LaTeX Font Info:    ... okay on input line 110.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 110.
+LaTeX Font Info:    ... okay on input line 110.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 110.
+LaTeX Font Info:    ... okay on input line 110.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 110.
+LaTeX Font Info:    ... okay on input line 110.
+LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 110.
+LaTeX Font Info:    ... okay on input line 110.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 110.
+LaTeX Font Info:    ... okay on input line 110.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 110.
+LaTeX Font Info:    ... okay on input line 110.
+LaTeX Font Info:    Checking defaults for T3/cmr/m/n on input line 110.
+LaTeX Font Info:    Trying to load font information for T3+cmr on input line 11
+0.
 (C:\Users\th_ki\AppData\Local\Programs\MiKTeX\tex/latex/tipa\t3cmr.fd
 File: t3cmr.fd 2001/12/31 TIPA font definitions
 )
-LaTeX Font Info:    ... okay on input line 109.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 109.
-LaTeX Font Info:    ... okay on input line 109.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 109.
-LaTeX Font Info:    ... okay on input line 109.
+LaTeX Font Info:    ... okay on input line 110.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 110.
+LaTeX Font Info:    ... okay on input line 110.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 110.
+LaTeX Font Info:    ... okay on input line 110.
 *geometry* driver: auto-detecting
 *geometry* detected driver: xetex
 *geometry* verbose mode - [ preamble ] result:
@@ -766,13 +766,13 @@ LaTeX Font Info:    ... okay on input line 109.
 Package microtype Info: Patching varwidth to enable character protrusion.
 \MT@vwid@leftmargin=\dimen280
 \MT@vwid@rightmargin=\dimen281
-LaTeX Info: Redefining \microtypecontext on input line 109.
-Package microtype Info: Applying patch `item' on input line 109.
-Package microtype Info: Applying patch `toc' on input line 109.
-Package microtype Info: Applying patch `eqnum' on input line 109.
-Package microtype Info: Applying patch `footnote' on input line 109.
-Package microtype Info: Applying patch `verbatim' on input line 109.
-LaTeX Info: Redefining \microtypesetup on input line 109.
+LaTeX Info: Redefining \microtypecontext on input line 110.
+Package microtype Info: Applying patch `item' on input line 110.
+Package microtype Info: Applying patch `toc' on input line 110.
+Package microtype Info: Applying patch `eqnum' on input line 110.
+Package microtype Info: Applying patch `footnote' on input line 110.
+Package microtype Info: Applying patch `verbatim' on input line 110.
+LaTeX Info: Redefining \microtypesetup on input line 110.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
 Package microtype Info: No adjustment of tracking.
@@ -784,7 +784,7 @@ nRoman.cfg
 File: mt-LatinModernRoman.cfg 2021/02/21 v1.1 microtype config. file: Latin Mod
 ern Roman (RS)
 )
-Package hyperref Info: Link coloring OFF on input line 109.
+Package hyperref Info: Link coloring OFF on input line 110.
 (paper.out) (paper.out)
 \@outlinefile=\write4
 \openout4 = `paper.out'.
@@ -794,7 +794,7 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 1
-29.
+30.
 (C:\Users\th_ki\AppData\Local\Programs\MiKTeX\tex/latex/lm\ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -803,34 +803,34 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 LaTeX Font Info:    Trying to load font information for OML+lmm on input line 1
-29.
+30.
 (C:\Users\th_ki\AppData\Local\Programs\MiKTeX\tex/latex/lm\omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-129.
+130.
 (C:\Users\th_ki\AppData\Local\Programs\MiKTeX\tex/latex/lm\omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-129.
+130.
 (C:\Users\th_ki\AppData\Local\Programs\MiKTeX\tex/latex/lm\omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 129.
+(Font)              <10> on input line 130.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 129.
+(Font)              <7> on input line 130.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 129.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 129
+(Font)              <5> on input line 130.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 130
 .
 (C:\Users\th_ki\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 ) (C:\Users\th_ki\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 129
+LaTeX Font Info:    Trying to load font information for U+msb on input line 130
 .
 (C:\Users\th_ki\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
@@ -838,15 +838,15 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 129.
+(Font)              <8> on input line 130.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 129.
+(Font)              <6> on input line 130.
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmtt' (encoding: TU).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
-Overfull \hbox (0.23203pt too wide) in paragraph at lines 138--153
+Overfull \hbox (0.23203pt too wide) in paragraph at lines 139--154
 \TU/lmr/m/n/10 biodiversity conservation, and rural income generation on the sa
 me hectare of land ([]Toens-
  []
@@ -860,28 +860,23 @@ Overfull \hbox (2.22pt too wide) has occurred while \output is active
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\<def>-command' on input line 153.
+(hyperref)                removing `\<def>-command' on input line 154.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\cnotenum' on input line 153.
+(hyperref)                removing `\cnotenum' on input line 154.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\<def>-command' on input line 153.
+(hyperref)                removing `\<def>-command' on input line 154.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\@corref' on input line 153.
+(hyperref)                removing `\@corref' on input line 154.
 
 [1
 
 ]
-
-Package natbib Warning: Citation `DEFAF' on page 2 undefined on input line 158.
-
-
-
 
 [2]
 
@@ -894,18 +889,14 @@ Package natbib Warning: Citation `DEFAF' on page 2 undefined on input line 158.
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 
+LaTeX Warning: Reference `tab-notation-growth' on page 6 undefined on input lin
+e 372.
+
+
 
 [6]
 
 [7]
-
-Package natbib Warning: Citation `Shinozaki1961_CD_Effect' on page 8 undefined 
-on input line 401.
-
-
-Package natbib Warning: Citation `Shinozaki1961_CD_Effect' on page 8 undefined 
-on input line 413.
-
 File: figures/growth-asymptote-functions-1.pdf Graphic file (type pdf)
 <use figures/growth-asymptote-functions-1.pdf>
 
@@ -913,144 +904,107 @@ File: figures/growth-asymptote-functions-1.pdf Graphic file (type pdf)
 [8]
 File: figures/afs-model-functions-1.pdf Graphic file (type pdf)
 <use figures/afs-model-functions-1.pdf>
+
+
+[9]
 File: figures/afs-growth-curves-1.pdf Graphic file (type pdf)
 <use figures/afs-growth-curves-1.pdf>
 
 
-[9]
-
 [10]
 
 [11]
-
-[12]
-Overfull \hbox (1.38933pt too wide) in paragraph at lines 601--601
+Overfull \hbox (1.38933pt too wide) in paragraph at lines 561--561
 []|\TU/lmr/m/n/7 Uncertainty|  
  []
 
 
-Overfull \hbox (23.06133pt too wide) in paragraph at lines 601--601
+Overfull \hbox (23.06133pt too wide) in paragraph at lines 561--561
 []|\TU/lmr/m/n/7 Strategic/Tactical|  
  []
 
 
-Overfull \hbox (10.75542pt too wide) in paragraph at lines 601--601
+Overfull \hbox (10.75542pt too wide) in paragraph at lines 561--561
 []|\TU/lmr/m/n/7 Cost/GHG/jobs|  
  []
 
 
-Overfull \hbox (23.06133pt too wide) in paragraph at lines 601--601
+Overfull \hbox (23.06133pt too wide) in paragraph at lines 561--561
 []|\TU/lmr/m/n/7 Strategic/Tactical|  
  []
 
 
-Overfull \hbox (2.55142pt too wide) in paragraph at lines 601--601
+Overfull \hbox (2.55142pt too wide) in paragraph at lines 561--561
 []|\TU/lmr/m/n/7 Sustainability|  
  []
 
 
-Overfull \hbox (11.65132pt too wide) in paragraph at lines 601--601
+Overfull \hbox (11.65132pt too wide) in paragraph at lines 561--561
 []|\TU/lmr/m/n/7 Tactical/Oper.|  
  []
 
 
-Overfull \hbox (23.06133pt too wide) in paragraph at lines 601--601
+Overfull \hbox (23.06133pt too wide) in paragraph at lines 561--561
 []|\TU/lmr/m/n/7 Strategic/Tactical|  
  []
 
 
-Overfull \hbox (7.49332pt too wide) in paragraph at lines 601--601
+Overfull \hbox (7.49332pt too wide) in paragraph at lines 561--561
 []|\TU/lmr/bx/n/7 Endogenous|  
  []
 
 
-Overfull \hbox (23.85233pt too wide) in paragraph at lines 601--601
+Overfull \hbox (23.85233pt too wide) in paragraph at lines 561--561
 []|\TU/lmr/bx/n/7 Strategic/Multi- 
  []
-
-
-LaTeX Warning: Reference `eq:total-stand-biomass' on page 13 undefined on input
- line 614.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 13 undefined on input lin
-e 614.
-
-
-
-[13]
-
-LaTeX Warning: Reference `eq:biomass-partial' on page 14 undefined on input lin
-e 626.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 14 undefined on input lin
-e 626.
-
-File: figures/fig-set-S-tikz-1.pdf Graphic file (type pdf)
-<use figures/fig-set-S-tikz-1.pdf>
-
-
-[14]
-File: figures/fig-set-S-path-1.pdf Graphic file (type pdf)
-<use figures/fig-set-S-path-1.pdf>
-
-LaTeX Warning: Reference `eq:biomass-partial' on page 15 undefined on input lin
-e 693.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 15 undefined on input lin
-e 693.
-
-
-LaTeX Warning: Reference `eq:total-stand-biomass' on page 15 undefined on input
- line 694.
-
-
-LaTeX Warning: Reference `tab:tab-notation' on page 15 undefined on input line 
-695.
-
-
-LaTeX Warning: Reference `eq:total-stand-biomass' on page 15 undefined on input
- line 747.
-
-
-LaTeX Warning: Reference `eq:component-share' on page 15 undefined on input lin
-e 747.
 
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 
 
+[12]
+
+[13]
+File: figures/fig-set-S-tikz-1.pdf Graphic file (type pdf)
+<use figures/fig-set-S-tikz-1.pdf>
+File: figures/fig-set-S-path-1.pdf Graphic file (type pdf)
+<use figures/fig-set-S-path-1.pdf>
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+
+
+[14]
+
 [15]
 
 [16]
 
 LaTeX Warning: Reference `eq:biomass-partial' on page 17 undefined on input lin
-e 809.
+e 702.
 
 
 LaTeX Warning: Reference `eq:component-share' on page 17 undefined on input lin
-e 809.
+e 702.
 
 
-LaTeX Warning: Reference `eq:C4' on page 17 undefined on input line 814.
+LaTeX Warning: Reference `eq:C4' on page 17 undefined on input line 707.
 
 
 
 [17]
 
 LaTeX Warning: Reference `eq:total-stand-biomass' on page 18 undefined on input
- line 870.
+ line 760.
 
 
 LaTeX Warning: Reference `eq:component-share' on page 18 undefined on input lin
-e 871.
+e 761.
 
 
-LaTeX Warning: Reference `fig:max3-growth' on page 18 undefined on input line 8
-76.
+LaTeX Warning: Reference `fig:max3-growth' on page 18 undefined on input line 7
+66.
 
 
 
@@ -1076,31 +1030,31 @@ File: figures/fig-consumer-demand-1.pdf Graphic file (type pdf)
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
 
-LaTeX Warning: Reference `fig:fig-results-alluvial' on page 23 undefined on inp
-ut line 1142.
-
-
-LaTeX Warning: Reference `fig:fig-results-deliveries' on page 23 undefined on i
-nput line 1143.
-
-
 
 [23]
 
+LaTeX Warning: Reference `fig:fig-results-alluvial' on page 24 undefined on inp
+ut line 1032.
+
+
+LaTeX Warning: Reference `fig:fig-results-deliveries' on page 24 undefined on i
+nput line 1033.
+
+
 LaTeX Warning: Reference `fig:fig-results-harvest-cycles' on page 24 undefined 
-on input line 1154.
+on input line 1044.
 
 
 LaTeX Warning: Reference `fig:fig-results-costs-profit' on page 24 undefined on
- input line 1162.
+ input line 1052.
 
 
 LaTeX Warning: Reference `fig:fig-results-site-profit' on page 24 undefined on 
-input line 1167.
+input line 1057.
 
 
 LaTeX Warning: Reference `fig:fig-results-opp-dist' on page 24 undefined on inp
-ut line 1171.
+ut line 1061.
 
 File: figures/fig-results-sc-map-1.pdf Graphic file (type pdf)
 <use figures/fig-results-sc-map-1.pdf>
@@ -1141,8 +1095,11 @@ Missing character: There is no ⁻ in font [lmroman8-regular]:mapping=tex-text;!
 [30]
 
 LaTeX Warning: Reference `fig:fig-effects-ols' on page 31 undefined on input li
-ne 1267.
+ne 1157.
 
+
+
+[31]
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
@@ -1150,34 +1107,48 @@ File: figures/lm-efffect-plot-1.pdf Graphic file (type pdf)
 <use figures/lm-efffect-plot-1.pdf>
 
 
-[31]
-
 [32]
+
+[33]
 File: figures/fig-results-inventory-1.pdf Graphic file (type pdf)
 <use figures/fig-results-inventory-1.pdf>
 File: figures/lm-diagnostics-1.pdf Graphic file (type pdf)
 <use figures/lm-diagnostics-1.pdf>
 (paper.bbl
+Underfull \hbox (badness 2608) in paragraph at lines 58--65
+[][] [] [][][][][] [][] [][][][] [][] [][][][][][] [][] [][][][][][] [][] [][] 
+[][] [][][] [][] [][][][][][][][][][][][] [][] [][][] [][] [][] [][] [][][][][]
+[][] [][] [][][][] [] [][][]$[]\TU/lmr/m/n/8 .  Available at:
+ []
 
-[33]
+
+Underfull \hbox (badness 10000) in paragraph at lines 58--65
+[]$[][][][][] [] [] [] [][][][][][][][][] [][] [][][][] [] [][] [] [][] [][] []
+[][][][][][] [] [][][][][][][] [] [][][][] [] [][] [] [][][][][] [][] [][][][] 
+[][] [][][][][][] [][] [][][][][][] [][] [][] [][] [][][] [][]
+ []
+
+
 
 [34]
 
 [35]
-Underfull \hbox (badness 1783) in paragraph at lines 215--222
+
+[36]
+Underfull \hbox (badness 1783) in paragraph at lines 232--239
 []\TU/lmr/m/n/8 Statistisches Bundesamt (Destatis).  Kaufwerte und pachtpreise 
 für landwirtschaftliche grund-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 215--222
+Underfull \hbox (badness 10000) in paragraph at lines 232--239
 \TU/lmr/m/n/8 2023.  URL []$[][][][][] [] [] [] [][][] [] [][][][][][][][] [] [
 ][] [] [][] [] [][][][][][] [] [][][][][][][][] [][] [][][][][][][][][][][] [] 
 [][][][][][][][][][][][][][] [][]
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 215--222
+Underfull \hbox (badness 10000) in paragraph at lines 232--239
 [][][][][][][][][][][][][][][] [][] [][][][][][][][][] [] [][][][][][][][][][][
 ][][][][] [] [][][][][][][][][][][][][] [] [][][][][][][][][] [][] [][][][][][]
 [][][][][][][][][] []
@@ -1185,13 +1156,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 215--222
 
 
 
-[36])
-
-Package natbib Warning: There were undefined citations.
-
-
-
-[37]
+[37])
 
 [38]
 
@@ -1211,12 +1176,12 @@ Package rerunfilecheck Info: File `paper.out' has not changed.
 (rerunfilecheck)             Checksum: 2B71B2750E554ED54BEAAF7F7402C7E5;1471.
  ) 
 Here is how much of TeX's memory you used:
- 21785 strings out of 403246
- 394558 string characters out of 5460781
- 918221 words of memory out of 5000000
- 49904 multiletter control sequences out of 15000+600000
+ 21791 strings out of 403246
+ 394693 string characters out of 5460781
+ 905404 words of memory out of 5000000
+ 49910 multiletter control sequences out of 15000+600000
  671787 words of font info for 90 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 72i,21n,79p,1169b,572s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 72i,21n,79p,1426b,580s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 Output written on paper.pdf (41 pages).
