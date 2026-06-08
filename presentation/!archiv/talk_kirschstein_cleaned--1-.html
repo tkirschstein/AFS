@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Agroforestry Biomass Supply Chain Design</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Thomas Kirschstein" />
+    <script src="libs/header-attrs-2.31/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/metropolis.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/metropolis-fonts.css" rel="stylesheet" />
+    <link rel="stylesheet" href="talk_kirschstein_cleaned_xaringan.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+
+
+
+class: title-slide
+
+# Agroforestry Biomass Supply Chain Design
+
+## A MILP Model with Age-Lag Constraints for Product Cascading
+
+&lt;br&gt;
+
+**Thomas Kirschstein**  
+Fraunhofer IKTS
+
+&lt;br&gt;
+
+.logo-bottom[
+  &lt;img src="fig/ikts_logo.png" height="36px"/&gt;
+]
+
+---
+
+name: overview
+class: section-nav
+
+# Overview
+
+.nav-header[
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP Model](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+1. **Introduction** — Motivation &amp; Research Gap
+2. **Literature Review** — AFS Systems, Biomass Growth, Supply Chains
+3. **MILP Model** — Sets, Variables, Objective, Constraints
+4. **Case Study** — Central European Poplar-based AFS (Saxony-Anhalt)
+5. **Optimization Results** — Supply Chain Configuration &amp; Flows
+6. **Conclusion** — Contributions &amp; Open Questions
+
+---
+
+name: intro
+class: section-divider, middle, center
+
+# Introduction
+
+---
+
+## Motivation
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+- Temperate **agroforestry systems (AFS)** integrate fast-growing trees (poplar, willow) into arable land via alley-cropping
+- Woody biomass from AFS is a **sustainable feedstock** for bio-based value chains — preferred over pure energy use as biogenic carbon is stored in products
+- In Germany: ~1,200 ha of silvoarable AFS in 2025 — only **0.02 %** of agricultural land despite substantial ecological benefits
+- **Core challenge:** coordinated decisions on stand establishment, multi-cycle harvesting, and product cascading in spatially distributed supply chains
+
+.callout-note[
+**Research question:** How can integrated MILP models link **age-dependent stand dynamics** at field sites to **regional supply chain design** for multi-product AFS biomass?
+]
+
+---
+
+## Research Gap &amp; Contributions
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+**Prior literature** on biomass supply chains (MILP) typically:
+
+- treats biomass availability as **exogenous input**
+- focuses on a **single downstream value chain** (e.g. bioenergy)
+- ignores **age-lag constraints** linking consecutive harvests
+
+**This paper contributes:**
+
+1. Novel **MILP formulation** (AFS-SCD) with explicit age-lag constraints enforcing minimum/maximum rotation ages
+2. **Allometric yield functions** (Gompertz) for age-specific, component-specific biomass fractions (stems, branches, residues)
+3. **Multi-product, multi-period network design** with product quality cascades and storage
+4. Application to a **real-world case study** in Central Germany
+
+---
+
+name: lit
+class: section-divider, middle, center
+
+# Literature Review
+
+---
+
+## Agroforestry System Types
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+.pull-left[
+**Short-rotation coppice (SRC)**
+- Monoculture, 8,000–20,000 cuttings/ha
+- Rotation: 3–7 years, stand lifetime: 20–25 years
+- Root system regenerates after harvest — no replanting
+- Benchmark for biomass production
+
+**Short-rotation AFS (SRAFS)**
+- SRC-type tree strips in alley-cropping arrangement
+- Trees cover 10–30 % of parcel area
+- Boundary effect: higher light &amp; water → higher individual-tree biomass
+]
+
+.pull-right[
+**Long-rotation AFS (LRAFS)**
+- Same spatial structure as SRAFS
+- Rotation cycles: 12–15+ years
+- Larger stem diameter → high-value timber (veneer, sawlogs, engineered wood)
+- Timber-quality species: walnut, cherry, oak, high-grade poplar
+
+.callout-note[
+**Key insight:** SRAFS and LRAFS are not sharply separated — **intended use, establishment decisions, and harvest timing** jointly determine economic viability.
+]
+]
+
+---
+
+## Biomass Growth Models
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+**Gompertz growth function** for above-ground biomass `\(B_{AG}(t)\)`:
+
+`$$B_{AG}(t) = A \cdot \exp\!\bigl(-\exp(-k(t - t_0))\bigr)$$`
+
+Component-specific fractions (stems `\(p=1\)`, branches `\(p=2\)`, residues `\(p=3\)`):
+
+`$$B_{AG,p}(t) = B_{AG}(t) \cdot \frac{h_p(t)}{h_1(t)+h_2(t)+h_3(t)}$$`
+
+- Parameters calibrated from SRAFS field trials in Southern Germany (Huber et al., 2018)
+- Age-specific yield coefficients `\(\eta_{p,a}\)` pre-computed and embedded in the MILP (constraints C3)
+
+---
+
+## Gompertz Growth Curves — Poplar Max 3
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+.pull-left55[
+&lt;img src="fig/max3-growth-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
+.fig-caption[Aboveground biomass components (stems, branches, residues) by stand age for poplar clone Max 3 under SRAFS conditions.]
+]
+
+.pull-right45[
+**Key observations:**
+
+- Stem share rises from ~55 % at age 4 to &gt;75 % at age 10
+- Growth peak (inflection) at ~age 4
+- Total AGB at age 10: ~65 t dry matter/ha
+- Component fractions `\(f_p(t)\)` determine yield coefficients `\(\eta_{p,a}\)` in constraint C3
+]
+
+---
+
+## Biomass Supply Chain Literature
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+| Aspect | State of the art | This paper |
+|:---|:---|:---|
+| Biomass availability | Exogenous or simplified | Endogenous via Gompertz + age-lag |
+| Rotation decisions | Not modelled | Binary `\(z_{ist}\)` with min/max age |
+| Product types | Single or aggregated | Multi-product cascade `\((p\', p) \in \mathcal{Q}\)` |
+| Network structure | Static | Multi-period, storage + processing |
+| Case study scope | Generic | Real SRC sites, Saxony-Anhalt |
+
+---
+
+name: model
+class: section-divider, middle, center
+
+# MILP Model (AFS-SCD)
+
+---
+
+## Sets, Indices &amp; Parameters
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+.pull-left[
+**Sets &amp; indices**
+
+| Symbol | Meaning |
+|:---|:---|
+| `\(\mathcal{I}\)` | AFS sites (field parcels) |
+| `\(\mathcal{J}\)` | Storage/processing facilities |
+| `\(\mathcal{K}\)` | Industrial consumers |
+| `\(\mathcal{P}\)` | Biomass product types |
+| `\(\mathcal{Q}\)` | Quality cascade pairs `\((p\', p)\)` |
+| `\(\mathcal{T}\)` | Planning periods |
+| `\(\mathcal{S}\)` | Feasible activity arcs `\((s, t)\)` |
+]
+
+.pull-right[
+**Key parameters**
+
+| Symbol | Meaning |
+|:---|:---|
+| `\(\eta_{p,a}\)` | Yield (t/ha) for product `\(p\)` at age `\(a\)` |
+| `\(\text{AREA}_i\)` | Site area (ha) |
+| `\(c^{est}_i\)` | Establishment cost (€/ha) |
+| `\(c^{harv}_i\)` | Harvest cost (€/ha) |
+| `\(c^{opp}_i\)` | Opportunity cost (€/ha/yr) |
+| `\(R_{kp}\)` | Revenue (€/t) at consumer `\(k\)` |
+| `\(d_{ij}, d_{jk}\)` | Transport distances (km) |
+]
+
+---
+
+## Supply Chain Network Structure
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+&lt;img src="fig/fig-supply-chain-network-1.png" alt="" width="90%" style="display: block; margin: auto;" /&gt;
+
+.fig-caption[Three-echelon supply chain network: AFS sites `\(\mathcal{I}\)` (sources) → storage/processing nodes `\(\mathcal{J}\)` → industrial consumers `\(\mathcal{K}\)` (sinks).]
+
+---
+
+## Age-Lag Arc Structure `\(\mathcal{S}\)`
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+.pull-left[
+&lt;img src="fig/fig-set-S-tikz-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
+.fig-caption[Arc network `\(\mathcal{S}\)`: establishment arcs `\(\mathcal{S}^{est}\)`, harvest arcs `\(\mathcal{S}^{harv}\)` (feasible only for `\(A_{min} \leq t-s \leq A_{max}\)`), and termination arcs `\(\mathcal{S}^{term}\)`.]
+]
+
+.pull-right[
+&lt;img src="fig/fig-set-S-tikz2-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
+.fig-caption[Arc network `\(\mathcal{S}\)` (alternative view): consecutive harvest arcs enforce path-consistent rotation sequences.]
+]
+
+---
+
+## Age-Lag Path Examples
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+.pull-left[
+&lt;img src="fig/fig-set-S-path-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
+.fig-caption[Example path 1: establishment at `\(t=0\)`, first harvest at `\(t=5\)` (age 5), second harvest at `\(t=9\)` (age 4), termination at `\(t=12\)`.]
+]
+
+.pull-right[
+&lt;img src="fig/fig-set-S-path2-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
+.fig-caption[Example path 2: alternative rotation pattern with earlier first harvest.]
+]
+
+---
+
+## Decision Variables
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+| Variable | Type | Meaning |
+|:---|:---|:---|
+| `\(z_{ist} \in \{0,1\}\)` | Binary | Activity arc: site `\(i\)` from age `\(s\)` to `\(t\)` |
+| `\(X_{ijpt} \geq 0\)` | Continuous | Biomass flow (t): site `\(i\)` → storage `\(j\)`, product `\(p\)`, period `\(t\)` |
+| `\(X_{jkp\'pt} \geq 0\)` | Continuous | Processed flow (t): storage `\(j\)` → consumer `\(k\)`, cascade `\((p\',p)\)` |
+| `\(S_{jpt} \geq 0\)` | Continuous | Inventory (t) at storage `\(j\)`, product `\(p\)`, end of period `\(t\)` |
+
+.callout-note[
+**Age-lag structure:** Arc `\((s,t) \in \mathcal{S}^{harv}\)` is only feasible if `\(A_{min} \leq t-s \leq A_{max}\)`, enforcing rotation age bounds without additional constraints.
+]
+
+---
+
+## Objective Function
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+**Maximise total contribution margin** over the planning horizon `\(\mathcal{T}\)`:
+
+`$$\max\; Z = \underbrace{\sum_{k,p} R_{kp} \sum_{j,(p\',p),t} X_{jkp\'pt}}_{\text{Revenue}} - \underbrace{C^{est} - C^{opp} - C^{main} - C^{harv}}_{\text{Site costs}} - \underbrace{C^{tr\text{-}raw} + C^{tr\text{-}pre}}_{\text{Transport costs}} - \underbrace{C^{stor}}_{\text{Storage costs}}$$`
+
+- **Opportunity costs** penalise foregone crop revenues for each year a site is under AFS
+- **Two-stage transport** distinguishes raw biomass (site → storage) from pre-treated biomass (storage → consumer)
+- **Storage costs** apply from year 2 onward (year-of-harvest drying is cost-free)
+
+---
+
+## Constraints (C1–C4)
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+**(C1) Single establishment per site:**
+`$$\sum_{(0,t)\in\mathcal{S}^{est}} z_{i0t} \leq 1 \qquad \forall\; i \in \mathcal{I}$$`
+
+**(C2) Path connectivity — flow conservation:**
+`$$\sum_{(s,t)\in\mathcal{S}} z_{ist} = \sum_{(t,u)\in\mathcal{S}} z_{itu} \qquad \forall\; i,\; t$$`
+
+**(C3) Biomass yield via Gompertz coefficients:**
+`$$\sum_{j} X_{ijpt} \leq \sum_{(s,t)\in\mathcal{S}^{harv}} \eta_{p(t-s)} \cdot \text{AREA}_i \cdot z_{ist} \qquad \forall\; i,p,t$$`
+
+**(C4)/(C5) Transport linkage &amp; inventory balance** — follows OPTIMASS network-flow structure (De Meyer et al., 2015)
+
+---
+
+## Constraints (C6–C8) &amp; Cascade Logic
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+**(C6) Storage capacity:**
+`$$\sum_{p} S_{jpt} \leq \text{CAP}^{stor}_j \qquad \forall\; j,\; t$$`
+
+**(C7) Processing capacity:**
+`$$\sum_{i,p} X_{ijpt} \leq \text{CAP}^{proc}_j \qquad \forall\; j,\; t$$`
+
+**(C8) Demand with quality cascade:**
+`$$\sum_{j,(p\',p)\in\mathcal{Q}} X_{jkp\'pt} \leq D^{max}_{kpt} \qquad \forall\; k,p,t$$`
+
+.callout-note[
+**Product cascade principle:** `\((p\',p) \in \mathcal{Q}\)` allows a **higher-quality product** `\(p\'\)` (e.g. stems) to satisfy demand for a **lower-quality product** `\(p\)` (e.g. chips for energy) — operationalising cascading use as the central economic rationale.
+]
+
+---
+
+name: case
+class: section-divider, middle, center
+
+# Case Study
+
+---
+
+## Study Region &amp; Supply Chain Configuration
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+- **Region:** tri-state area of Saxony-Anhalt, northern Thuringia, northern Saxony (Germany)
+- Highest density of registered SRC *Feldblöcke* in Germany
+- **Supply chain structure:** AFS sites (sources) → storage/processing nodes → industrial consumers (sinks)
+
+.pull-left[
+**Sites `\(\mathcal{I}\)`**
+
+- Registered SRC parcels from INVEKOS land-use register
+- Clustered into representative site groups
+- Site-specific area, establishment/harvest costs
+]
+
+.pull-right[
+**Consumers `\(\mathcal{K}\)`**
+
+- 3 biomass product types: stems (P1), branches (P2), residues (P3)
+- Industrial consumers: paper/pulp, chemical biorefinery, energy plants
+- Minimum demand threshold: `\(\geq\)` 1.5 units/period
+]
+
+---
+
+## Supply Chain Network — Saxony-Anhalt
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+&lt;img src="fig/fig-results-sc-map-1.png" alt="" width="85%" style="display: block; margin: auto;" /&gt;
+
+.fig-caption[Supply chain network for the Saxony-Anhalt case study: AFS site clusters (green), storage/processing nodes (orange), and industrial consumers (blue).]
+
+---
+
+## Consumer Demand &amp; Product Classification
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+.pull-left55[
+&lt;img src="fig/fig-consumer-demand-1.png" alt="" width="100%" style="display: block; margin: auto;" /&gt;
+.fig-caption[Consumer demand profile by product type (P1 stems, P2 branches, P3 residues).]
+]
+
+.pull-right45[
+| Product | Type | Primary use | Cascade |
+|:---|:---|:---|:---|
+| P1 — Stems | High quality | Sawlogs, pulp | → P2, P3 |
+| P2 — Branches | Medium | Chips, boards | → P3 |
+| P3 — Residues | Low quality | Energy | End |
+]
+
+---
+
+## MILP Model Parameters
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+| Parameter | Value | Source |
+|:---|:---|:---|
+| Planning horizon `\(\vert\mathcal{T}\vert\)` | 40 periods | — |
+| Max. rotation age `\(A_{max}\)` | 15 years | LRAFS benchmark |
+| Min. rotation age `\(A_{min}\)` | 3 years | SRAFS minimum |
+| Raw biomass transport `\(c^{tr\text{-}raw}\)` | 0.08 €/(tkm) | Literature |
+| Pre-treated transport `\(c^{tr\text{-}pre}\)` | 0.06 €/(tkm) | Literature |
+| Establishment cost `\(c^{est}\)` | 2,500 €/ha | Testa et al. (2014) |
+| Harvest cost `\(c^{harv}\)` | 150 €/ha | Literature |
+| Opportunity cost `\(c^{opp}\)` | 45 €/ha/yr | Literature |
+| Solver | Gurobi 10, MIP gap 1 % | — |
+
+---
+
+name: results
+class: section-divider, middle, center
+
+# Optimization Results
+
+---
+
+## Supply Chain Network — Optimal Configuration
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+&lt;img src="fig/fig-results-sc-map-1.png" alt="" width="88%" style="display: block; margin: auto;" /&gt;
+
+.fig-caption[Optimal supply chain network: established AFS sites (green), active storage nodes (orange), served consumers (blue). Arc width ∝ total biomass flow volume.]
+
+---
+
+## Harvest &amp; Rotation Patterns
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+&lt;img src="fig/fig-results-harvest-gantt-1.png" alt="" width="95%" style="display: block; margin: auto;" /&gt;
+
+.callout-note[
+**Trade-off:** Longer rotations → higher stem share &amp; revenue per harvest  
+Shorter rotations → more frequent harvests, lower capital tie-up, better demand coverage
+]
+
+---
+
+## Product Mix &amp; Biomass Flows
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+&lt;img src="fig/fig-results-product-mix-1.png" alt="" width="95%" style="display: block; margin: auto;" /&gt;
+
+.fig-caption[Alluvial diagram of biomass flows: product type (P1/P2/P3) from harvest sites through storage nodes to industrial consumers. Product cascade (C8) visible as P1-stem flows partially satisfying P2/P3 demand.]
+
+---
+
+## Inventory Dynamics at Storage Nodes
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+&lt;img src="fig/fig-results-inventory-1.png" alt="" width="95%" style="display: block; margin: auto;" /&gt;
+
+.fig-caption[Inventory levels `\(S_{jpt}\)` at storage nodes by product type and period. Storage buffers harvest peaks to ensure continuous supply to consumers.]
+
+---
+
+name: conclusion
+class: section-divider, middle, center
+
+# Conclusion
+
+---
+
+## Contributions &amp; Key Findings
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+**Novel MILP formulation (AFS-SCD):** explicit age-lag constraints link establishment and consecutive harvest decisions — first integrated AFS supply chain model of this type
+
+**Allometric Gompertz yield functions** embedded directly in the MILP via pre-computed `\(\eta_{p,a}\)` coefficients — no exogenous biomass input needed
+
+**Multi-product cascade** operationalises cleaner production principle: high-quality material use before energy recovery
+
+**Real-world case study** (Saxony-Anhalt) demonstrates feasibility at regional scale
+
+---
+
+## Open Research Questions
+
+.nav-header[
+[Overview](#overview) &amp;nbsp;|&amp;nbsp;
+[Introduction](#intro) &amp;nbsp;|&amp;nbsp;
+[Literature](#lit) &amp;nbsp;|&amp;nbsp;
+[MILP](#model) &amp;nbsp;|&amp;nbsp;
+[Case Study](#case) &amp;nbsp;|&amp;nbsp;
+[Results](#results) &amp;nbsp;|&amp;nbsp;
+[Conclusion](#conclusion)
+]
+
+.callout-important[
+**Planned computational experiments:**
+- **Allometric parameter uncertainty:** sensitivity of optimal rotation length to Gompertz parameter ranges
+- **Price scenarios:** impact of biomass price trajectories (P1/P2/P3) on product mix and supply chain configuration
+- **Policy incentives:** effect of AFS subsidies and carbon pricing on establishment decisions
+- **Scalability:** solution quality and computation time for larger site/consumer instances
+]
+
+--
+
+**Further directions:**
+- Stochastic programming extensions for yield and demand uncertainty
+- Multi-objective optimization (economic vs. ecological performance)
+- Integration of ecosystem service valuations (carbon sequestration, biodiversity)
+
+---
+
+class: title-slide, center, middle
+
+# Thank You
+
+**Questions?**
+
+Thomas Kirschstein  
+Fraunhofer IKTS  
+thomas.kirschstein@ikts.fraunhofer.de
+
+.logo-bottom[
+  &lt;img src="fig/ikts_logo.png" height="36px"/&gt;
+]
+
+---
+
+## References
+
+Huber, G. et al. (2018). SRAFS growth calibration. *Biomass and Bioenergy*.
+
+De Meyer, A. et al. (2015). OPTIMASS: A MILP for biomass supply networks. *European Journal of Operational Research*.
+
+Testa, R. et al. (2014). Economic assessment of poplar cultivation. *Energy*.
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+  "ratio": "16:9",
+  "highlightStyle": "github",
+  "highlightLines": true,
+  "countIncrementalSlides": false,
+  "slideNumberFormat": "%current% / %total%"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

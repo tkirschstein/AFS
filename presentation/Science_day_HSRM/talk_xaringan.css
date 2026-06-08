@@ -1,0 +1,452 @@
+/* ============================================================
+   talk_xaringan.css
+   Hochschule RheinMain (HSRM) Theme fuer Xaringan
+
+   HSRM-Farbschema (aus HSRM-PP-Vorlage-2025.pptx):
+   Primaer  (Dunkelviolett): #361E47
+   Sekundaer (Violett):      #5E3EE1
+   Akzent (Rot):             #E00514
+   Schriften: Aptos Display (Ueberschriften), Aptos (Fliesstext)
+   ============================================================ */
+
+/* --- Design Tokens (HSRM Corporate Design) --- */
+:root {
+  --hsrm:        #361E47;   /* Dunkelviolett – Primaerfarbe */
+  --hsrm-dark:   #261537;   /* Noch dunkleres Violett fuer Konturlinien */
+  --hsrm-light:  #f0edf4;   /* Sehr helles Violett fuer Hintergruende */
+  --hsrm-violet: #5E3EE1;   /* Leuchtviolett – Sekundaerfarbe */
+  --hsrm-red:    #E00514;   /* Rot – Akzentfarbe */
+  --text-main:   #1a1a1a;
+  --text-muted:  #555555;
+}
+
+/* ============================================================
+   ALLGEMEINE FOLIENGESTALTUNG
+   ============================================================ */
+.remark-slide-content {
+  background: #ffffff;
+  color: var(--text-main);
+  font-family: "Aptos", "Calibri", Arial, sans-serif;
+  font-size: 1.5em;
+  padding: -0.0em 1.2em 1.2em 1.2em;
+  padding-top: 2.0em; /* Platz fuer den Titel (h2) lassen */
+  text-align: left;
+}
+
+/* --- Folien-Titel (h2) = Beamer frametitle --- */
+.remark-slide-content h2 {
+  background: var(--hsrm);
+  color: #ffffff;
+  font-family: "Aptos Display", "Calibri", Arial, sans-serif;
+  font-size: 1.8em;
+  font-weight: 600;
+  padding: 0.55em 0.75em 0.32em 0.75em;
+  margin: -0.9em -1.2em 0.75em -1.2em;
+  border-bottom: 2px solid var(--hsrm-dark);
+  text-align: left;
+  letter-spacing: 0.01em;
+}
+
+/* --- Unterueberschrift h3 --- */
+.remark-slide-content h3 {
+  color: var(--hsrm-violet);
+  font-family: "Aptos Display", "Calibri", Arial, sans-serif;
+  font-size: 1.05em;
+  font-weight: 700;
+  margin-top: 0.6em;
+  margin-bottom: 0.3em;
+}
+
+/* --- Abschnittstitel (section divider / h1) --- */
+.section-divider h1 {
+  color: #ffffff;
+  font-family: "Aptos Display", "Calibri", Arial, sans-serif;
+  font-size: 2em;
+  font-weight: 700;
+  border-bottom: 3px solid rgba(255,255,255,0.6);
+  padding-bottom: 0.25em;
+}
+
+.section-divider {
+  background: var(--hsrm) !important;
+  color: #ffffff !important;
+}
+
+/* ============================================================
+   TITELFOLIE
+   ============================================================ */
+.title-slide {
+  background: #ffffff !important;
+  text-align: center;
+}
+
+.title-slide.remark-slide-content h1 {
+  color: var(--hsrm);
+  font-family: "Aptos Display", "Calibri", Arial, sans-serif;
+  font-size: 1.65em;
+  font-weight: 700;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0.2em 0 0.3em 0;
+  text-align: center;
+}
+
+.title-slide.remark-slide-content h2 {
+  background: none !important;
+  color: var(--text-muted) !important;
+  font-family: "Aptos", "Calibri", Arial, sans-serif !important;
+  font-size: 1em !important;
+  font-weight: 400 !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 0 0.6em 0 !important;
+  text-align: center !important;
+  letter-spacing: 0 !important;
+}
+
+.title-slide .author {
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 1em;
+}
+
+.title-slide .date {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+/* HSRM-Violett-Linie unter dem Haupttitel auf der Titelfolie */
+.title-slide.remark-slide-content h1::after {
+  content: "";
+  display: block;
+  width: 580px;
+  height: 3px;
+  background: var(--hsrm-violet);
+  margin: 0.4em auto 0;
+}
+
+/* ============================================================
+   AUFZAEHLUNG
+   ============================================================ */
+.remark-slide-content ul {
+  list-style: disc;
+  padding-left: 1.4em;
+}
+
+.remark-slide-content ul > li::marker {
+  color: var(--hsrm-violet);
+}
+
+.remark-slide-content ul li,
+.remark-slide-content ol li {
+  margin-bottom: 0.38em;
+  line-height: 1.5;
+}
+
+.remark-slide-content strong {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+/* ============================================================
+   CALLOUT-BOXEN (entsprechen Beamer \begin{block})
+   ============================================================ */
+.callout-note {
+  border-left: 4px solid var(--hsrm);
+  background: var(--hsrm-light);
+  border-radius: 2px;
+  padding: 0.5em 0.85em;
+  font-size: 0.88em;
+  margin: 0.7em 0;
+}
+
+.callout-note::before {
+  content: "Note";
+  display: block;
+  background: var(--hsrm);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15em 0.6em;
+  margin: -0.5em -0.85em 0.5em -0.85em;
+  border-radius: 0;
+}
+
+.callout-important {
+  border-left: 4px solid var(--hsrm-violet);
+  background: #eeebf9;
+  border-radius: 2px;
+  padding: 0.5em 0.85em;
+  font-size: 0.88em;
+  margin: 0.7em 0;
+}
+
+.callout-important::before {
+  content: "Important";
+  display: block;
+  background: var(--hsrm-violet);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15em 0.6em;
+  margin: -0.5em -0.85em 0.5em -0.85em;
+  border-radius: 0;
+}
+
+.callout-block {
+  border-left: 4px solid var(--hsrm-violet);
+  background: #eeebf9;
+  border-radius: 2px;
+  padding: 0.3em 0.5em;
+  font-size: 1.2em;
+  margin: 0.3em 0;
+}
+
+.callout-block::before {
+  content: "";
+  display: block;
+  background: var(--hsrm-violet);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.2em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.15em 0.3em;
+  margin: -0.3em -0.5em 0.3em -0.5em;
+  border-radius: 0;
+}
+
+/* ============================================================
+   TABELLEN
+   ============================================================ */
+.remark-slide-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82em;
+  margin: 0.6em 0;
+}
+
+.remark-slide-content table th {
+  background: var(--hsrm);
+  color: #ffffff;
+  padding: 0.32em 0.6em;
+  font-weight: 600;
+  text-align: left;
+  font-family: "Aptos", "Calibri", Arial, sans-serif;
+}
+
+.remark-slide-content table td {
+  padding: 0.28em 0.6em;
+  border-bottom: 1px solid #e0e0e0;
+  color: var(--text-main);
+}
+
+.remark-slide-content table tr:nth-child(even) td {
+  background: #f5f2f8;
+}
+
+/* ============================================================
+   GLEICHUNGEN / MATHEMATIK
+   ============================================================ */
+.remark-slide-content .math {
+  color: var(--text-main);
+  font-size: 0.93em;
+}
+
+/* ============================================================
+   FOLIENZAHL
+   ============================================================ */
+.remark-slide-number {
+  display: block;
+  position: absolute;
+  bottom: 0.52em;
+  right: 0.9em;
+  font-size: 0.62em;
+  font-family: "Aptos", "Calibri", Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.90);
+  background: transparent;
+  padding: 0;
+  line-height: 1;
+  z-index: 12;
+}
+
+/* ============================================================
+   FUSSZEILE: HSRM-Violett mit Logo links + Foliennummer rechts
+   ============================================================ */
+
+/* Mehr Abstand unten, damit der Footer nicht den Inhalt ueberlagert */
+.remark-slide-content {
+  padding-bottom: 2.6em !important;
+}
+
+.remark-slide-container .remark-slide-scaler::after {
+  content: '';
+}
+
+.remark-slide {
+  position: relative;
+}
+
+/* Dunkelviolette Fusszeile */
+.remark-slide-content::after {
+  content: '';
+  position: absolute;
+  left:   0;
+  right:  0;
+  bottom: 0;
+  height: 2.0em;
+  background: var(--hsrm);
+  border-top: 2px solid var(--hsrm-dark);
+  z-index: 10;
+}
+
+/* Logo in der Fusszeile (links) */
+.remark-slide-content::before {
+  content: '';
+  position: absolute;
+  left:   0.9em;
+  bottom: 0.35em;
+  width:  auto;
+  height: 1.8em;
+  background-image: url("fig/logo_hsrm.png");
+  background-repeat: no-repeat;
+  background-size:   contain;
+  background-position: left center;
+  z-index: 11;
+  min-width: 150px;
+}
+
+/* Titelfolie und Section-Divider: etwas dunklere Fusszeile */
+.title-slide.remark-slide-content::after,
+.section-divider.remark-slide-content::after {
+  background: var(--hsrm-dark);
+  border-top: 2px solid rgba(255,255,255,0.25);
+}
+
+.title-slide.remark-slide-content::before,
+.section-divider.remark-slide-content::before {
+  filter: brightness(0) invert(1);   /* Logo weiss auf dunklem Hintergrund */
+}
+
+/* Seitenzahl auf Titelfolie ausblenden */
+.title-slide .remark-slide-number {
+  display: none;
+}
+
+/* ============================================================
+   LOGO (manuell, Legacy .logo-bottom — weiterhin nutzbar)
+   ============================================================ */
+.remark-slide-content .logo-bottom {
+  position: absolute;
+  bottom: 0.5em;
+  right: 0.9em;
+}
+.remark-slide-content .logo-bottom img {
+  height: 36px;
+  display: inline-block;
+}
+
+/* ============================================================
+   ABBILDUNGSUNTERSCHRIFTEN
+   ============================================================ */
+.fig-caption {
+  font-size: 0.7em;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 0.2em;
+  font-style: italic;
+  line-height: 1.35;
+}
+
+/* ============================================================
+   ZWEISPALTIGE LAYOUTS (analog .pull-left / .pull-right)
+   ============================================================ */
+.pull-left55 {
+  float: left;
+  width: 53%;
+  padding-right: 1.2em;
+}
+
+.pull-right45 {
+  float: right;
+  width: 43%;
+}
+
+/* Beliebige Breiten-Klassen */
+.col-30 { float: left;  width: 28%; padding-right: 1em; }
+.col-40 { float: left;  width: 35%; padding-right: 1em; }
+.col-50 { float: left;  width: 45%; padding-right: 1em; }
+.col-60 { float: left;  width: 55%; padding-right: 1em; }
+.col-70 { float: left;  width: 68%; }
+
+/* ============================================================
+   HORIZONTALE TRENNLINIE
+   ============================================================ */
+.remark-slide-content hr {
+  border: none;
+  border-top: 3px solid var(--hsrm-violet);
+  margin: 0.6em auto;
+  width: 60px;
+  display: block;
+}
+
+/* ============================================================
+   OVERVIEW / INHALTSFOLIE (section-nav)
+   ============================================================ */
+.section-nav h1 {
+  color: var(--hsrm);
+  font-family: "Aptos Display", "Calibri", Arial, sans-serif;
+  font-size: 1.55em;
+  font-weight: 700;
+  border-bottom: 3px solid var(--hsrm-violet);
+  padding-bottom: 0.25em;
+  margin-bottom: 0.7em;
+}
+
+/* Kompakte Folien */
+.compact-slide.remark-slide-content {
+  padding-top: 3.2em !important;
+}
+
+/* ============================================================
+   UTILITY-KLASSEN
+   ============================================================ */
+
+.center {
+  text-align: center;
+}
+
+.large {
+  font-size: 1.1em;
+}
+
+.medium {
+  font-size: 0.9em;
+}
+
+.small {
+  font-size: 0.8em;
+}
+
+.tiny {
+  font-size: 0.7em;
+}
+
+.footnote {
+  position: absolute;
+  bottom: 1em;
+  font-size: 0.65em;
+  color: var(--text-muted);
+}
+
+/* Clearfix nach float-Layouts */
+.clearfix::after {
+  content: "";
+  display: table;
+  clear: both;
+}

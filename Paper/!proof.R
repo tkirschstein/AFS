@@ -26,6 +26,7 @@ source("../Modell/extract_result.R")
 #Rcpp::sourceCpp("../Modell/build_lp_rcpp_v2.cpp")
 #Rcpp::sourceCpp("../Modell/build_lp_rcpp_v3.cpp")
 Rcpp::sourceCpp("../Modell/build_and_solve_afs_milp.cpp")
+Rcpp::sourceCpp("../Modell/build_and_solve_afs_lp_v11.cpp")
 
 build_ompr_model <- function(milp_instance) {
  
@@ -805,6 +806,12 @@ milp_instance <- build_optimization_instance(
 result.cpp <- build_and_solve_afs_milp(milp_instance,
                                    gurobi_params = list(TimeLimit = 300, MIPGap = 0.01),
                                    verbose = TRUE)
+
+result.lp <- build_and_solve_afs_lp_v11(milp_instance,
+                                       gurobi_params = list(TimeLimit = 300),
+                                       verbose = TRUE)
+
+result.cpp <- result.lp
 
 ################################################################################
 # recalculate objective value of CPP solution

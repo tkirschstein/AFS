@@ -1,0 +1,213 @@
+/* ============================================================
+   Custom CSS fuer talk_kirschstein_cleaned.qmd
+   Orientiert am Fraunhofer IKTS Beamer-Theme (MLUProdLog)
+   Primaerfarbe: #179C7D (Fraunhofer-Gruen)
+   ============================================================ */
+
+:root {
+  --fhg:        #179C7D;
+  --fhg-dark:   #0d7a62;
+  --fhg-light:  #e8f5f2;
+  --text-main:  #1a1a1a;
+  --text-muted: #555555;
+}
+
+/* --- Folien-Hintergrund weiss --- */
+.reveal .slides section {
+  background: #ffffff;
+  color: var(--text-main);
+  font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
+  font-size: 0.95em;
+  text-align: left;
+}
+
+/* --- Folien-Titel (h2) wie Beamer frametitle --- */
+.reveal .slides section h2 {
+  background: var(--fhg);
+  color: #ffffff;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 1.25em;
+  font-weight: 600;
+  padding: 0.35em 0.75em;
+  margin: -0.5em -0.5em 0.8em -0.5em;
+  border-bottom: 2px solid var(--fhg-dark);
+  text-align: left;
+  letter-spacing: 0.01em;
+}
+
+/* --- Abschnittstitel (h1 / section title) --- */
+.reveal .slides section h1 {
+  color: var(--fhg);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 1.6em;
+  font-weight: 700;
+  border-bottom: 3px solid var(--fhg);
+  padding-bottom: 0.3em;
+}
+
+/* --- h3 Unterueberschrift --- */
+.reveal .slides section h3 {
+  color: var(--fhg);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 1.4em;
+  font-weight: 700;
+}
+
+/* --- Aufzaehlungszeichen wie Beamer item (gruen, rund) --- */
+.reveal .slides ul > li::marker {
+  color: var(--fhg);
+}
+.reveal .slides ul {
+  list-style: disc;
+}
+.reveal .slides ul li,
+.reveal .slides ol li {
+  margin-bottom: 0.4em;
+  line-height: 1.5;
+}
+
+/* --- Fettschrift hebt sich deutlich ab --- */
+.reveal .slides strong {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+/* --- Callout-Boxen (Note = Beamer \begin{block}) --- */
+.reveal .slides .callout {
+  border-radius: 2px;
+  font-size: 0.88em;
+}
+.reveal .slides .callout-note {
+  border-top: 3px solid var(--fhg);
+  background: var(--fhg-light);
+}
+.reveal .slides .callout-note .callout-title {
+  background: var(--fhg);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.78em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.reveal .slides .callout-important {
+  border-top: 3px solid var(--fhg-dark);
+  background: #f0faf7;
+}
+.reveal .slides .callout-important .callout-title {
+  background: var(--fhg-dark);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.78em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* --- Tabellen wie Beamer tabularx --- */
+.reveal .slides table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85em;
+}
+.reveal .slides table th {
+  background: var(--fhg);
+  color: #ffffff;
+  padding: 0.35em 0.6em;
+  font-weight: 600;
+  text-align: left;
+}
+.reveal .slides table td {
+  padding: 0.3em 0.6em;
+  border-bottom: 1px solid #e8e8e8;
+  color: var(--text-main);
+}
+.reveal .slides table tr:nth-child(even) td {
+  background: #f7f7f7;
+}
+
+/* --- Zielfunktion / Gleichungen --- */
+.reveal .slides .math {
+  color: var(--text-main);
+  font-size: 0.95em;
+}
+
+/* --- Footer (Beamer-Fusszeile) --- */
+.reveal .footer {
+  font-size: 0.6em;
+  color: rgba(255,255,255,0.85);
+  background: var(--fhg);
+  padding: 0.2em 1em;
+  width: 100%;
+  bottom: 0;
+}
+
+/* --- Foliennummer --- */
+.reveal .slide-number {
+  background: var(--fhg);
+  color: #ffffff;
+  font-size: 0.65em;
+  padding: 0.2em 0.5em;
+  border-radius: 2px;
+}
+
+/* --- Logo Positionierung --- */
+.reveal .slide-logo {
+  height: 28px !important;
+  bottom: 0.5em;
+  right: 0.8em;
+  filter: none;
+}
+
+/* --- Titelfolie --- */
+.reveal .title-slide {
+  background: #ffffff !important;
+  text-align: center;
+}
+.reveal .title-slide h1.title {
+  color: var(--fhg);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 1.7em;
+  font-weight: 700;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0 0 0.5em 0;
+}
+.reveal .title-slide .author {
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 1em;
+}
+.reveal .title-slide .date {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+/* --- Horizontale Trennlinie (hr) = Beamer-Balken --- */
+.reveal .slides section hr {
+  border: none;
+  border-top: 3px solid var(--fhg);
+  margin: 0.6em auto;
+  width: 60px;
+}
+
+/* --- .center Utility --- */
+.reveal .slides .center,
+.reveal .slides section.center {
+  text-align: center;
+}
+
+/* --- Quarto columns gap --- */
+.reveal .columns {
+  gap: 1.5em;
+}
+
+
+/* Beliebige Breiten-Klassen */
+.col-30 { float: left;  width: 29%; padding-right: 1em; }
+.col-40 { float: left;  width: 39%; padding-right: 1em; }
+.col-50 { float: left;  width: 48%; padding-right: 1em; }
+.col-60 { float: left;  width: 59%; padding-right: 1em; }
+.col-70 { float: left;  width: 69%; }
+
+/* Immer nach float-Spalten nötig! */
+.clearfix::after { content: ""; display: table; clear: both; }
