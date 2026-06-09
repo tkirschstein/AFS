@@ -82,6 +82,7 @@
 \usepackage{pdflscape}
 \usepackage{float}
 \usepackage{xcolor}
+\usepackage{eurosym}
 \newcommand{\Tc}{\mathcal{T}}
 \newcommand{\Pc}{\mathcal{P}}
 \newcommand{\Qc}{\mathcal{Q}}
@@ -1115,7 +1116,7 @@ selected in the optimal solution.
 
 }
 
-\caption{Scatterplot of active agroforestry sites: opportunity cost rate (€ ha⁻¹ yr⁻¹) on the x-axis versus demand-weighted average delivery distance (km) on the y-axis. Point size is proportional to the site's net margin (€ ha⁻¹ yr⁻¹); sites with negative net margin are shown as open circles. A LOESS smoothing line indicates the joint trend.}\label{fig:fig-results-site-scatter}
+\caption{Scatterplot of active agroforestry sites: opportunity cost rate (€ ha yr) on the x-axis versus demand-weighted average delivery distance (km) on the y-axis. Point size is proportional to the site's net margin (€ ha yr); sites with negative net margin are shown as open circles. A LOESS smoothing line indicates the joint trend.}\label{fig:fig-results-site-scatter}
 \end{figure}
 
 \section{Sensitivity analysis}\label{sensitivity-analysis}
@@ -1159,38 +1160,27 @@ so when foregone agricultural revenue is high, confirming the
 rotation-length trade-off in the AFS-SCD formulation
 (Section \ref{sec:milp}).
 
-\begin{table}
-\centering
-\caption{\label{tab:tab-scenario-kpis}Key performance indicators for benchmark and sensitivity scenarios.
-               Opp.~cost: opportunity cost per hectare; Cost/Rev.~mult.: multipliers
-               relative to the baseline scenario (1.0 = baseline).
-               Total profit is net revenue minus all costs over the full planning
-               horizon; demand satisfaction reports the share of total customer
-               demand served.}
-\centering
-\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
-\fontsize{8}{10}\selectfont
-\begin{tabular}[t]{lrrrrrrr}
-\toprule
-Scen. & Opp. cost (€/ha) & Cost mult. & Rev. mult. & Profit (€/ha·a) & Act. sites & Wood (kt/a) & Demand sat. (\%)\\
-\midrule
-\cellcolor{gray!10}{Bench.} & \cellcolor{gray!10}{150} & \cellcolor{gray!10}{1.0} & \cellcolor{gray!10}{1.0} & \cellcolor{gray!10}{651} & \cellcolor{gray!10}{60} & \cellcolor{gray!10}{923} & \cellcolor{gray!10}{79.4\%}\\
-1 & 150 & 0.5 & 0.5 & 254 & 66 & 904 & 77.8\%\\
-\cellcolor{gray!10}{2} & \cellcolor{gray!10}{300} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{171} & \cellcolor{gray!10}{60} & \cellcolor{gray!10}{864} & \cellcolor{gray!10}{74.3\%}\\
-3 & 150 & 2.0 & 0.5 & 91 & 50 & 777 & 66.9\%\\
-\cellcolor{gray!10}{4} & \cellcolor{gray!10}{300} & \cellcolor{gray!10}{2.0} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{109} & \cellcolor{gray!10}{11} & \cellcolor{gray!10}{160} & \cellcolor{gray!10}{13.8\%}\\
-\addlinespace
-5 & 150 & 0.5 & 1.5 & 708 & 99 & 961 & 82.7\%\\
-\cellcolor{gray!10}{6} & \cellcolor{gray!10}{300} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{1.5} & \cellcolor{gray!10}{751} & \cellcolor{gray!10}{84} & \cellcolor{gray!10}{942} & \cellcolor{gray!10}{81.1\%}\\
-7 & 150 & 2.0 & 1.5 & 889 & 67 & 915 & 78.8\%\\
-\cellcolor{gray!10}{8} & \cellcolor{gray!10}{300} & \cellcolor{gray!10}{2.0} & \cellcolor{gray!10}{1.5} & \cellcolor{gray!10}{812} & \cellcolor{gray!10}{65} & \cellcolor{gray!10}{905} & \cellcolor{gray!10}{77.9\%}\\
-\bottomrule
-\end{tabular}}
-\end{table}
+\begin{figure}
+
+{\centering \includegraphics[width=\textwidth]{figures/fig-boxplot-scenario-profit-1} 
+
+}
+
+\caption{Verteilung des Standortprofits (€ ha yr) über die Ausprägungen der Szenarienparameter Opportunitätskosten (opp\_cost), Kostenniveau (cost\_level) und Preisniveau (revenue\_level). Jeder Boxplot fasst alle aktiven Standorte aller Replikationen der jeweiligen Parameterkombination zusammen.}\label{fig:fig-boxplot-scenario-profit}
+\end{figure}
+
+\begin{figure}
+
+{\centering \includegraphics[width=\textwidth]{figures/fig-boxplot-scenario-area-1} 
+
+}
+
+\caption{Verteilung der bewirtschafteten AFS-Fläche (ha) über die Ausprägungen der Szenarienparameter Opportunitätskosten (opp\_cost), Kostenniveau (cost\_level) und Preisniveau (revenue\_level). Jeder Boxplot fasst die Summe der aktiven Standortflächen je Replikation und Parameterkombination zusammen. Höhere Werte zeigen eine breitere räumliche Aktivierung des AFS-Potenzials an.}\label{fig:fig-boxplot-scenario-area}
+\end{figure}
 
 \begin{table}[!h]
 \centering
-\caption{\label{tab:tab-lm-profit}Overview on OLS regression result (adj. R$^2$:81\%, \# obervations: 556, $\sigma$: 240)}
+\caption{\label{tab:tab-lm-profit}Overview on OLS regression result (adj. R$^2$:70\%, \# obervations: 21131, $\sigma$: 266)}
 \centering
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
 \fontsize{8}{10}\selectfont
@@ -1198,13 +1188,17 @@ Scen. & Opp. cost (€/ha) & Cost mult. & Rev. mult. & Profit (€/ha·a) & Act.
 \toprule
 variable & estimate & std. error & t value & p value & CI 2.5\% & CI 97.5\%\\
 \midrule
-\(Intercept\) & -2513.370 & 177.374 & -14.170 & 0.000 & -2861.775 & -2164.964\\
-opp\_cost & -1.276 & 0.143 & -8.916 & 0.000 & -1.557 & -0.995\\
-cost\_level & -166.715 & 15.565 & -10.711 & 0.000 & -197.288 & -136.142\\
-revenue\_level & 1249.993 & 25.489 & 49.041 & 0.000 & 1199.927 & 1300.059\\
-avg\_rotation\_yr & 178.444 & 6.475 & 27.558 & 0.000 & 165.725 & 191.163\\
+\(Intercept\) & -1352.966 & 34.261 & -39.489 & 0 & -1420.121 & -1285.811\\
+opp\_cost & -1.166 & 0.059 & -19.783 & 0 & -1.281 & -1.050\\
+cost\_level & -347.783 & 11.349 & -30.645 & 0 & -370.027 & -325.539\\
+revenue\_level & 731.446 & 13.771 & 53.115 & 0 & 704.454 & 758.439\\
+avg\_rotation\_yr & 117.729 & 1.156 & 101.800 & 0 & 115.462 & 119.995\\
 \addlinespace
-log\(area\_ha\) & 19.172 & 20.043 & 0.957 & 0.339 & -20.197 & 58.541\\
+log\(area\_ha\) & 23.561 & 3.610 & 6.527 & 0 & 16.486 & 30.636\\
+opp\_cost $\times$ cost\_level & 0.496 & 0.043 & 11.404 & 0 & 0.410 & 0.581\\
+opp\_cost $\times$ revenue\_level & 1.054 & 0.052 & 20.308 & 0 & 0.952 & 1.156\\
+cost\_level $\times$ revenue\_level & 210.283 & 10.135 & 20.748 & 0 & 190.417 & 230.148\\
+opp\_cost $\times$ cost\_level $\times$ revenue\_level & -0.548 & 0.039 & -14.221 & 0 & -0.623 & -0.472\\
 \bottomrule
 \end{tabular}}
 \end{table}
@@ -1269,9 +1263,63 @@ evaluation, consistent with the cleaner production framing of this work.
 
 \section{Appendix}\label{appendix}
 
-\begin{verbatim}
-## NULL
-\end{verbatim}
+\begin{table}
+\centering
+\caption{\label{tab:tab-scenario-kpis}Key performance indicators for benchmark and sensitivity scenarios.
+               Opp.~cost: opportunity cost per hectare; Cost/Rev.~mult.: multipliers
+               relative to the baseline scenario (1.0 = baseline).
+               Total profit is net revenue minus all costs over the full planning
+               horizon; demand satisfaction reports the share of total customer
+               demand served.}
+\centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
+\fontsize{8}{10}\selectfont
+\begin{tabular}[t]{lrrrrrr}
+\toprule
+Opp. cost (€/ha) & Cost mult. & Rev. mult. & Profit (€/ha·a) & Act. sites & Wood (kt/a) & Demand sat. (\%)\\
+\midrule
+\cellcolor{gray!10}{10} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{0.50} & \cellcolor{gray!10}{311} & \cellcolor{gray!10}{72} & \cellcolor{gray!10}{939} & \cellcolor{gray!10}{80.8\%}\\
+10 & 0.5 & 0.75 & 404 & 90 & 958 & 82.5\%\\
+\cellcolor{gray!10}{10} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{1.25} & \cellcolor{gray!10}{616} & \cellcolor{gray!10}{105} & \cellcolor{gray!10}{971} & \cellcolor{gray!10}{83.5\%}\\
+10 & 0.5 & 1.50 & 591 & 134 & 984 & 84.6\%\\
+\cellcolor{gray!10}{10} & \cellcolor{gray!10}{2.0} & \cellcolor{gray!10}{0.50} & \cellcolor{gray!10}{179} & \cellcolor{gray!10}{59} & \cellcolor{gray!10}{881} & \cellcolor{gray!10}{75.8\%}\\
+\addlinespace
+10 & 2.0 & 0.75 & 389 & 62 & 903 & 77.7\%\\
+\cellcolor{gray!10}{10} & \cellcolor{gray!10}{2.0} & \cellcolor{gray!10}{1.25} & \cellcolor{gray!10}{757} & \cellcolor{gray!10}{67} & \cellcolor{gray!10}{924} & \cellcolor{gray!10}{79.5\%}\\
+10 & 2.0 & 1.50 & 904 & 72 & 932 & 80.2\%\\
+\cellcolor{gray!10}{150} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{0.50} & \cellcolor{gray!10}{351} & \cellcolor{gray!10}{59} & \cellcolor{gray!10}{910} & \cellcolor{gray!10}{78.3\%}\\
+150 & 0.5 & 0.75 & 499 & 69 & 931 & 80.1\%\\
+\addlinespace
+\cellcolor{gray!10}{150} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{1.25} & \cellcolor{gray!10}{737} & \cellcolor{gray!10}{85} & \cellcolor{gray!10}{951} & \cellcolor{gray!10}{81.8\%}\\
+150 & 0.5 & 1.50 & 808 & 95 & 960 & 82.6\%\\
+\cellcolor{gray!10}{150} & \cellcolor{gray!10}{1.0} & \cellcolor{gray!10}{1.00} & \cellcolor{gray!10}{651} & \cellcolor{gray!10}{60} & \cellcolor{gray!10}{923} & \cellcolor{gray!10}{79.4\%}\\
+150 & 2.0 & 0.50 & 179 & 46 & 813 & 69.9\%\\
+\cellcolor{gray!10}{150} & \cellcolor{gray!10}{2.0} & \cellcolor{gray!10}{0.75} & \cellcolor{gray!10}{390} & \cellcolor{gray!10}{54} & \cellcolor{gray!10}{890} & \cellcolor{gray!10}{76.5\%}\\
+\addlinespace
+150 & 2.0 & 1.25 & 799 & 60 & 914 & 78.6\%\\
+\cellcolor{gray!10}{150} & \cellcolor{gray!10}{2.0} & \cellcolor{gray!10}{1.50} & \cellcolor{gray!10}{980} & \cellcolor{gray!10}{61} & \cellcolor{gray!10}{922} & \cellcolor{gray!10}{79.3\%}\\
+300 & 0.5 & 0.50 & 356 & 56 & 890 & 76.6\%\\
+\cellcolor{gray!10}{300} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{0.75} & \cellcolor{gray!10}{555} & \cellcolor{gray!10}{59} & \cellcolor{gray!10}{911} & \cellcolor{gray!10}{78.4\%}\\
+300 & 0.5 & 1.25 & 854 & 72 & 934 & 80.4\%\\
+\addlinespace
+\cellcolor{gray!10}{300} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{1.50} & \cellcolor{gray!10}{969} & \cellcolor{gray!10}{77} & \cellcolor{gray!10}{942} & \cellcolor{gray!10}{81.1\%}\\
+300 & 2.0 & 0.50 & 187 & 39 & 714 & 61.5\%\\
+\cellcolor{gray!10}{300} & \cellcolor{gray!10}{2.0} & \cellcolor{gray!10}{0.75} & \cellcolor{gray!10}{388} & \cellcolor{gray!10}{53} & \cellcolor{gray!10}{878} & \cellcolor{gray!10}{75.5\%}\\
+300 & 2.0 & 1.25 & 798 & 59 & 907 & 78.0\%\\
+\cellcolor{gray!10}{300} & \cellcolor{gray!10}{2.0} & \cellcolor{gray!10}{1.50} & \cellcolor{gray!10}{987} & \cellcolor{gray!10}{61} & \cellcolor{gray!10}{914} & \cellcolor{gray!10}{78.6\%}\\
+\addlinespace
+450 & 0.5 & 0.50 & 354 & 53 & 867 & 74.6\%\\
+\cellcolor{gray!10}{450} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{0.75} & \cellcolor{gray!10}{552} & \cellcolor{gray!10}{57} & \cellcolor{gray!10}{894} & \cellcolor{gray!10}{76.9\%}\\
+450 & 0.5 & 1.25 & 895 & 66 & 924 & 79.5\%\\
+\cellcolor{gray!10}{450} & \cellcolor{gray!10}{0.5} & \cellcolor{gray!10}{1.50} & \cellcolor{gray!10}{1016} & \cellcolor{gray!10}{70} & \cellcolor{gray!10}{933} & \cellcolor{gray!10}{80.3\%}\\
+450 & 2.0 & 0.50 & 244 & 33 & 606 & 52.1\%\\
+\addlinespace
+\cellcolor{gray!10}{450} & \cellcolor{gray!10}{2.0} & \cellcolor{gray!10}{0.75} & \cellcolor{gray!10}{379} & \cellcolor{gray!10}{48} & \cellcolor{gray!10}{837} & \cellcolor{gray!10}{72.0\%}\\
+450 & 2.0 & 1.25 & 787 & 57 & 897 & 77.2\%\\
+\cellcolor{gray!10}{450} & \cellcolor{gray!10}{2.0} & \cellcolor{gray!10}{1.50} & \cellcolor{gray!10}{1014} & \cellcolor{gray!10}{59} & \cellcolor{gray!10}{907} & \cellcolor{gray!10}{78.0\%}\\
+\bottomrule
+\end{tabular}}
+\end{table}
 
 \begin{figure}
 

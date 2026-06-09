@@ -108,11 +108,14 @@ bib <- ReadBib("literature.bib", check = FALSE)
 ```{r setup-2, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
 source("../../Modell/!afs_biomass_setup.r")
 source("../../Modell/extract_result.R")
-Rcpp::sourceCpp("../../Modell/build_and_solve_afs_lp_v11.cpp")
+source("../../Modell/!helper_func.r")
+source("../../Modell/!helper_instance_builder_v8a.R")
+source("../../Modell/!build_AFS_milp.r")
+#Rcpp::sourceCpp("../../Modell/build_and_solve_afs_lp_v11.cpp")
 
 #load("../Modell/afs_workspace.RData")
 load("../../Paper/afs_workspace_red.RData")
-source("../Modell/extract_result.R")
+
 
 sites_sf   <- afs_workspace$sites_sf
 sites      <- afs_workspace$sites
@@ -203,7 +206,7 @@ milp_instance <- build_optimization_instance(
 # 
 #saveRDS(result, "result_lp_v11.rds")
 
-result <- readRDS("result_lp_v11.rds")
+result <- readRDS("../../Paper/result_lp_v11.rds")
 
 ext <- result$solution_vector
 
@@ -222,7 +225,7 @@ ext$S <- ext$S %>%
   rename(hub_id = j, period = t)
 
 # load scenario results 
-res.sens.list <- readRDS("res_sens_list_lp_v11.rds")
+res.sens.list <- readRDS("../../Paper/res_sens_list_lp_v11.rds")
 
 ```
 
@@ -518,90 +521,97 @@ class: compact-slide
 .col-60[
 ```{r max3-growth, fig.height=4.5, fig.width=6, out.width="90%", cache=TRUE}
 # Code-Chunk direkt aus paper.Rmd (Abschnitt max3-growth)
-ages <- seq(0, 13, by = 0.1)
 
-comp_long <- tibble(
-  age       = ages,
-  Stem      = f_stem_g(ages)   * B_AG_max3(ages),
-  Branches  = f_branch_g(ages) * B_AG_max3(ages),
-  Residues  = f_rest_g(ages)   * B_AG_max3(ages)
-) |>
-  pivot_longer(-age, names_to = "component", values_to = "biomass") |>
-  mutate(component = factor(component, levels = c("Residues", "Branches", "Stem")))
+age.vec <- seq(0, 20, by = 0.1)
 
-jha_points <- tribble(
-  ~age, ~AGB,           ~p_trunk, ~p_branch,
-   8,   134.3,          0.747,    0.166,
-   9,    74.0,          0.83,     0.11,
-   9,    51.46,         0.92,     0.04,
-  10,   105.4,          0.744,    0.13,
-   6,   218.5/1937*500, 0.619,    0.276,
-  13,   152.0,          0.77,     0.22
-) |>
+cons <- build_scenario_ts(ages = age.vec , N = 300, C_site = 6.500, k = 0.194, t0 = 9.7, label = "Conservative (250 trees/ha)")
+
+comp_long <- bind_rows(cons) |>
+  rename(stem = "Merch. stem", branch = "Merch. branch", residue = Residue) %>% 
+  pivot_longer(c("stem", "branch", "residue"),
+               names_to = "component", values_to = "biomass") |>
   mutate(
-    stem_cum   = AGB * p_trunk,
-    branch_cum = AGB * (p_trunk + p_branch),
-    total      = AGB
-  )
+    component = factor(component,
+      levels = c("residue", "branch", "stem")),
+    scenario  = factor(scenario,
+      levels = c("Conservative (113 trees/ha)", "Good site (139 trees/ha)"))
+  ) %>% 
+  select(-scenario)
 
-jha_long <- bind_rows(
-  jha_points |> transmute(age, biomass = stem_cum,   emp_series = "Empirical: stem"),
-  jha_points |> transmute(age, biomass = branch_cum, emp_series = "Empirical: stem+branches"),
-  jha_points |> transmute(age, biomass = total,      emp_series = "Empirical: total AGB")
+# totals_long <- comp_long |>
+#   group_by(age, scenario) |>
+#   summarise(total = sum(biomass), .groups = "drop")
+
+emp_pts <- tribble(
+  ~age, ~AGB,   ~p_stem, ~p_branch,
+   8,   134.3,  0.747,   0.166, # N = 400
+   9,    74.0,  0.830,   0.110, # N = 500
+   9,    51.5,  0.920,   0.040, # N = 500
+  10,   119,    0.76,   0.210,# N = 139
+  13,   152.0,  0.770,   0.220 # N = 139
 ) |>
-  mutate(emp_series = factor(emp_series,
-    levels = c("Empirical: stem", "Empirical: stem+branches", "Empirical: total AGB")))
+  mutate(stem_cum   = AGB * p_stem,
+         branch_cum = AGB * (p_stem + p_branch),
+         total      = AGB)
 
-emp_colours <- c(
-  "Empirical: stem"          = "darkgreen",
-  "Empirical: stem+branches" = "darkorange",
-  "Empirical: total AGB"     = "navy"
-)
-emp_shapes <- c(
-  "Empirical: stem"          = 21L,
-  "Empirical: stem+branches" = 24L,
-  "Empirical: total AGB"     = 23L
-)
+emp_long <- bind_rows(
+  emp_pts |> transmute(age, biomass = stem_cum,   series = "Empirical: stem"),
+  emp_pts |> transmute(age, biomass = branch_cum, series = "Empirical: stem+branches"),
+  emp_pts |> transmute(age, biomass = total,      series = "Empirical: total biomass")
+) |> mutate(series = factor(series, levels = c(
+  "Empirical: stem", "Empirical: stem+branches", "Empirical: total biomass")))
+
+emp_col   <- c("Empirical: stem"          = "darkgreen",
+               "Empirical: stem+branches" = "darkorange",
+               "Empirical: total biomass"     = "navy")
+emp_shape <- c("Empirical: stem"          = 21L,
+               "Empirical: stem+branches" = 24L,
+               "Empirical: total biomass"     = 23L)
 
 ggplot(comp_long, aes(x = age, y = biomass)) +
-  annotate("rect", xmin = 5, xmax = 10, ymin = 0, ymax = Inf,
-           fill = "grey80", alpha = 0.3) +
-  geom_area(aes(fill = component), position = "stack",
-            alpha = 0.75, colour = NA) +
-  geom_point(data = jha_long,
+  annotate("rect", xmin = 5, xmax = 15, ymin = 0, ymax = Inf,
+           fill = "grey80", alpha = 0.25) +
+  geom_area(aes(fill = component),  #, linetype = scenario
+            position = "stack", alpha = 0.70, colour = "white", linewidth = 0.2) +
+  # geom_line(data    = totals_long,
+  #           aes(x = age, y = total, linetype = scenario),
+  #           colour  = "grey30", linewidth = 0.45, inherit.aes = FALSE) +
+  geom_point(data = emp_long,
              aes(x = age, y = biomass,
-                 colour = emp_series, shape = emp_series, fill = emp_series),
-             size = 2.5, alpha = 0.85, inherit.aes = FALSE) +
+                 colour = series, shape = series, fill = series),
+             size = 2.5, alpha = 0.90, inherit.aes = FALSE) +
   scale_fill_manual(
-    name   = "Component (model)",
-    values = c("Stem" = "#1b9e77", "Branches" = "#d95f02",
-               "Residues" = "#7570b3", emp_colours),
-    breaks = c("Stem", "Branches", "Residues")
-  ) +
-  scale_colour_manual(name = "Empirical (Jha 2018)", values = emp_colours) +
-  scale_shape_manual(name  = "Empirical (Jha 2018)", values = emp_shapes) +
+    name   = "Biomass fraction",
+    values = c("stem"   = "#1b9e77",
+               "branch" = "#d95f02",
+               "residue"       = "#7570b3"),
+    breaks = c("stem", "branch", "residue")) +
+  scale_colour_manual(name = "Empirical data", values = emp_col) +
+  scale_shape_manual (name = "Empirical data", values = emp_shape) +
+  # scale_linetype_manual(
+  #   name   = "Scenario",
+  #   values = c("Conservative (113 trees/ha)" = "solid",
+  #              "Good site (139 trees/ha)"    = "dashed")) +
   guides(
-    fill   = guide_legend(order = 1, override.aes = list(shape = NA, colour = NA)),
-    colour = guide_legend(order = 2,
-                          override.aes = list(
-                            shape = emp_shapes[levels(jha_long$emp_series)],
-                            size  = 2.5,
-                            fill  = emp_colours[levels(jha_long$emp_series)]
-                          )),
-    shape  = "none"
-  ) +
-  scale_x_continuous(breaks = 0:13) +
+    fill     = guide_legend(order = 1,
+                 override.aes = list(shape = NA, colour = NA, linetype = 0)),
+    colour   = guide_legend(order = 3,
+                 override.aes = list(
+                   shape  = emp_shape[levels(emp_long$series)],
+                   size   = 2.5,
+                   fill   = emp_col[levels(emp_long$series)])),
+    linetype = guide_legend(order = 2,
+                 override.aes = list(fill = NA, colour = "grey30")),
+    shape    = "none") +
+  scale_x_continuous(breaks = seq(0, 20, 2)) +
   labs(x = "Stand age (years)",
-       y = "Biomass (t dry matter / ha)") +
+       y = expression("biomass (t DM "*ha^{-1}*")")) +
   theme_minimal(base_size = 9) +
-  theme(
-    legend.position  = "right",
-    legend.key.size  = unit(0.4, "cm"),
-    legend.text      = element_text(size = 7),
-    legend.title     = element_text(size = 8, face = "bold"),
-    panel.grid.minor = element_blank()
-    #,    title = Citep(bib, "Jha2018_Poplar_AFS_Biomass")
-  )
+  theme(legend.position  = "right",
+        legend.key.size  = unit(0.4, "cm"),
+        legend.text      = element_text(size = 7),
+        legend.title     = element_text(size = 8, face = "bold"),
+        panel.grid.minor = element_blank())
 ```
 ]
 

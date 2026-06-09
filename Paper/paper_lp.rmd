@@ -44,6 +44,7 @@ header-includes:
   - \usepackage{pdflscape}
   - \usepackage{float}
   - \usepackage{xcolor}
+  - \usepackage{eurosym}
   - \newcommand{\Tc}{\mathcal{T}}
   - \newcommand{\Pc}{\mathcal{P}}
   - \newcommand{\Qc}{\mathcal{Q}}
@@ -237,95 +238,95 @@ ext$S <- ext$S %>%
   rename(hub_id = j, period = t)
 
 # sensitivity analysis ##########################################
-
-scen.mat <- expand.grid(opp = c(10, 150, 300, 450), cost = c(.5, 2), revenue = c(.5, .75, 1.25 ,1.5)  )
-nb.rep <- 10
-
-res.sens.list <- vector("list", nrow(scen.mat)*nb.rep)
-
-for(i in seq_len(nrow(scen.mat))){
-  tmp.setting <- list(opp = scen.mat$opp[i], cost = scen.mat$cost[i], revenue = scen.mat$revenue[i])
-
-  # storage cost
-  tmp.storages <- storages
-  tmp.storages$c_stor <- tmp.storages$c_stor * tmp.setting$cost
-  # consumers
-  tmp.consumers <- consumers
-  tmp.consumers$P1 <- tmp.consumers$P1 * tmp.setting$revenue
-  tmp.consumers$P2 <- tmp.consumers$P2 * tmp.setting$revenue
-  tmp.consumers$P3 <- tmp.consumers$P3 * tmp.setting$revenue
-
-  # # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
-    tmp.params_obj <- list(
-       n_periods  = 40,
-       max_age    = 15L,    # A_max: LRAFS upper rotation bound
-       min_age    =  3L,    # A_min: SRAFS lower rotation bound
-       c_tr_raw   = 0.08 * tmp.setting$cost,   # €/(t·km)  raw biomass  site → storage
-       c_tr_pre   = 0.06 * tmp.setting$cost   # €/(t·km)  chips        storage → consumer
-     )
-    #
-
-  for(j in seq_len(nb.rep)){
-    tmp.c.opp.vec <- rnorm(nrow(sites_clustered), 1, .75)
-
-    # opportunity cost
-    tmp.c.opp.vec <- tmp.c.opp.vec*tmp.setting$opp
-
-    # site details
-    tmp.sites_clustered <- sites_clustered %>%
-       mutate(
-         C_est  = 2500 * tmp.setting$cost,   # €/ha  establishment (Section 2.1 mid-range)
-         C_harv = 150 * tmp.setting$cost,    # €/ha  harvest cost  (Section 2.1 mid-range)
-         C_main = 10 * tmp.setting$cost, #  €/ha  maintenance cost  (Section 2.1 mid-range)
-         C_opp  = tmp.c.opp.vec #  €/ha  opportunity cost  (Section 2.1 mid-range)
-       )
-    #
-    tmp.data_obj <- list(
-       sites    = tmp.sites_clustered,
-       storages = tmp.storages,
-       consumers = tmp.consumers,
-       dist_ij  = afs_workspace$dist_ij_clust,
-       dist_jk  = dist_jk,
-       yields_by_age = yields_by_age
-     )
-
-    # rescale demands in consumers to tons
-    tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")]  <- tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")] * 1000
-
-    # ── 4. generate instance ─────────────────────────────────────
-    tmp.milp_instance <- build_optimization_instance(
-        data         = tmp.data_obj,
-        params       = tmp.params_obj
-      )
-    #
-     tmp.result <- build_and_solve_afs_lp_v11(
-       tmp.milp_instance,
-       gurobi_params = list(
-         TimeLimit = 600),
-       verbose = TRUE)
-    #
-
-    tmp.ext <- tmp.result$solution_vector
-    #  renaming
-
-    tmp.ext$Xjk <- tmp.ext$Xjk %>%
-      rename(src_product = p, del_product = q, period = t, hub_id = j, consumer_id = k)
-
-    tmp.ext$Xij <- tmp.ext$Xij %>%
-      rename(period = t, site_id = i, hub_id = j)
-
-    tmp.ext$z <- tmp.ext$z %>%
-      rename(arc_type = type, site_id = i )
-
-    tmp.ext$S <- tmp.ext$S %>%
-      rename(hub_id = j, period = t)
-
-    res.sens.list[[(i-1)*nb.rep + j]] <- list(setting = tmp.setting, milp_instance = tmp.milp_instance, ext = tmp.ext)
-  }
-
-}
-
-saveRDS(res.sens.list, "res_sens_list_lp_v11.rds")
+# 
+# scen.mat <- expand.grid(opp = c(10, 150, 300, 450), cost = c(.5, 2), revenue = c(.5, .75, 1.25 ,1.5)  )
+# nb.rep <- 10
+# 
+# res.sens.list <- vector("list", nrow(scen.mat)*nb.rep)
+# 
+# for(i in seq_len(nrow(scen.mat))){
+#   tmp.setting <- list(opp = scen.mat$opp[i], cost = scen.mat$cost[i], revenue = scen.mat$revenue[i])
+# 
+#   # storage cost
+#   tmp.storages <- storages
+#   tmp.storages$c_stor <- tmp.storages$c_stor * tmp.setting$cost
+#   # consumers
+#   tmp.consumers <- consumers
+#   tmp.consumers$P1 <- tmp.consumers$P1 * tmp.setting$revenue
+#   tmp.consumers$P2 <- tmp.consumers$P2 * tmp.setting$revenue
+#   tmp.consumers$P3 <- tmp.consumers$P3 * tmp.setting$revenue
+# 
+#   # # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
+#     tmp.params_obj <- list(
+#        n_periods  = 40,
+#        max_age    = 15L,    # A_max: LRAFS upper rotation bound
+#        min_age    =  3L,    # A_min: SRAFS lower rotation bound
+#        c_tr_raw   = 0.08 * tmp.setting$cost,   # €/(t·km)  raw biomass  site → storage
+#        c_tr_pre   = 0.06 * tmp.setting$cost   # €/(t·km)  chips        storage → consumer
+#      )
+#     #
+# 
+#   for(j in seq_len(nb.rep)){
+#     tmp.c.opp.vec <- rnorm(nrow(sites_clustered), 1, .75)
+# 
+#     # opportunity cost
+#     tmp.c.opp.vec <- tmp.c.opp.vec*tmp.setting$opp
+# 
+#     # site details
+#     tmp.sites_clustered <- sites_clustered %>%
+#        mutate(
+#          C_est  = 2500 * tmp.setting$cost,   # €/ha  establishment (Section 2.1 mid-range)
+#          C_harv = 150 * tmp.setting$cost,    # €/ha  harvest cost  (Section 2.1 mid-range)
+#          C_main = 10 * tmp.setting$cost, #  €/ha  maintenance cost  (Section 2.1 mid-range)
+#          C_opp  = tmp.c.opp.vec #  €/ha  opportunity cost  (Section 2.1 mid-range)
+#        )
+#     #
+#     tmp.data_obj <- list(
+#        sites    = tmp.sites_clustered,
+#        storages = tmp.storages,
+#        consumers = tmp.consumers,
+#        dist_ij  = afs_workspace$dist_ij_clust,
+#        dist_jk  = dist_jk,
+#        yields_by_age = yields_by_age
+#      )
+# 
+#     # rescale demands in consumers to tons
+#     tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")]  <- tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")] * 1000
+# 
+#     # ── 4. generate instance ─────────────────────────────────────
+#     tmp.milp_instance <- build_optimization_instance(
+#         data         = tmp.data_obj,
+#         params       = tmp.params_obj
+#       )
+#     #
+#      tmp.result <- build_and_solve_afs_lp_v11(
+#        tmp.milp_instance,
+#        gurobi_params = list(
+#          TimeLimit = 600),
+#        verbose = TRUE)
+#     #
+# 
+#     tmp.ext <- tmp.result$solution_vector
+#     #  renaming
+# 
+#     tmp.ext$Xjk <- tmp.ext$Xjk %>%
+#       rename(src_product = p, del_product = q, period = t, hub_id = j, consumer_id = k)
+# 
+#     tmp.ext$Xij <- tmp.ext$Xij %>%
+#       rename(period = t, site_id = i, hub_id = j)
+# 
+#     tmp.ext$z <- tmp.ext$z %>%
+#       rename(arc_type = type, site_id = i )
+# 
+#     tmp.ext$S <- tmp.ext$S %>%
+#       rename(hub_id = j, period = t)
+# 
+#     res.sens.list[[(i-1)*nb.rep + j]] <- list(setting = tmp.setting, milp_instance = tmp.milp_instance, ext = tmp.ext)
+#   }
+# 
+# }
+# 
+# saveRDS(res.sens.list, "res_sens_list_lp_v11.rds")
 
 res.sens.list <- readRDS("res_sens_list_lp_v11.rds")
 
@@ -2680,7 +2681,7 @@ site_revenue <- ext$Xjk %>%
   summarise(revenue = sum(site_rev, na.rm = TRUE), .groups = "drop") %>%
   filter(!is.na(site_id))
 
-# ── 6. Active production years per site & normalise to € ha⁻¹ yr⁻¹ ──────────
+# ── 6. Active production years per site & normalise to € ha yr ──────────
 # Active years = t_term - t_est; sites still running at horizon end use n_periods
 site_active_years <- est_p %>%
   left_join(term_p, by = "site_id") %>%
@@ -2690,7 +2691,7 @@ site_active_years <- est_p %>%
   ) %>%
   select(site_id, active_years)
 
-# Normalisation denominator: area_ha * active_years  →  € ha⁻¹ yr⁻¹
+# Normalisation denominator: area_ha * active_years  →  € ha yr
 site_norm_denom <- active_p %>%
   left_join(site_active_years, by = "site_id") %>%
   mutate(denom = tot_value * active_years)
@@ -2704,13 +2705,13 @@ all_costs_site <- bind_rows(sc_est, sc_harv, sc_main, sc_opp,
 
 cost_site_norm <- all_costs_site %>%
   left_join(site_norm_denom, by = "site_id") %>%
-  mutate(cost_norm = cost / denom)          # € ha⁻¹ yr⁻¹
+  mutate(cost_norm = cost / denom)          # € ha yr
 
 rev_site_norm <- site_revenue %>%
   left_join(site_norm_denom, by = "site_id") %>%
-  mutate(rev_norm = revenue / denom)        # € ha⁻¹ yr⁻¹
+  mutate(rev_norm = revenue / denom)        # € ha yr
 
-# Site ordering by descending net margin (€ ha⁻¹ yr⁻¹)
+# Site ordering by descending net margin (€ ha yr)
 total_cost_site <- cost_site_norm %>%
   group_by(site_id) %>%
   summarise(total_cost_norm = sum(cost_norm, na.rm = TRUE), .groups = "drop")
@@ -2753,11 +2754,11 @@ ggplot() +
                           override.aes = list(alpha = 1))
   ) +
   scale_y_continuous(
-    name   = "Value (€ ha⁻¹ yr⁻¹)",
+    name   = "Value (€ ha yr)",
     labels = scales::label_number(big.mark = ",")
   ) +
   scale_x_discrete(
-    name   = "Active site (ordered by net margin ↓)",
+    name   = "Active site (ordered by net margin)",
     labels = function(x) paste0("S", x)
   ) +
   annotate("text", x = 0.7, y = max(rev_site_norm$rev_norm) * 0.92,
@@ -2768,8 +2769,8 @@ ggplot() +
            colour = "grey30", fontface = "italic") +
   labs(
     caption = paste0(
-      length(active_site_ids), " active sites  |  ◆ = net margin  |  ",
-      "normalised to € ha⁻¹ yr⁻¹ (active production years only)"
+      length(active_site_ids), " active sites  |  = net margin  |  ",
+      "normalised to € ha yr (active production years only)"
     )
   ) +
   theme_minimal(base_size = 8) +
@@ -2784,14 +2785,14 @@ ggplot() +
   )
 ```
 
-```{r fig-results-site-scatter, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Scatterplot of active agroforestry sites: opportunity cost rate (€ ha⁻¹ yr⁻¹) on the x-axis versus demand-weighted average delivery distance (km) on the y-axis. Point size is proportional to the site's net margin (€ ha⁻¹ yr⁻¹); sites with negative net margin are shown as open circles. A LOESS smoothing line indicates the joint trend.", fig.width = 5.5, fig.height = 4, dev = "pdf", out.width = "0.72\\textwidth", cache = T, cache.extra = c("ext", "milp_instance", "params_obj")}
+```{r fig-results-site-scatter, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Scatterplot of active agroforestry sites: opportunity cost rate (€ ha yr) on the x-axis versus demand-weighted average delivery distance (km) on the y-axis. Point size is proportional to the site's net margin (€ ha yr); sites with negative net margin are shown as open circles. A LOESS smoothing line indicates the joint trend.", fig.width = 5.5, fig.height = 4, dev = "pdf", out.width = "0.72\\textwidth", cache = T, cache.extra = c("ext", "milp_instance", "params_obj")}
 
 
 
-# ── 1. Opportunity cost rate per site (€ ha⁻¹ yr⁻¹) ─────────────────────────
+# ── 1. Opportunity cost rate per site (€ ha yr) ─────────────────────────
 # C_opp is already a per-ha-per-year rate stored in site_meta
 opp_rate <- site_meta %>%
-  select(site_id, opp_rate = C_opp, area_ha)   # unit: € ha⁻¹ yr⁻¹
+  select(site_id, opp_rate = C_opp, area_ha)   # unit: € ha yr
 
 # ── 2. Demand-weighted average distance to customers per site ─────────────────
 # Step 1: for each (site → hub) shipment, find the downstream (hub → consumer)
@@ -2819,7 +2820,7 @@ site_avg_dist <- ext$Xjk %>%
     .groups = "drop"
   )
 
-# ── 3. Net margin per site (€ ha⁻¹ yr⁻¹) — reuse from previous chunk ─────────
+# ── 3. Net margin per site (€ ha yr) — reuse from previous chunk ─────────
 # (site_norm_denom, rev_site_norm, total_cost_site already computed above)
 net_margin_site <- rev_site_norm %>%
   left_join(total_cost_site, by = "site_id") %>%
@@ -2840,7 +2841,7 @@ scatter_df <- opp_rate %>%
 ggplot(scatter_df,
        aes(x = opp_rate, y = abs_margin)) +
   # LOESS trend (all sites)
-  geom_smooth(method = "loess", formula = y ~ x,
+  geom_smooth(method = "lm", formula = y ~ x,
               colour = "grey60", fill = "grey88",
               linewidth = 0.55, alpha = 0.35, se = TRUE) +
   # Profitable sites: filled circles
@@ -2859,11 +2860,11 @@ ggplot(scatter_df,
      labels   = scales::label_number(big.mark = ",")
    ) +
   scale_x_continuous(
-    name   = "Opportunity cost rate (€ ha⁻¹ yr⁻¹)",
+    name   = "Opportunity cost rate (€ ha yr)",
     labels = scales::label_number(big.mark = ",")
   ) +
   scale_y_continuous(
-    name   = "|Net margin| (€ ha⁻¹ yr⁻¹)",
+    name   = "|Net margin| (€ ha yr)",
     labels = scales::label_number(accuracy = 1)
   ) +
   # Colour legend annotation (manual, avoids a redundant colour scale)
@@ -3111,7 +3112,7 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
            opp_cost, cost_level, revenue_level,
            avg_dist_hub_km, avg_dist_consumer_km,
            avg_rotation_yr, n_harvests, share_p1,
-           area_ha, active_years)
+           area_ha, active_years, n_sites)
   
   return(result_df)
 }
@@ -3140,13 +3141,10 @@ df_lm <- bind_rows(df_bench, df_sens) %>%
 # Vollständiges Modell inkl. Interaktion opp_cost × cost_level
 lm_full <- lm(
   profit_ha_yr ~
-    opp_cost +               # Opportunitätskosten (€/ha)
-    cost_level +             # Allgemeines Kostenniveau (Szenario-Multiplikator)
+    opp_cost *               # Opportunitätskosten (€/ha)
+    cost_level *             # Allgemeines Kostenniveau (Szenario-Multiplikator)
     revenue_level +          # Preisniveau (Szenario-Multiplikator)
-#    avg_dist_hub_km +        # Ø Distanz Standort → Hub (km)
-#    avg_dist_consumer_km +   # Ø Distanz Hub → Kunde (km)
     avg_rotation_yr +        # Ø Rotationslänge (Erntealter in Jahren)
-#    share_p1 +               # Anteil Stammholz (P1, Hochwertsortiment)
     log(area_ha),             # Standortgröße (log-transformiert wegen Skaleneffekten)
   data = df_lm
 )
@@ -3160,6 +3158,119 @@ tmp.lm.nobs <- sum.lm$df[2]
 tmp.lm.sigma <- round(sum.lm$sigma,0)
 
 ```
+
+```{r fig-boxplot-scenario-profit, echo=FALSE, message=FALSE, warning=FALSE,    fig.cap="Verteilung des Standortprofits (€ ha yr) über die Ausprägungen der Szenarienparameter Opportunitätskosten (opp\\_cost), Kostenniveau (cost\\_level) und Preisniveau (revenue\\_level). Jeder Boxplot fasst alle aktiven Standorte aller Replikationen der jeweiligen Parameterkombination zusammen.",  fig.width = 7, fig.height = 5.5, dev = "pdf", out.width = "\\textwidth", cache = FALSE}
+
+df_lm %>%
+  mutate(
+    opp_cost_lbl     = factor(
+      paste0("Opp. cost: ", opp_cost, " €/ha"),
+      levels = paste0("Opp. cost: ", sort(unique(opp_cost)), " €/ha")
+    ),
+    cost_level_lbl   = factor(
+      paste0("Cost ×", cost_level),
+      levels = paste0("Cost ×", sort(unique(cost_level)))
+    ),
+    revenue_level_lbl = factor(
+      paste0("Rev. ×", revenue_level),
+      levels = paste0("Rev. ×", sort(unique(revenue_level)))
+    )
+  ) %>%
+  ggplot(aes(x = revenue_level_lbl, y = profit_ha_yr, fill = cost_level_lbl)) +
+  geom_hline(yintercept = 0, colour = "grey50", linetype = "dashed", linewidth = 0.4) +
+  geom_boxplot(
+    outlier.size   = 0.8,
+    outlier.alpha  = 0.5,
+    linewidth      = 0.4,
+    width          = 0.65,
+    position       = position_dodge(width = 0.75)
+  ) +
+  facet_wrap(~ opp_cost_lbl, ncol = 2, scales = "fixed") +
+  scale_fill_manual(
+    name   = "Cost level",
+    values = c("Cost ×0.5" = "#74c476", "Cost ×2"   = "#fd8d3c")
+  ) +
+  scale_y_continuous(
+    name   = "Profit (€ ha yr)",
+    labels = scales::label_number(big.mark = ",")
+  ) +
+  labs(x = "Revenue level") +
+  theme_minimal(base_size = 9) +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor   = element_blank(),
+    strip.text         = element_text(face = "bold", size = 8),
+    legend.position    = "bottom",
+    legend.key.size    = unit(0.4, "cm"),
+    legend.text        = element_text(size = 7),
+    legend.title       = element_text(size = 7.5, face = "bold")
+  )
+```
+
+
+```{r fig-boxplot-scenario-area, echo=FALSE, message=FALSE, warning=FALSE,    fig.cap="Verteilung der bewirtschafteten AFS-Fläche (ha) über die Ausprägungen der Szenarienparameter Opportunitätskosten (opp\\_cost), Kostenniveau (cost\\_level) und Preisniveau (revenue\\_level). Jeder Boxplot fasst die Summe der aktiven Standortflächen je Replikation und Parameterkombination zusammen. Höhere Werte zeigen eine breitere räumliche Aktivierung des AFS-Potenzials an.", fig.width = 7, fig.height = 5.5, dev = "pdf", out.width = "\\textwidth", cache = FALSE}
+
+df_lm %>%
+  # Aggregiere pro Szenario-Replikation: Gesamtfläche aller aktiven Standorte
+  group_by(scenario, opp_cost, cost_level, revenue_level) %>%
+  summarise(
+    total_area_ha = sum(area_ha, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    opp_cost_lbl      = factor(
+      paste0("Opp. cost: ", opp_cost, " €/ha"),
+      levels = paste0("Opp. cost: ", sort(unique(opp_cost)), " €/ha")
+    ),
+    cost_level_lbl    = factor(
+      paste0("Cost ×", cost_level),
+      levels = paste0("Cost ×", sort(unique(cost_level)))
+    ),
+    revenue_level_lbl = factor(
+      paste0("Rev. ×", revenue_level),
+      levels = paste0("Rev. ×", sort(unique(revenue_level)))
+    )
+  ) %>%
+  ggplot(aes(x = revenue_level_lbl, y = total_area_ha, fill = cost_level_lbl)) +
+  geom_boxplot(
+    outlier.size  = 0.8,
+    outlier.alpha = 0.5,
+    linewidth     = 0.4,
+    width         = 0.65,
+    position      = position_dodge(width = 0.75)
+  ) +
+  geom_jitter(
+    aes(colour = cost_level_lbl),
+    position      = position_jitterdodge(jitter.width = 0.15, dodge.width = 0.75),
+    size          = 1.0,
+    alpha         = 0.55,
+    show.legend   = FALSE
+  ) +
+  facet_wrap(~ opp_cost_lbl, ncol = 2, scales = "fixed") +
+  scale_fill_manual(
+    name   = "Cost level",
+    values = c("Cost ×0.5" = "#74c476", "Cost ×2" = "#fd8d3c")
+  ) +
+  scale_colour_manual(
+    values = c("Cost ×0.5" = "#41ab5d", "Cost ×2" = "#e6550d")
+  ) +
+  scale_y_continuous(
+    name   = "Bewirtschaftete AFS-Fläche (ha)",
+    labels = scales::label_number(big.mark = ",")
+  ) +
+  labs(x = "Revenue level") +
+  theme_minimal(base_size = 9) +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor   = element_blank(),
+    strip.text         = element_text(face = "bold", size = 8),
+    legend.position    = "bottom",
+    legend.key.size    = unit(0.4, "cm"),
+    legend.text        = element_text(size = 7),
+    legend.title       = element_text(size = 7.5, face = "bold")
+  )
+```
+
 
 
 ```{r lm-table, echo=F, message=FALSE, warning=FALSE, cache=F, fig.cap="Effect plot of explaining variables of OLS regression model.", fig.width = 5.5, fig.height = 4, dev = "pdf", out.width = "0.72\\textwidth"}
@@ -3204,7 +3315,7 @@ tidy(lm_full, conf.int = TRUE) %>%
    name   = "significant (p < 0.05)",
      values = c("TRUE" = "#1b9e77", "FALSE" = "#d95f02")
    ) +
-  labs(x = "regression coeffizient (€ ha⁻¹ yr⁻¹)",
+  labs(x = "regression coeffizient (€ ha yr)",
        y = NULL) +
   theme_minimal(base_size = 9) +
   theme(legend.position  = "bottom",
@@ -3559,7 +3670,7 @@ plot(lm_full, which = 1:4, cex = 0.5, col = "grey40")
 
 <!-- plots_list <- lapply(vars_continuous, function(v) { -->
 <!--   plot_predictions(lm_full, condition = v) + -->
-<!--     labs(x = v, y = "Profit (€ ha⁻¹ yr⁻¹)") + -->
+<!--     labs(x = v, y = "Profit (€ ha yr)") + -->
 <!--     theme_minimal(base_size = 8) + -->
 <!--     theme(panel.grid.minor = element_blank()) -->
 <!-- }) -->
