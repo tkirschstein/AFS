@@ -524,7 +524,7 @@ Calibrated for stem ($d > 15$ cm) and branches ($d > 7$ cm) $\rightarrow$ residu
 ]
 
 .col-60[
-```{r max3-growth, fig.width=6, out.width="95%", cache=TRUE}
+```{r max3-growth, fig.width=6, out.width="90%", cache=TRUE}
 age.vec <- seq(0, 20, by = 0.1)
 
 cons <- build_scenario_ts(ages = age.vec, N = 300, C_site = 6.500, k = 0.194, t0 = 9.7,
@@ -583,7 +583,7 @@ p <- ggplot(comp_long, aes(x = age, y = biomass)) +
                 fill  = emp_col[levels(emp_long$series)])),
     shape  = "none") +
   scale_x_continuous(breaks = seq(0, 20, 2)) +
-  labs(x = "Stand age (years)", y = "biomass (t DM/ha",
+  labs(x = "Stand age (years)", y = "biomass (t DM/ha)",
        caption = "Grey band: typical medium-rotation harvest window (5–15 years).") +
   theme_minimal(base_size = 9) +
   theme(legend.position = "top",
@@ -610,10 +610,58 @@ class: inverse, center, middle
 **Objective (AFS-SCD):** Maximise total supply chain profit over a planning horizon of $T$ years, integrating establishment, harvesting, logistics, and product cascading decisions.
 ]
 
+.col-60[
 **Three-echelon supply chain:**
-- **Layer 1:** AFS sites $\mathcal{I}$ — potential poplar alley-cropping parcels
-- **Layer 2:** Pre-treatment / storage nodes $\mathcal{J}$ — sawmills and logistics hubs
-- **Layer 3:** Industrial consumers $\mathcal{K}$ — chemical, pulp/paper, energy sectors
+- **Stage 1:** AFS sites $\mathcal{I}$ — potential poplar alley-cropping parcels
+- **Stage 2:** Pre-treatment / storage nodes $\mathcal{J}$ — sawmills and logistics hubs
+- **Stage 3:** Industrial consumers $\mathcal{K}$ — chemical, pulp/paper, energy sectors
+]
+
+.col-40[
+```{r, engine='tikz', fig.ext='png', fig.align='center', out.width='90%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}","\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}")),  fig.height = 3, cache=TRUE}
+% --- Network A: Supply chain stages (I sites -> J hub -> K consumers)
+\begin{tikzpicture}[x=1cm,y=1cm,>=latex]
+  % Styles
+  \tikzstyle{site}=[circle, draw=teal!70!black, fill=teal!18, thick, minimum size=8mm]
+  \tikzstyle{hub}=[rectangle, rounded corners=2pt, draw=orange!80!black, fill=orange!20, thick, minimum width=12mm, minimum height=8mm]
+  \tikzstyle{consumer}=[circle, draw=purple!70!black, fill=purple!18, thick, minimum size=8mm]
+  \tikzstyle{flow}=[->, thick, draw=gray!75]
+
+  % Column labels
+  \node[align=center, font=\small\bfseries] at (0,4.2) {Sites\\$i \in I$};
+  \node[align=center, font=\small\bfseries] at (4,4.2) {Hub\\$j \in J$};
+  \node[align=center, font=\small\bfseries] at (8,4.2) {Consumers\\$k \in K$};
+
+  % Sites
+  \node[site] (i1) at (0,3) {$i_1$};
+  \node[site] (i2) at (0,2) {$i_2$};
+  \node[site] (i3) at (0,1) {$i_3$};
+
+  % Hub
+  \node[hub] (j1) at (4,2.5) {$j_1$};
+  \node[hub] (j2) at (4,1.5) {$j_2$};
+
+  % Consumers
+  \node[consumer] (k1) at (8,3) {$k_1$};
+  \node[consumer] (k2) at (8,2) {$k_2$};
+  \node[consumer] (k3) at (8,1) {$k_3$};
+
+  % Flows: sites to hub
+  \draw[flow] (i1) -- node[above, sloped, font=\scriptsize] {$x_{i_1 j_1}$} (j1);
+  \draw[flow] (i2) -- node[above, sloped, font=\scriptsize] {$x_{i_2 j_1}$} (j1);
+  \draw[flow] (i3) -- node[below, sloped, font=\scriptsize] {$x_{i_3 j_1}$} (j1);
+
+  % Flows: hub to consumers
+  \draw[flow] (j1) -- node[above, sloped, font=\scriptsize] {$x_{j_1 k_1}$} (k1);
+  \draw[flow] (j1) -- node[above, sloped, font=\scriptsize] {$x_{j_1 k_2}$} (k2);
+  \draw[flow] (j1) -- node[below, sloped, font=\scriptsize] {$x_{j_1 k_3}$} (k3);
+
+  % Optional annotation
+  \node[align=center, font=\scriptsize, text=gray!70] at (4,-0.1)
+  {Two-stage transport structure: feedstock collection and downstream distribution};
+\end{tikzpicture}
+```
+]
 
 **Key decision variables:**
 - $z_{ist}$ — area of site $i$ with AFS operated under arc $(s,t)$
