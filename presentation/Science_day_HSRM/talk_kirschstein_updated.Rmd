@@ -1,9 +1,9 @@
 ---
 title: "Agroforestry Biomass Supply Chain Design"
 subtitle: "Economic assessment and optimisation of AFS-based bioeconomy networks"
-author: "Thomas Kirschstein"
-institute: "Fraunhofer IKTS, Dresden, Germany"
-date: "`r Sys.Date()`"
+author: "Thomas Kirschstein and Nico Tauchnitz"
+institute: "Fraunhofer IKTS"
+date: "Wiesbaden, am `r Sys.Date()`"
 output:
   xaringan::moon_reader:
     css: [talk_xaringan.css]
@@ -86,6 +86,7 @@ xaringanExtra::use_progress_bar(
   height   = "4px"
 )
 
+
 xaringanExtra::use_tile_view()
 xaringanExtra::use_broadcast()
 
@@ -95,7 +96,9 @@ BibOptions(
   cite.style    = "authoryear",
   style         = "markdown",
   hyperlink     = FALSE,
-  dashed        = FALSE
+  dashed        = FALSE,
+  max.names      = 2,
+  longnamesfirst = FALSE
 )
 bib <- ReadBib("literature.bib", check = FALSE)
 ```
@@ -215,22 +218,108 @@ class: inverse, center, middle
 
 # Introduction
 
+
 ---
 
-## Motivation – Biobased materials and woody biomass demand
+## What is the Bioeconomy?
+
+.pull-left[
+> **"The bioeconomy encompasses the production of renewable biological resources and their conversion into food, feed, bio-based products, and bioenergy."** .small[— European Commission, 2012; updated strategy 2018]
+
+- 🌾 **Biomass** as the primary feedstock (agriculture, forestry, marine)
+- 🔬 **Biotechnology** enabling valorisation at molecular level
+- ♻️ **Circular economy** integration — cascading use of resources substitution of fossil feedstocks
+]
+
+.pull-right[
+**Scope of the EU Bioeconomy (2024)**
+
+| Indicator | Value |
+|-----------|-------|
+| Gross value added | € 2.7 trillion |
+| Employment | 17.1 million jobs |
+| Share of EU GDP | ~11–16 % |
+| Share of EU employment | ~8 % |
+]
+
+---
+
+## Growth Potentials: market segments — size & growth
+
+.pull-left[
+| Segment | Market 2025 | CAGR to 2030/34 |
+|---------|-------------|-----------------|
+| Bio-based chemicals (global) | $ 110–120 bn | **9.6 %** |
+| Bio-based polymers (production) | 4.5 mio. t | **11.0 %** |
+| Biorefineries (global) | $ 57–146 bn | **7.8–9.6 %** |
+| Biofuels (global) | ~$ 145 bn | **5.8 %** |
+| Bioplastics (global) | $ 11.9 bn | **8.1 %** |
+]
+
+.pull-right[
+📦 **Bio-based polymers**
+capacity target: 8.5 mio. t by 2030 Bio-PP: +94 % new capacity 
+
+🧪 **Platform chemicals**
+Succinic acid, lactic acid — CAGR 5.9 %; market $ 28 bn by 2035
+
+💊 **Biopharmaceuticals (DE)**
+€ 19.2 bn revenue (2023); 34.5 % market share — fastest-growing pharma sub-sector
+]
+
+---
+
+## Biobased plastics
 
 ```{r, echo=FALSE, out.width="90%", fig.align="center"}
 knitr::include_graphics("fig/motivation_upm.png")
 ```
 
 .callout-block[
-Total wood production in Germany: ~27 mill. t dry (2024), of which ~4–5 mill. t is beech `r Citep(bib, "StatistischesBundesamt2026_WoodProduction")`.
-UPM Biochemicals (Leuna) demands ~10 % of German beech production for biochemical conversion `r Citep(bib, "upmBiochemicals2024")`.
+.medium[
+Total wood production in Germany: ~27 mill. t dry wood (2024), of which ~4–5 mill. t is beech `r Citep(bib, "StatistischesBundesamt2026_WoodProduction")`.
+UPM Biochemicals (Leuna) demands ~10 % of German beech production for biochemical conversion `r Citep(bib, "upmBiochemicals2024")`.]
 ]
 
 ---
 
-## Motivation – AFS potential in Germany
+## Feedstocks - Trees in agricultural systems
+
+.col-50[
+
+.medium[
+**Short-Rotation Coppice (SRC)**
+- Monoculture, 8,000–20,000 trees/ha
+- Rotation: 3–7 years; lifetime: 20–25 years
+- No inter-row crop production 
+]
+
+.center[
+<img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/b85e327b53548ec58761b530c078ce006f4f6a56.jpg" style="width:70%; margin-bottom:8px;">
+]
+
+]
+
+--
+
+.col-50[
+
+.medium[
+**Agroforestry systems (AFS)**
+- 1–4 tree rows in alley-cropping
+- 10–30 % of total parcel area $\rightarrow$ 400-800 trees/ha
+- Edge-tree effect $\rightarrow$ higher individual-tree biomass 
+]
+
+.center[
+<img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/1bef14d477d7b6bcc161e077fa6758919766f1a2.jpg" style="width:70%; margin-bottom:8px;">
+]
+
+]
+
+---
+
+## AFS potential in Germany
 
 .col-40[
 <a href="https://defaf.map.agroforestry-map.eu/de" target="_blank" rel="noopener">
@@ -258,6 +347,11 @@ class: inverse, center, middle
 ---
 
 ## Economics of Agroforestry Systems
+
+.callout-block[.small[
+Profitability depends critically on which value chains absorbs harvested biomass fractions.
+]
+]
 
 .col-40[
 ```{r afs-tree-interactive, echo=FALSE, message=FALSE, warning=FALSE, out.width="100%"}
@@ -311,84 +405,101 @@ collapsibleTree(
   - Crop yield premium in inter-row strips (+5–15 % relative to open-field) `r Citep(bib, "Graves2007_Agroforestry_Economics")`
   - Subsidies and carbon credits `r Citep(bib, "Toensmeier2017_Carbon_Agroforestry")`
 ]
-
-.callout-block[
-.small[
-Profitability depends critically on which value chains absorb harvested biomass fractions.
-]
-]
 ]
 
 ---
 class: compact-slide
 
-## AFS Biomass Fractions and Usage Pathways
-
+## Usage of AFS Biomasses
+<!-- FIX 1: NO blank line between h2 and the div -->
 <div style="display:grid; grid-template-columns: 250px 1fr; gap: 1.2rem; align-items:start; margin-top:0.3rem; overflow:visible;">
 
+<!-- LEFT COLUMN: Biomass fractions -->
 <div style="background:#f4f9f4; border-radius:8px; padding:0.8rem; border-left:4px solid #4a7c2f;">
   <p style="font-weight:700; color:#2d5a1b; font-size:1rem; margin:0 0 0.6rem 0;">🌳 BIOMASS FRACTIONS</p>
+
   <div style="margin:0.4rem 0; border-radius:4px; overflow:hidden; font-size:0.9rem; background:#2d5a1b; color:white;">
-    <div style="padding:0.3rem 0.5rem;">🪵 <strong>Stem wood</strong> (Ø > 15 cm)</div>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Holzstapel01_2010-03-07.jpg/330px-Holzstapel01_2010-03-07.jpg"
+         alt="Stem wood" style="width:100%; height:72px; object-fit:cover; display:block;">
+    <div style="padding:0.3rem 0.5rem;">🪵 <strong>Stem wood</strong> (Ø &gt;15 cm)</div>
   </div>
+
   <div style="margin:0.4rem 0; border-radius:4px; overflow:hidden; font-size:0.9rem; background:#4a7c2f; color:white;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Gibberd_Garden_apple_tree_bough_Harlow_Essex_England.jpg/330px-Gibberd_Garden_apple_tree_bough_Harlow_Essex_England.jpg"
+         alt="Large branches" style="width:100%; height:72px; object-fit:cover; display:block;">
     <div style="padding:0.3rem 0.5rem;">🌿 <strong>Large branches</strong> (Ø 7–15 cm)</div>
   </div>
+
   <div style="margin:0.4rem 0; border-radius:4px; overflow:hidden; font-size:0.9rem; background:#6ea048; color:white;">
-    <div style="padding:0.3rem 0.5rem;">🍃 <strong>Residues</strong> (Ø < 7 cm + leaves)</div>
+    <img src="fig/reissig-unsplash.jpg"
+         alt="Small branches / leaves" style="width:100%; height:72px; object-fit:cover; display:block;">
+    <div style="padding:0.3rem 0.5rem;">🍃 <strong>Small branches / leaves</strong> (Ø &lt;7 cm)</div>
   </div>
 </div>
 
+<!-- RIGHT COLUMN: Usage pathways -->
 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.6rem;">
-  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.6rem; text-align:center;">
-    <p style="font-weight:700; font-size:0.95rem; color:#2d5a1b;">Chemical industry</p>
-    <p style="font-size:0.65rem; color:#555; line-height:1.3;">Bioplastics, lignin derivatives. Gate price: 80–120 €/t</p>
-    <div style="padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:0.6rem; color:#4a7c2f;">▶ Stem (P1)</div>
+
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; overflow:hidden; text-align:center;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Kantholz.jpg/330px-Kantholz.jpg"
+         alt="Furniture industry – sawn timber"
+         style="width:100%; height:100px; object-fit:cover; display:block;">
+    <div style="padding:0.5rem 0.7rem 0.7rem;">
+      <p style="font-weight:700; font-size:1.5rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Furniture industry</p>
+      <p style="font-size:1rem; color:#555; margin:0; line-height:1.3;">Sawn timber, veneers</p>
+      <div style="margin-top:0.4rem; padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:1rem; color:#4a7c2f;">▶ Stem wood</div>
+    </div>
   </div>
-  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.6rem; text-align:center;">
-    <p style="font-weight:700; font-size:0.95rem; color:#2d5a1b;">Pulp & Paper</p>
-    <p style="font-size:0.65rem; color:#555; line-height:1.3;">Long-fibre hardwood pulp, cardboard. Gate price: 55–75 €/t</p>
-    <div style="padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:0.6rem; color:#4a7c2f;">▶ Stem + Branches (P2)</div>
+
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; overflow:hidden; text-align:center;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Papier_fabrication.jpg/330px-Papier_fabrication.jpg"
+         alt="Paper industry – pulpwood"
+         style="width:100%; height:100px; object-fit:cover; display:block;">
+    <div style="padding:0.5rem 0.7rem 0.7rem;">
+      <p style="font-weight:700; font-size:1.5rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Paper industry</p>
+      <p style="font-size:1rem; color:#555; margin:0; line-height:1.3;">Pulp, fibres, cardboard</p>
+      <div style="margin-top:0.4rem; padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:1rem; color:#4a7c2f;">▶ Stem + large branches</div>
+    </div>
   </div>
-  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; padding:0.6rem; text-align:center;">
-    <p style="font-weight:700; font-size:0.95rem; color:#2d5a1b;">Energy generation</p>
-    <p style="font-size:0.65rem; color:#555; line-height:1.3;">Wood chips, pellets, CHP. Gate price: 30–40 €/t</p>
-    <div style="padding:0.15rem; background:#fff3e0; border-radius:3px; font-size:0.6rem; color:#b45309;">▶ All fractions (P3)</div>
+
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; overflow:hidden; text-align:center;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/%D0%A1%D0%B0%D0%BB%D1%84%D0%B5%D1%82%D0%BA%D0%B0_%D1%83%D0%BD%D0%B8%D0%B2%D0%B5%D1%80%D1%81%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F_%D0%B3%D1%83%D0%B1%D1%87%D0%B0%D1%82%D0%B0%D1%8F_%28%D0%B2%D0%B8%D0%B4_%D1%81%D0%B1%D0%BE%D0%BA%D1%83%29.jpg/330px-%D0%A1%D0%B0%D0%BB%D1%84%D0%B5%D1%82%D0%BA%D0%B0_%D1%83%D0%BD%D0%B8%D0%B2%D0%B5%D1%80%D1%81%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F_%D0%B3%D1%83%D0%B1%D1%87%D0%B0%D1%82%D0%B0%D1%8F_%28%D0%B2%D0%B8%D0%B4_%D1%81%D0%B1%D0%BE%D0%BA%D1%83%29.jpg"
+         alt="Chemical industry – wood material"
+         style="width:100%; height:100px; object-fit:cover; display:block;">
+    <div style="padding:0.5rem 0.7rem 0.7rem;">
+      <p style="font-weight:700; font-size:1.5rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Chemical industry</p>
+      <p style="font-size:1rem; color:#555; margin:0; line-height:1.3;">Bioplastics, lignin derivatives, resins</p>
+      <div style="margin-top:0.4rem; padding:0.15rem; background:#e8f4e0; border-radius:3px; font-size:1rem; color:#4a7c2f;">▶ Stem + large branches</div>
+    </div>
   </div>
+
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; overflow:hidden; text-align:center;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Bushblok_Factory.jpg/330px-Bushblok_Factory.jpg"
+         alt="Energy generation – wood chips"
+         style="width:100%; height:100px; object-fit:cover; display:block;">
+    <div style="padding:0.5rem 0.7rem 0.7rem;">
+      <p style="font-weight:700; font-size:1.5rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Energy generation</p>
+      <p style="font-size:1rem; color:#555; margin:0; line-height:1.3;">Wood chips, pellets, combined heat & power</p>
+      <div style="margin-top:0.4rem; padding:0.15rem; background:#fff3e0; border-radius:3px; font-size:1rem; color:#b45309;">▶ all fractions</div>
+    </div>
+  </div>
+
+  <div style="background:#fff; border:1px solid #c8dfc0; border-radius:8px; overflow:hidden; text-align:center;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/2013-05-03_Fotoflug_Leer_Papenburg_DSCF6946.jpg/330px-2013-05-03_Fotoflug_Leer_Papenburg_DSCF6946.jpg?uselang=de"
+         alt="Biogas plant – leaf and fine material"
+         style="width:100%; height:100px; object-fit:cover; display:block;">
+    <div style="padding:0.5rem 0.7rem 0.7rem;">
+      <p style="font-weight:700; font-size:1.5rem; color:#2d5a1b; margin:0.2rem 0 0.3rem 0;">Biogas plant</p>
+      <p style="font-size:1rem; color:#555; margin:0; line-height:1.3;">Anaerobic digestion, electricity + heat (CHP)</p>
+      <div style="margin-top:0.4rem; padding:0.15rem; background:#fff3e0; border-radius:3px; font-size:1rem; color:#b45309;">▶ Leaves + fine brushwood</div>
+    </div>
+  </div>
+
 </div>
 </div>
+<!-- FIX 2: blank line BEFORE .footnote is mandatory -->
 
-.footnote[Cascade utilisation following EU Bioeconomy Strategy (2018); price ranges: `r Citep(bib, "Lamers2015_Feedstock_Design")`]
-
----
-
-## AFS System Types
-
-.col-40[
-**Short-Rotation Coppice (SRC)**
-- Monoculture, 8,000–20,000 cuttings/ha
-- Rotation: 3–7 years; lifetime: 20–25 years
-- No inter-row crop production `r Citep(bib, "Trnka2008_Poplar_SRF")`
-
-**Short-Rotation AFS (SRAFS)**
-- 1–4 tree rows in alley-cropping
-- Tree strips: 10–30 % of total parcel area
-- Edge-tree effect → higher individual-tree biomass `r Citep(bib, "Huber2018_SRAFS_growth")`
-
-**Long-Rotation AFS (LRAFS)**
-- Rotation ≥ 12–15 years
-- Large stem diameters → high-value timber `r Citep(bib, "Graves2007_Agroforestry_Economics")`
-]
-
-.col-60[
-.callout-block[
-In this paper **SRAFS and LRAFS are not treated as fixed categories**. The MILP optimises rotation length endogenously, spanning the full range [A_min, A_max].
-]
-
-```{r, echo=FALSE, out.width="65%", fig.align="center"}
-knitr::include_graphics("fig/motivation_defaf.png")
-```
-]
+.footnote[Cascade utilisation following EU Bioeconomy Strategy (2018); fraction assignment: own classification]
 
 ---
 
@@ -397,23 +508,23 @@ knitr::include_graphics("fig/motivation_defaf.png")
 .col-40[
 .small[
 **Stand-level Gompertz model:**
-$$M(t) = A(N) \cdot \exp\!\bigl(-\exp(-k \cdot (t - t_0))\bigr)$$
+$$M(t) = A \cdot e^{-e^{-k \cdot (t - t_0) }}$$
 
-- $A(N) = C_{\text{site}} \cdot N^{1-\beta}$ — density-dependent asymptote
-- $k \in [0.17, 0.2]$ yr⁻¹, $t_0 \in [9, 10]$ yr for poplar in Central Europe
-- $t_0$ indicates the upper bound on economically optimal rotation age
+- $A$ — asymptotic biomass quantity
+- $t_0 \in [9, 10]$ - inflection point $\rightarrow$ maximal growth rate
+- $k \in [0.17, 0.2]$ shape/skewness of grwoth curve
+ 
 
 **Compartment fractions** (logistic model):
 $$q_p(t) = \frac{f_p}{1 + \exp(-r_p \cdot (t - t_{50,p}))}$$
 
-Calibrated for stem ($d > 15$ cm): $r_s = 0.467$, $t_{50,s} = 8.19$ yr, $f_s = 0.75$  
-Branch ($d > 7$ cm): $r_b = 0.698$, $t_{50,b} = 7.55$ yr, $f_b = 0.15$  
+Calibrated for stem ($d > 15$ cm) and branches ($d > 7$ cm) $\rightarrow$ residue defined as rest
 `r Citep(bib, "Jha2018_Poplar_AFS_Biomass")`; `r Citep(bib, "Civitarese2019_Poplar_Harvest")`
 ]
 ]
 
 .col-60[
-```{r max3-growth, fig.height=4.5, fig.width=6, out.width="95%", cache=TRUE}
+```{r max3-growth, fig.width=6, out.width="95%", cache=TRUE}
 age.vec <- seq(0, 20, by = 0.1)
 
 cons <- build_scenario_ts(ages = age.vec, N = 300, C_site = 6.500, k = 0.194, t0 = 9.7,
@@ -452,7 +563,7 @@ emp_shape <- c("Empirical: stem" = 21L,
                "Empirical: stem+branches" = 24L,
                "Empirical: total biomass" = 23L)
 
-ggplot(comp_long, aes(x = age, y = biomass)) +
+p <- ggplot(comp_long, aes(x = age, y = biomass)) +
   annotate("rect", xmin = 5, xmax = 15, ymin = 0, ymax = Inf,
            fill = "grey80", alpha = 0.25) +
   geom_area(aes(fill = component),
@@ -472,14 +583,17 @@ ggplot(comp_long, aes(x = age, y = biomass)) +
                 fill  = emp_col[levels(emp_long$series)])),
     shape  = "none") +
   scale_x_continuous(breaks = seq(0, 20, 2)) +
-  labs(x = "Stand age (years)", y = expression("biomass (t DM "*ha^{-1}*")"),
+  labs(x = "Stand age (years)", y = "biomass (t DM/ha",
        caption = "Grey band: typical medium-rotation harvest window (5–15 years).") +
   theme_minimal(base_size = 9) +
-  theme(legend.position = "right",
+  theme(legend.position = "top",
         legend.key.size = unit(0.4, "cm"),
         legend.text     = element_text(size = 7),
         legend.title    = element_text(size = 8, face = "bold"),
         panel.grid.minor = element_blank())
+
+ggplotly(p, height = 500)
+
 ```
 ]
 
@@ -513,9 +627,7 @@ class: inverse, center, middle
 
 For planning horizon $T=8$, $A^{\min}=3$, $A^{\max}=5$:
 
-```{r tikz-netzwerk-1, engine='tikz', fig.ext='png', fig.align='center', out.width='80%', echo=FALSE,
-  engine.opts=list(extra.preamble=c("\\usepackage{tikz}", "\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}")),
-  fig.height = 3, cache=TRUE}
+```{r tikz-netzwerk-1, engine='tikz', fig.ext='png', fig.align='center', out.width='80%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}","\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}")),  fig.height = 3, cache=TRUE}
 
 \begin{tikzpicture}[
   x=1.55cm, y=1cm,
@@ -579,9 +691,7 @@ For planning horizon $T=8$, $A^{\min}=3$, $A^{\max}=5$:
 
 Example path: establishment in $t=1$, harvests in $t=5$ and $t=8$
 
-```{r tikz-netzwerk-2, engine='tikz', fig.ext='png', fig.align='center', out.width='80%', echo=FALSE,
-  engine.opts=list(extra.preamble=c("\\usepackage{tikz}", "\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}")),
-  fig.height = 3, cache=TRUE}
+```{r tikz-netzwerk-2, engine='tikz', fig.ext='png', fig.align='center', out.width='80%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}","\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}")),  fig.height = 3, cache=TRUE}
 
 \begin{tikzpicture}[
   x=1.55cm, y=1cm,
@@ -849,9 +959,9 @@ rivers_eu <- ne_download(scale = 10, type = "rivers_lake_centerlines",
   st_transform(crs_map) %>% st_intersection(bbox_map)
 
 site_harvest <- ext$Xij %>%
-  group_by(site_id, product) %>%
+  group_by(site_id, p) %>%
   summarise(vol = sum(value, na.rm = TRUE), .groups = "drop") %>%
-  tidyr::pivot_wider(names_from = product, values_from = vol, values_fill = 0, names_prefix = "p")
+  tidyr::pivot_wider(names_from = p, values_from = vol, values_fill = 0, names_prefix = "p")
 for (col in c("p1", "p2", "p3")) if (!col %in% names(site_harvest)) site_harvest[[col]] <- 0
 site_harvest <- site_harvest %>% mutate(total_vol = p1 + p2 + p3) %>% filter(total_vol > 0)
 active_site_ids <- unique(site_harvest$site_id)
@@ -943,6 +1053,7 @@ Active sites concentrated in **Elbe and Saale floodplains** (high yields + proxi
 
 ```{r tab-biomass-balance, echo=FALSE, message=FALSE, warning=FALSE}
 prod_by_product <- ext$Xij %>%
+  rename(product = p) %>% 
   group_by(product) %>%
   summarise(produced_total = sum(value, na.rm = TRUE), .groups = "drop")
 cons_by_product <- ext$Xjk %>%

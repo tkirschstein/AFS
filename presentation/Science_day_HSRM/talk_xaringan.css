@@ -1,24 +1,34 @@
 /* ============================================================
-   talk_xaringan.css
-   Hochschule RheinMain (HSRM) Theme fuer Xaringan
+   talk_kirschstein_cleaned_xaringan.css
+   Fraunhofer IKTS Theme fuer Xaringan
+   Primaerfarbe: #179C7D (Fraunhofer-Gruen)
 
-   HSRM-Farbschema (aus HSRM-PP-Vorlage-2025.pptx):
-   Primaer  (Dunkelviolett): #361E47
-   Sekundaer (Violett):      #5E3EE1
-   Akzent (Rot):             #E00514
-   Schriften: Aptos Display (Ueberschriften), Aptos (Fliesstext)
+   ÄNDERUNGEN gegenüber Original:
+   1. Widersprüchliche margin-top-Regel in .remark-slide-content h2 entfernt
+   2. .title-slide h2 Selektor zu .title-slide.remark-slide-content h2 erhöht
+      (höhere CSS-Spezifität verhindert Überschreibung durch allgemeines h2-Styling)
+   3. Gleiches Prinzip für .title-slide h1 Selektor
    ============================================================ */
 
-/* --- Design Tokens (HSRM Corporate Design) --- */
+/* --- Design Tokens (matching talk_kirschstein_cleaned.css) --- */
 :root {
-  --hsrm:        #361E47;   /* Dunkelviolett – Primaerfarbe */
-  --hsrm-dark:   #261537;   /* Noch dunkleres Violett fuer Konturlinien */
-  --hsrm-light:  #f0edf4;   /* Sehr helles Violett fuer Hintergruende */
-  --hsrm-violet: #5E3EE1;   /* Leuchtviolett – Sekundaerfarbe */
-  --hsrm-red:    #E00514;   /* Rot – Akzentfarbe */
-  --text-main:   #1a1a1a;
-  --text-muted:  #555555;
+  --fhg:        #179C7D;
+  --fhg-dark:   #0d7a62;
+  --fhg-light:  #e8f5f2;
+  --text-main:  #1a1a1a;
+  --text-muted: #555555;
+  --fhg-nav-bg: #0d7a62;
 }
+
+/* ============================================================
+   KOPFZEILE: JavaScript Navigationsleiste
+   ============================================================ */
+
+   
+
+/* ============================================================
+   Platz fuer die Navbar oben in allen Folien ausser Titelfolie
+   ============================================================ */
 
 /* ============================================================
    ALLGEMEINE FOLIENGESTALTUNG
@@ -26,7 +36,7 @@
 .remark-slide-content {
   background: #ffffff;
   color: var(--text-main);
-  font-family: "Aptos", "Calibri", Arial, sans-serif;
+  font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
   font-size: 1.5em;
   padding: -0.0em 1.2em 1.2em 1.2em;
   padding-top: 2.0em; /* Platz fuer den Titel (h2) lassen */
@@ -35,22 +45,22 @@
 
 /* --- Folien-Titel (h2) = Beamer frametitle --- */
 .remark-slide-content h2 {
-  background: var(--hsrm);
+  background: var(--fhg);
   color: #ffffff;
-  font-family: "Aptos Display", "Calibri", Arial, sans-serif;
+  font-family: "Source Serif 4", Georgia, serif;
   font-size: 1.8em;
   font-weight: 600;
   padding: 0.55em 0.75em 0.32em 0.75em;
   margin: -0.9em -1.2em 0.75em -1.2em;
-  border-bottom: 2px solid var(--hsrm-dark);
+  border-bottom: 2px solid var(--fhg-dark);
   text-align: left;
   letter-spacing: 0.01em;
 }
 
 /* --- Unterueberschrift h3 --- */
 .remark-slide-content h3 {
-  color: var(--hsrm-violet);
-  font-family: "Aptos Display", "Calibri", Arial, sans-serif;
+  color: var(--fhg);
+  font-family: "Source Serif 4", Georgia, serif;
   font-size: 1.05em;
   font-weight: 700;
   margin-top: 0.6em;
@@ -60,7 +70,7 @@
 /* --- Abschnittstitel (section divider / h1) --- */
 .section-divider h1 {
   color: #ffffff;
-  font-family: "Aptos Display", "Calibri", Arial, sans-serif;
+  font-family: "Source Serif 4", Georgia, serif;
   font-size: 2em;
   font-weight: 700;
   border-bottom: 3px solid rgba(255,255,255,0.6);
@@ -68,7 +78,7 @@
 }
 
 .section-divider {
-  background: var(--hsrm) !important;
+  background: var(--fhg) !important;
   color: #ffffff !important;
 }
 
@@ -81,8 +91,8 @@
 }
 
 .title-slide.remark-slide-content h1 {
-  color: var(--hsrm);
-  font-family: "Aptos Display", "Calibri", Arial, sans-serif;
+  color: var(--fhg);
+  font-family: "Source Serif 4", Georgia, serif;
   font-size: 1.65em;
   font-weight: 700;
   border: none;
@@ -95,7 +105,7 @@
 .title-slide.remark-slide-content h2 {
   background: none !important;
   color: var(--text-muted) !important;
-  font-family: "Aptos", "Calibri", Arial, sans-serif !important;
+  font-family: "Source Sans 3", "Calibri", Arial, sans-serif !important;
   font-size: 1em !important;
   font-weight: 400 !important;
   border: none !important;
@@ -116,13 +126,13 @@
   font-size: 0.85em;
 }
 
-/* HSRM-Violett-Linie unter dem Haupttitel auf der Titelfolie */
+/* Fraunhofer-Gruen Linie unter dem Haupttitel auf der Titelfolie */
 .title-slide.remark-slide-content h1::after {
   content: "";
   display: block;
   width: 580px;
   height: 3px;
-  background: var(--hsrm-violet);
+  background: var(--fhg);
   margin: 0.4em auto 0;
 }
 
@@ -135,7 +145,7 @@
 }
 
 .remark-slide-content ul > li::marker {
-  color: var(--hsrm-violet);
+  color: var(--fhg);
 }
 
 .remark-slide-content ul li,
@@ -153,8 +163,8 @@
    CALLOUT-BOXEN (entsprechen Beamer \begin{block})
    ============================================================ */
 .callout-note {
-  border-left: 4px solid var(--hsrm);
-  background: var(--hsrm-light);
+  border-left: 4px solid var(--fhg);
+  background: var(--fhg-light);
   border-radius: 2px;
   padding: 0.5em 0.85em;
   font-size: 0.88em;
@@ -164,7 +174,7 @@
 .callout-note::before {
   content: "Note";
   display: block;
-  background: var(--hsrm);
+  background: var(--fhg);
   color: #ffffff;
   font-weight: 700;
   font-size: 0.75em;
@@ -176,8 +186,8 @@
 }
 
 .callout-important {
-  border-left: 4px solid var(--hsrm-violet);
-  background: #eeebf9;
+  border-left: 4px solid var(--fhg-dark);
+  background: #f0faf7;
   border-radius: 2px;
   padding: 0.5em 0.85em;
   font-size: 0.88em;
@@ -187,7 +197,7 @@
 .callout-important::before {
   content: "Important";
   display: block;
-  background: var(--hsrm-violet);
+  background: var(--fhg-dark);
   color: #ffffff;
   font-weight: 700;
   font-size: 0.75em;
@@ -198,28 +208,30 @@
   border-radius: 0;
 }
 
+
 .callout-block {
-  border-left: 4px solid var(--hsrm-violet);
-  background: #eeebf9;
-  border-radius: 2px;
-  padding: 0.3em 0.5em;
+  border-left: 4px solid var(--fhg-dark);
+  background: #f0faf7;
+  border-radius: 1px;
+  padding: 0.1em 0.2em;
   font-size: 1.2em;
-  margin: 0.3em 0;
+  margin: 0.1em 0;
 }
 
 .callout-block::before {
   content: "";
   display: block;
-  background: var(--hsrm-violet);
+  background: var(--fhg-dark);
   color: #ffffff;
   font-weight: 700;
   font-size: 1.2em;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: 0.15em 0.3em;
-  margin: -0.3em -0.5em 0.3em -0.5em;
+  padding: 0.1em 0.2em;
+  margin: -0.1em -0.2em 0.1em -0.2em;
   border-radius: 0;
 }
+
 
 /* ============================================================
    TABELLEN
@@ -232,12 +244,12 @@
 }
 
 .remark-slide-content table th {
-  background: var(--hsrm);
+  background: var(--fhg);
   color: #ffffff;
   padding: 0.32em 0.6em;
   font-weight: 600;
   text-align: left;
-  font-family: "Aptos", "Calibri", Arial, sans-serif;
+  font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
 }
 
 .remark-slide-content table td {
@@ -247,7 +259,7 @@
 }
 
 .remark-slide-content table tr:nth-child(even) td {
-  background: #f5f2f8;
+  background: #f4faf8;
 }
 
 /* ============================================================
@@ -260,6 +272,8 @@
 
 /* ============================================================
    FOLIENZAHL
+   Xaringan schreibt die aktuelle Foliennummer in .remark-slide-number.
+   Wir positionieren sie rechts in der gruenen Fusszeile.
    ============================================================ */
 .remark-slide-number {
   display: block;
@@ -267,7 +281,7 @@
   bottom: 0.52em;
   right: 0.9em;
   font-size: 0.62em;
-  font-family: "Aptos", "Calibri", Arial, sans-serif;
+  font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
   color: rgba(255, 255, 255, 0.90);
   background: transparent;
   padding: 0;
@@ -276,7 +290,9 @@
 }
 
 /* ============================================================
-   FUSSZEILE: HSRM-Violett mit Logo links + Foliennummer rechts
+   FUSSZEILE: Fraunhofer-Gruen mit Logo links + Foliennummer rechts
+   Xaringan-native: remark-slide-content padding-bottom muss
+   Platz fuer die footer-Hoehe lassen (hier ~2.2em).
    ============================================================ */
 
 /* Mehr Abstand unten, damit der Footer nicht den Inhalt ueberlagert */
@@ -284,15 +300,17 @@
   padding-bottom: 2.6em !important;
 }
 
+/* Fusszeile via ::after auf dem Folienwrapper */
 .remark-slide-container .remark-slide-scaler::after {
   content: '';
 }
 
+/* Xaringan rendert jeden Slide in .remark-slide-content.
+   Wir nutzen position:absolute auf dem Slide-Element selbst. */
 .remark-slide {
   position: relative;
 }
 
-/* Dunkelviolette Fusszeile */
 .remark-slide-content::after {
   content: '';
   position: absolute;
@@ -300,8 +318,8 @@
   right:  0;
   bottom: 0;
   height: 2.0em;
-  background: var(--hsrm);
-  border-top: 2px solid var(--hsrm-dark);
+  background: var(--fhg);
+  border-top: 2px solid var(--fhg-dark);
   z-index: 10;
 }
 
@@ -312,25 +330,25 @@
   left:   0.9em;
   bottom: 0.35em;
   width:  auto;
-  height: 1.8em;
-  background-image: url("fig/logo_hsrm.png");
+  height: 1.3em;
+  background-image: url("fig/ikts_logo.png");
   background-repeat: no-repeat;
   background-size:   contain;
   background-position: left center;
   z-index: 11;
-  min-width: 150px;
+  min-width: 80px;
 }
 
-/* Titelfolie und Section-Divider: etwas dunklere Fusszeile */
+/* Titelfolie und Section-Divider: andere Fusszeile */
 .title-slide.remark-slide-content::after,
 .section-divider.remark-slide-content::after {
-  background: var(--hsrm-dark);
+  background: var(--fhg-dark);
   border-top: 2px solid rgba(255,255,255,0.25);
 }
 
 .title-slide.remark-slide-content::before,
 .section-divider.remark-slide-content::before {
-  filter: brightness(0) invert(1);   /* Logo weiss auf dunklem Hintergrund */
+  filter: brightness(0) invert(1);   /* Logo weiss auf gruener Titelfolie */
 }
 
 /* Seitenzahl auf Titelfolie ausblenden */
@@ -389,7 +407,7 @@
    ============================================================ */
 .remark-slide-content hr {
   border: none;
-  border-top: 3px solid var(--hsrm-violet);
+  border-top: 3px solid var(--fhg);
   margin: 0.6em auto;
   width: 60px;
   display: block;
@@ -399,16 +417,17 @@
    OVERVIEW / INHALTSFOLIE (section-nav)
    ============================================================ */
 .section-nav h1 {
-  color: var(--hsrm);
-  font-family: "Aptos Display", "Calibri", Arial, sans-serif;
+  color: var(--fhg);
+  font-family: "Source Serif 4", Georgia, serif;
   font-size: 1.55em;
   font-weight: 700;
-  border-bottom: 3px solid var(--hsrm-violet);
+  border-bottom: 3px solid var(--fhg);
   padding-bottom: 0.25em;
   margin-bottom: 0.7em;
 }
 
-/* Kompakte Folien */
+
+/* FIX 3: Kompakte Folien – weniger padding-top wenn kein h2-Offset nötig */
 .compact-slide.remark-slide-content {
   padding-top: 3.2em !important;
 }
@@ -416,7 +435,8 @@
 /* ============================================================
    UTILITY-KLASSEN
    ============================================================ */
-
+   
+   
 .center {
   text-align: center;
 }
@@ -425,6 +445,7 @@
   font-size: 1.1em;
 }
 
+
 .medium {
   font-size: 0.9em;
 }
@@ -432,6 +453,7 @@
 .small {
   font-size: 0.8em;
 }
+
 
 .tiny {
   font-size: 0.7em;
@@ -443,6 +465,8 @@
   font-size: 0.65em;
   color: var(--text-muted);
 }
+
+
 
 /* Clearfix nach float-Layouts */
 .clearfix::after {
