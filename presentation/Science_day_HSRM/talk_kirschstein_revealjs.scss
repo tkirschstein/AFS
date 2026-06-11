@@ -1,0 +1,412 @@
+/*-- scss:defaults --*/
+
+// Fraunhofer IKTS Theme – SCSS variables
+$fhg:        #179C7D;
+$fhg-dark:   #0d7a62;
+$fhg-light:  #e8f5f2;
+$text-main:  #1a1a1a;
+$text-muted: #555555;
+
+// Reveal.js theme overrides
+$body-bg:         #ffffff;
+$body-color:      $text-main;
+$font-family-sans-serif: "Source Sans 3", "Calibri", Arial, sans-serif;
+$presentation-heading-font: "Source Serif 4", Georgia, serif;
+$presentation-heading-color: #ffffff;
+$link-color: $fhg;
+
+/*-- scss:rules --*/
+
+// ============================================================
+// CSS Custom Properties (für Nutzung in reinem CSS)
+// ============================================================
+:root {
+  --fhg:        #{$fhg};
+  --fhg-dark:   #{$fhg-dark};
+  --fhg-light:  #{$fhg-light};
+  --text-main:  #{$text-main};
+  --text-muted: #{$text-muted};
+}
+
+// ============================================================
+// ALLGEMEINE FOLIENGESTALTUNG
+// ============================================================
+.reveal .slides section {
+  background:  #ffffff;
+  color:       $text-main;
+  font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
+  text-align:  left;
+  padding:     1.0em 0.0em 1.0em 0.0em;
+}
+
+// ============================================================
+// FOLIENTITEL h2
+// ============================================================
+.reveal .slides section h2 {
+  background:     $fhg;
+  color:          #ffffff;
+  font-family:    "Source Serif 4", Georgia, serif;
+  font-size:      1.25em;
+  font-weight:    600;
+  padding:        0.42em 0.5em 0.28em 0.5em;
+  margin:         -.1em -.08em .06em -.08em;
+  border-bottom:  2px solid $fhg-dark;
+  text-align:     left;
+  letter-spacing: 0.01em;
+  line-height:    1.5;
+}
+
+// ============================================================
+// UNTERÜBERSCHRIFT h3
+// ============================================================
+.reveal .slides section h3 {
+  color:         $fhg;
+  font-family:   "Source Serif 4", Georgia, serif;
+  font-size:     0.75em;
+  font-weight:   700;
+  margin-top:    0.6em;
+  margin-bottom: 0.3em;
+}
+
+// ============================================================
+// TITELFOLIE
+// ============================================================
+.reveal .slides section.title-slide {
+  background: #ffffff !important;
+  text-align: center;
+}
+
+.reveal .slides section.title-slide h1 {
+  color:          $fhg;
+  font-family:    "Source Serif 4", Georgia, serif;
+  font-size:      2.9em;          /* ← vergrößert */
+  font-weight:    700;
+  border:         none;
+  background:     none;
+  padding:        0;
+  margin:         0.2em 0 0.3em 0;
+  text-align:     center;
+  line-height:    1.25;
+}
+
+.reveal .slides section.title-slide h1::after {
+  content:    "";
+  display:    block;
+  width:      60%;
+  height:     3px;
+  background: $fhg;
+  margin:     0.4em auto 0;
+}
+
+.reveal .slides section.title-slide h2 {
+  background:     none !important;
+  color:          $text-muted !important;
+  font-family:    "Source Sans 3", "Calibri", Arial, sans-serif !important;
+  font-size:      0.65em !important;
+  font-weight:    400 !important;
+  border:         none !important;
+  padding:        0 !important;
+  margin:         0 0 0.6em 0 !important;
+  text-align:     center !important;
+  letter-spacing: 0 !important;
+}
+
+.reveal p.author {
+  color:       $text-main;
+  font-weight: 600;
+  font-size:   1.5em;
+}
+
+.reveal p.date {
+  color:     $text-muted;
+  font-size: 1.5em;
+}
+
+// Am Ende des TITELFOLIE-Blocks im SCSS einfügen:
+.reveal .slides section.title-slide::before {
+  content:    "";
+  display:    block;
+  background: url("!logos.png") no-repeat center / contain;
+  width:      120px;
+  height:     50px;
+  margin:     0 auto 1em auto;
+}
+
+// Reveal.js setzt .slide-logo auf jeder Folie
+.reveal .slide-logo {
+  // Standard: nur auf Titelfolie
+  display: none !important;
+}
+#title-slide .slide-logo,
+.reveal .slides section.present:first-child .slide-logo {
+  display: block !important;
+  position: absolute;
+  bottom: 1.5rem;
+  right: 2rem;
+  max-height: 52px;
+}
+
+// ============================================================
+// ABSCHNITTS-DIVIDER  (## Titel {.section-divider})
+// ============================================================
+.reveal .slides section.section-divider {
+  background: $fhg !important;
+  color:      #ffffff !important;
+}
+
+.reveal .slides section.section-divider h1,
+.reveal .slides section.section-divider h2 {
+  color:          #ffffff;
+  font-family:    "Source Serif 4", Georgia, serif;
+  font-size:      1.4em;
+  font-weight:    700;
+  background:     none !important;
+  border:         none !important;
+  border-bottom:  3px solid rgba(255,255,255,0.6) !important;
+  padding:        0 0 0.25em 0 !important;
+  margin:         0 0 0.4em 0 !important;
+  text-align:     left;
+}
+
+// ============================================================
+// AUFZÄHLUNG
+// ============================================================
+.reveal .slides section ul {
+  list-style:   disc;
+  padding-left: 1.4em;
+}
+
+.reveal .slides section ul > li::marker {
+  color: $fhg;
+}
+
+.reveal .slides section ul li,
+.reveal .slides section ol li {
+  margin-bottom: 0.38em;
+  line-height:   1.5;
+}
+
+.reveal .slides section strong {
+  color:       $text-main;
+  font-weight: 700;
+}
+
+// ============================================================
+// CALLOUT-BOXEN
+// ============================================================
+.reveal .callout-note {
+  border-left:   4px solid $fhg !important;
+  background:    $fhg-light !important;
+  border-radius: 2px;
+}
+
+.reveal .callout-note .callout-title {
+  background:     $fhg !important;
+  color:          #ffffff !important;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.reveal .callout-important {
+  border-left:   4px solid $fhg-dark !important;
+  background:    #f0faf7 !important;
+  border-radius: 2px;
+}
+
+.reveal .callout-important .callout-title {
+  background:     $fhg-dark !important;
+  color:          #ffffff !important;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.reveal .callout-block {
+  border-left:   4px solid $fhg-dark;
+  background:    #f0faf7;
+  border-radius: 1px;
+  padding:       0.4em 0.7em;
+  font-size:     0.9em;
+  margin:        0.5em 0;
+}
+
+// ============================================================
+// TABELLEN
+// ============================================================
+.reveal .slides section table {
+  width:           100%;
+  border-collapse: collapse;
+  font-size:       0.82em;
+  margin:          0.6em 0;
+}
+
+.reveal .slides section table th {
+  background:  $fhg;
+  color:       #ffffff;
+  padding:     0.32em 0.6em;
+  font-weight: 600;
+  text-align:  left;
+}
+
+.reveal .slides section table td {
+  padding:       0.28em 0.6em;
+  border-bottom: 1px solid #e0e0e0;
+  color:         $text-main;
+}
+
+.reveal .slides section table tr:nth-child(even) td {
+  background: #f4faf8;
+}
+
+// ============================================================
+// FOLIENNUMMER
+// ============================================================
+//.reveal .slide-number {
+//  background:  $fhg;
+//  color:       rgba(255,255,255,0.90);
+//  font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
+//  font-size:   0.55em;
+//  padding:     0.2em 0.55em;
+//  border-radius: 0;
+//}
+
+// ============================================================
+// FUSSZEILE
+// ============================================================
+//.reveal .footer {
+//  background:  $fhg;
+//  color:       rgba(255,255,255,0.90);
+//  font-family: "Source Sans 3", "Calibri", Arial, sans-serif;
+//  font-size:   0.55em;
+//  padding:     0.25em 0.9em;
+//  border-top:  2px solid $fhg-dark;
+//  text-align:  left;
+//}
+
+.reveal .slide-logo {
+  bottom:     0.35em;
+  left:       0.9em;
+  height:     1.6em;
+  max-height: 28px;
+}
+
+// ============================================================
+// PROGRESS BAR
+// ============================================================
+//.reveal .progress {
+//  height:     3px;
+//  background: $fhg-light;
+//}
+
+//.reveal .progress span {
+//  background: $fhg;
+//}
+
+// ============================================================
+// ABBILDUNGSUNTERSCHRIFTEN
+// ============================================================
+//.reveal .slides section .fig-caption,
+//.reveal .slides section figcaption {
+//  font-size:   0.7em;
+//  color:       $text-muted;
+//  text-align:  center;
+//  margin-top:  0.2em;
+//  font-style:  italic;
+//  line-height: 1.35;
+//}
+
+// ============================================================
+// ZWEISPALTIGE LAYOUTS
+// ============================================================
+.reveal .pull-left55  { float: left;  width: 53%; padding-right: 1.2em; }
+.reveal .pull-right45 { float: right; width: 43%; }
+.reveal .col-30 { float: left; width: 28%; padding-right: 1em; }
+.reveal .col-40 { float: left; width: 35%; padding-right: 1em; }
+.reveal .col-50 { float: left; width: 45%; padding-right: 1em; }
+.reveal .col-60 { float: left; width: 55%; padding-right: 1em; }
+.reveal .col-70 { float: left; width: 68%; }
+
+// ============================================================
+// HORIZONTALE TRENNLINIE
+// ============================================================
+.reveal .slides section hr {
+  border:     none;
+  border-top: 3px solid $fhg;
+  margin:     0.6em auto;
+  width:      60px;
+  display:    block;
+}
+
+// ============================================================
+// OVERVIEW / INHALTSFOLIE  (.section-nav)
+// ============================================================
+.reveal .section-nav h1 {
+  color:          $fhg;
+  font-family:    "Source Serif 4", Georgia, serif;
+  font-size:      1.2em;
+  font-weight:    700;
+  border-bottom:  3px solid $fhg;
+  padding-bottom: 0.25em;
+  margin-bottom:  0.7em;
+}
+
+// ============================================================
+// KOMPAKTE FOLIEN
+// ============================================================
+.reveal .slides section.compact-slide {
+  padding-top: 2.5em !important;
+}
+
+.reveal .slides section.tight-lines p,
+.reveal .slides section.tight-lines li {
+  line-height: 1.1;
+}
+
+/* Leaflet-Karten in Reveal.js-Folien immer sichtbar halten */
+.reveal .leaflet {
+  visibility: visible !important;
+}
+.reveal section.present .leaflet-container {
+  visibility: visible !important;
+}
+
+.center-slide {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;      // horizontal
+  justify-content: center;  // vertikal
+  height: 100%;
+  text-align: center;
+}
+
+// ============================================================
+// UTILITY-KLASSEN
+// ============================================================
+.reveal .center  { text-align: center; }
+.reveal .large   { font-size: 1.1em; }
+.reveal .medium  { font-size: 0.9em; }
+.reveal .small   { font-size: 0.8em; }
+.reveal .tiny    { font-size: 0.7em; }
+
+//.reveal .footnote {
+//  position:  absolute;
+//  bottom:    2.2em;
+//  font-size: 0.65em;
+//  color:     $text-muted;
+//}
+
+//.reveal .clearfix::after {
+//  content: "";
+//  display: table;
+//  clear:   both;
+//}
+
+// ============================================================
+// BILDER
+// ============================================================
+//.reveal .slides section img {
+//  max-width: 100%;
+//  height:    auto;
+//  display:   block;
+//}
