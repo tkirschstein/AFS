@@ -110,7 +110,7 @@ source("../../Modell/extract_result.R")
 source("../../Modell/!helper_func.r")
 source("../../Modell/!helper_instance_builder_v8a.R")
 source("../../Modell/!build_AFS_milp.r")
-Rcpp::sourceCpp("../../Modell/build_and_solve_afs_lp_v11.cpp")
+#Rcpp::sourceCpp("../../Modell/build_and_solve_afs_lp_v11.cpp")
 
 load("../../Paper/afs_workspace_red.RData")
 
@@ -610,15 +610,20 @@ class: inverse, center, middle
 **Objective (AFS-SCD):** Maximise total supply chain profit over a planning horizon of $T$ years, integrating establishment, harvesting, logistics, and product cascading decisions.
 ]
 
+<div class="clearfix">
+
 .col-60[
-**Three-echelon supply chain:**
-- **Stage 1:** AFS sites $\mathcal{I}$ — potential poplar alley-cropping parcels
-- **Stage 2:** Pre-treatment / storage nodes $\mathcal{J}$ — sawmills and logistics hubs
-- **Stage 3:** Industrial consumers $\mathcal{K}$ — chemical, pulp/paper, energy sectors
+**Sets & variables:**
+- **Stage 1:** potential AFS sites $\mathcal{I}$ 
+- **Stage 2:** Pre-treatment / storage nodes $\mathcal{J}$ 
+- **Stage 3:** Industrial consumers $\mathcal{K}$ 
+- $z_{ist}$ — area of site $i$ with AFS operated under arc $(s,t)$
+- $X_{ijpt}$ / $X_{jkpp't}$ — biomass transport from site $i/j$ to $j/k$
+- $S_{jpt}$ — end-of-period inventory at facility $j$
 ]
 
 .col-40[
-```{r, engine='tikz', fig.ext='png', fig.align='center', out.width='90%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}","\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}")),  fig.height = 3, cache=TRUE}
+```{r, engine='tikz', fig.ext='png', fig.align='center', out.width='90%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}","\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}")),  fig.height = 3.5, cache=TRUE}
 % --- Network A: Supply chain stages (I sites -> J hub -> K consumers)
 \begin{tikzpicture}[x=1cm,y=1cm,>=latex]
   % Styles
@@ -649,25 +654,68 @@ class: inverse, center, middle
   % Flows: sites to hub
   \draw[flow] (i1) -- node[above, sloped, font=\scriptsize] {$x_{i_1 j_1}$} (j1);
   \draw[flow] (i2) -- node[above, sloped, font=\scriptsize] {$x_{i_2 j_1}$} (j1);
-  \draw[flow] (i3) -- node[below, sloped, font=\scriptsize] {$x_{i_3 j_1}$} (j1);
+  %\draw[flow] (i3) -- node[below, sloped, font=\scriptsize] {$x_{i_3 j_1}$} (j1);
+% Flows: sites to hub
+  %\draw[flow] (i1) -- node[above, sloped, font=\scriptsize] {$x_{i_1 j_1}$} (j2);
+  \draw[flow] (i2) -- node[above, sloped, font=\scriptsize] {$x_{i_2 j_2}$} (j2);
+  \draw[flow] (i3) -- node[below, sloped, font=\scriptsize] {$x_{i_3 j_2}$} (j2);
+
 
   % Flows: hub to consumers
   \draw[flow] (j1) -- node[above, sloped, font=\scriptsize] {$x_{j_1 k_1}$} (k1);
   \draw[flow] (j1) -- node[above, sloped, font=\scriptsize] {$x_{j_1 k_2}$} (k2);
-  \draw[flow] (j1) -- node[below, sloped, font=\scriptsize] {$x_{j_1 k_3}$} (k3);
+%  \draw[flow] (j1) -- node[below, sloped, font=\scriptsize] {$x_{j_1 k_3}$} (k3);
+
+  \draw[flow] (j2) -- node[above, sloped, font=\scriptsize] {$x_{j_2 k_1}$} (k2);
+  \draw[flow] (j2) -- node[above, sloped, font=\scriptsize] {$x_{j_2 k_2}$} (k3);
+
 
   % Optional annotation
-  \node[align=center, font=\scriptsize, text=gray!70] at (4,-0.1)
-  {Two-stage transport structure: feedstock collection and downstream distribution};
+  %\node[align=center, font=\scriptsize, text=gray!70] at (4,-0.1)
+  %{Two-stage transport structure: feedstock collection and downstream distribution};
 \end{tikzpicture}
 ```
-]
 
-**Key decision variables:**
-- $z_{ist}$ — area of site $i$ with AFS operated under arc $(s,t)$
-- $X_{ijpt}$ — raw biomass transport from site $i$ to facility $j$
-- $X_{jkpp't}$ — processed flow from $j$ to consumer $k$ (quality cascade)
-- $S_{jpt}$ — end-of-period inventory at facility $j$
+```{r, engine='tikz', fig.ext='png', fig.align='center', out.width='90%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}","\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}")),  fig.height = 3.5, cache=TRUE}
+
+% --- Network B: Product cascade (stem -> branch -> residue)
+\begin{tikzpicture}[x=1cm,y=1cm,>=latex]
+  % Styles
+  \tikzstyle{prodA}=[rectangle, rounded corners=2pt, draw=green!60!black, fill=green!20, thick, minimum width=18mm, minimum height=8mm]
+  \tikzstyle{prodB}=[rectangle, rounded corners=2pt, draw=orange!80!black, fill=orange!20, thick, minimum width=18mm, minimum height=8mm]
+  \tikzstyle{prodC}=[rectangle, rounded corners=2pt, draw=violet!70!black, fill=violet!18, thick, minimum width=18mm, minimum height=8mm]
+  \tikzstyle{flow}=[->, thick, draw=gray!75]
+  \tikzstyle{sideflow}=[->, dashed, thick, draw=gray!55]
+
+  % Main cascade nodes
+  \node[prodA] (stem) at (0,2) {Stem};
+  \node[prodB] (branch) at (4,2) {Branch};
+  \node[prodC] (residue) at (8,2) {Residue};
+
+  % Main cascade arrows
+  \draw[flow] (stem) -- node[above, font=\scriptsize] {downgrade} (branch);
+  \draw[flow] (branch) -- node[above, font=\scriptsize] {downgrade} (residue);
+  \draw[flow] (stem) to[out=45,  in=135,  looseness=0.55] (residue);
+  % Optional side sinks / uses
+  \node[font=\small\bfseries, align=center] (u1) at (0,0.4) {high-value\\chemical, timber};
+  \node[font=\small\bfseries, align=center] (u2) at (4,0.4) {medium-value\\paper \& pulp};
+  \node[font=\small\bfseries, align=center] (u3) at (8,0.4) {low-value\\ energy};
+
+  \draw[sideflow] (stem) -- (u1);
+  \draw[sideflow] (branch) -- (u2);
+  \draw[sideflow] (residue) -- (u3);
+
+  % Title-like label
+  \node[align=center, font=\small\bfseries] at (4,3.75) {Biomass product cascade};
+  \node[align=center, font=\scriptsize] at (4,3) {downgrade};
+  % Optional note
+  %\node[align=center, font=\scriptsize, text=gray!70] at (4,-0.6)
+  %{Sequential use principle: material fractions move from higher to lower value applications};
+\end{tikzpicture}
+```
+
+]
+</div>
 
 ---
 
@@ -675,7 +723,7 @@ class: inverse, center, middle
 
 For planning horizon $T=8$, $A^{\min}=3$, $A^{\max}=5$:
 
-```{r tikz-netzwerk-1, engine='tikz', fig.ext='png', fig.align='center', out.width='80%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}","\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}")),  fig.height = 3, cache=TRUE}
+```{r tikz-netzwerk-1, engine='tikz', fig.ext='png', fig.align='center', out.width='70%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}","\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}")),  fig.height = 2.5, cache=TRUE}
 
 \begin{tikzpicture}[
   x=1.55cm, y=1cm,
@@ -691,7 +739,7 @@ For planning horizon $T=8$, $A^{\min}=3$, $A^{\max}=5$:
 \foreach \i in {1,...,8} {
   \node[node=gray!50!black] (n\i) at (\i,0) {$\i$};
 }
-\node[node=red!70!black]   (n9) at (9,0) {$T\!+\!1$};
+\node[node=red!70!black]   (n9) at (9,0) {$9$};
 
 \draw[est] (n0) -- (n1);
 \foreach \t/\l in {2/1.3, 3/1.0, 4/0.80, 5/0.65}{
@@ -716,20 +764,20 @@ For planning horizon $T=8$, $A^{\min}=3$, $A^{\max}=5$:
 }
 \draw[term] (n8) -- (n9);
 
-\node[anchor=north west] at (0.0,-0.85) {%
+\node[anchor=north west] at (0.0,2.5) {%
   \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
     \draw[est]   (0,0)--(1,0);
     \node[font=\small, anchor=west] at (1.1,0) {Establishment arc $(0,t)$};
   \end{tikzpicture}};
-\node[anchor=north west] at (4.2,-0.85) {%
+\node[anchor=north west] at (3.5,2.5) {%
   \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
     \draw[harva] (0,0)--(1,0);
     \node[font=\small, anchor=west] at (1.1,0) {Harvest arc $(s,t)$};
   \end{tikzpicture}};
-\node[anchor=north west] at (7.6,-0.85) {%
+\node[anchor=north west] at (6.3,2.5) {%
   \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
     \draw[term]  (0,0)--(1,0);
-    \node[font=\small, anchor=west] at (1.1,0) {Termination arc $(s,T{+}1)$};
+    \node[font=\small, anchor=west] at (1.1,0) {Termination arc $(s,9)$};
   \end{tikzpicture}};
 
 \end{tikzpicture}
@@ -737,9 +785,8 @@ For planning horizon $T=8$, $A^{\min}=3$, $A^{\max}=5$:
 
 --
 
-Example path: establishment in $t=1$, harvests in $t=5$ and $t=8$
-
-```{r tikz-netzwerk-2, engine='tikz', fig.ext='png', fig.align='center', out.width='80%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}","\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}")),  fig.height = 3, cache=TRUE}
+**Example path**: establishment in $t=1$, harvests in $t=5$ and $t=8$
+```{r tikz-netzwerk-2, engine='tikz', fig.ext='png', fig.align='center', out.width='70%', echo=FALSE,  engine.opts=list(extra.preamble=c("\\usepackage{tikz}","\\usetikzlibrary{arrows.meta,shapes.geometric,shapes.misc}")),  fig.height = 2.5, cache=TRUE}
 
 \begin{tikzpicture}[
   x=1.55cm, y=1cm,
@@ -761,15 +808,20 @@ Example path: establishment in $t=1$, harvests in $t=5$ and $t=8$
 \foreach \i in {1,5,8} {
   \node[pathnode]  (n\i) at (\i,0) {$\i$};
 }
-\node[n9style]   (n9) at (9,0) {$T\!+\!1$};
+\node[n9style]   (n9) at (9,0) {$9$};
 
 \draw[est]     (n0) -- (n1);
 \draw[patharc] (n1) to[out=60, in=120, looseness=0.42] (n5);
+\draw[term] (n5) to[out=-50, in=-130, looseness=0.42] (n9);
 \draw[patharc] (n5) to[out=55, in=125, looseness=0.55] (n8);
 \draw[term]    (n8) -- (n9);
 
 \node[font=\footnotesize, text=blue!70!black]   at (0.5, 0.28) {est.};
+\node[font=\footnotesize, text=blue!70!black]   at (0.5, -0.3) {$100$};
+\node[font=\footnotesize, text=green!40!black]  at (3.0, 1.1)  {$100$};
 \node[font=\footnotesize, text=green!40!black]  at (3.0, 0.6)  {$t-s=4$};
+\node[font=\footnotesize, text=green!40!black]  at (6.5, 1) {$70$};
+\node[font=\footnotesize, text=red!70!black]  at (7, -1.0) {$30$};
 \node[font=\footnotesize, text=green!40!black]  at (6.5, 0.55) {$t-s=3$};
 \node[font=\footnotesize, text=red!70!black]    at (8.5, 0.28) {term.};
 
@@ -794,28 +846,27 @@ $$
 \end{aligned}
 $$
 
-Note: $c^{\text{opp}}_i$ can be negative (subsidies / positive crop-yield spillovers) or positive (high-value arable land). Opportunity costs and transport costs are the two largest cost drivers `r Citep(bib, "Faasch2012_SRC_Economics")`.
+.callout-note[
+$c^{\text{opp}}_i$ can be negative (subsidies / positive crop-yield spillovers) or positive (high-value arable land). Opportunity costs and transport costs are the two largest cost drivers `r Citep(bib, "Faasch2012_SRC_Economics")`.]
 ]
 
 ---
 
-## Key Constraints (C1–C5)
+## Constraints 
 
 .small[
-**C1 – Single establishment per site:**
+**Establishment per site:**
 $$\sum_{(0,t)\in\mathcal{S}^{est}} z_{i0t} \leq \text{AREA}_i \qquad \forall\; i$$
 
-**C2 – Flow conservation (path connectivity):**
+**Flow conservation (path connectivity):**
 $$\sum_{(s,t)\in\mathcal{S}} z_{ist} = \sum_{(t,u)\in\mathcal{S}} z_{itu} \qquad \forall\; i,\; t$$
 
-**C3 – Age-dependent biomass yield:**
+**Age-dependent biomass yield:**
 $$\sum_{j} X_{ijpt} \leq \sum_{(s,t)\in\mathcal{S}^{harv}} \eta_{p(t-s)} \cdot z_{ist} \qquad \forall\; i,p,t$$
 
 where $\eta_{pa} = q_p(a) \cdot M(a)$ links Gompertz stand model to logistics flows.
 
-**C4/C5 – Inventory balance and capacity at facilities** — follows `r Citep(bib, "DeMeyer2015_OPTIMASS")` network-flow structure.
-
-**C6 – Quality cascade demand:**
+**Quality cascade demand:**
 $$\sum_{j,\,(p',p)\in\mathcal{Q}} X_{jkp'pt} \leq D^{\max}_{kpt} \qquad \forall\; k,p,t$$
 
 Higher-quality fractions (stems) can substitute lower-quality demands, not vice versa.
@@ -858,9 +909,14 @@ class: inverse, center, middle
 ## Case Study Data Overview
 
 .col-50[
-```{r fig-supply-chain-network, echo=FALSE, message=FALSE, warning=FALSE, out.width="85%", cache=TRUE}
+```{r fig-supply-chain-network-leaflet, echo=FALSE, message=FALSE, warning=FALSE, out.width="100%", cache=TRUE}
+library(sf)
+library(dplyr)
+library(leaflet)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(htmltools)
 
-crs_map <- 25833
 COL_SAW <- "#e65c00"
 COL_HUB <- "#c05000"
 COL_P1  <- "#6a0dad"
@@ -870,37 +926,35 @@ COL_P3  <- "#a50026"
 bbox_wgs84 <- st_as_sfc(
   st_bbox(c(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8), crs = st_crs(4326))
 )
-bbox_map <- st_transform(bbox_wgs84, crs_map)
-bbox_num <- st_bbox(bbox_map)
 
 de_states <- ne_states(country = "Germany", returnclass = "sf") %>%
-  st_transform(crs_map) %>% st_intersection(bbox_map)
+  st_transform(4326) %>%
+  st_intersection(bbox_wgs84)
 
-rivers_eu <- ne_download(scale = 10, type = "rivers_lake_centerlines",
-                         category = "physical", returnclass = "sf") %>%
-  st_transform(crs_map) %>% st_intersection(bbox_map)
+rivers_eu <- ne_download(
+  scale = 10, type = "rivers_lake_centerlines",
+  category = "physical", returnclass = "sf"
+) %>%
+  st_transform(4326) %>%
+  st_intersection(bbox_wgs84)
 
 cluster_assig <- afs_workspace$site_cluster_assig %>%
   select(site_id, hac_cluster) %>%
   mutate(hac_cluster = as.factor(hac_cluster))
 
-n_clusters  <- length(unique(cluster_assig$hac_cluster))
-cluster_pal <- setNames(
-  colorRampPalette(RColorBrewer::brewer.pal(min(n_clusters, 12), "Set3"))(n_clusters),
-  levels(cluster_assig$hac_cluster)
-)
-
 sites_sf_clust <- sites_sf %>%
   mutate(site_id = seq_len(nrow(sites_sf))) %>%
   left_join(cluster_assig, by = "site_id") %>%
-  st_transform(crs_map)
+  st_transform(4326)
 
 tmp.opp <- sites_clustered %>%
   select(site_id, C_opp) %>%
   rename(hac_cluster = site_id) %>%
   mutate(hac_cluster = as.factor(hac_cluster))
 
-sites_sf_clust <- sites_sf_clust %>% left_join(tmp.opp, by = "hac_cluster")
+sites_sf_clust <- sites_sf_clust %>%
+  left_join(tmp.opp, by = "hac_cluster") %>%
+  st_intersection(bbox_wgs84)
 
 consumers_plt <- consumers %>%
   mutate(
@@ -911,47 +965,112 @@ consumers_plt <- consumers %>%
       demand_P3 > 0 ~ "Energy / Biogas (P3)",
       TRUE ~ "Other"
     ),
-    pt_size = pmin(4.5, pmax(1.5, 1.5 + log1p(total_demand) * 0.55))
+    pt_size = pmin(14, pmax(5, 5 + log1p(total_demand) * 1.8))
   )
 
 storages_plt <- storages %>%
-  mutate(subtype = if_else(type == "Hub", "Hub", "Hub"), pt_size = 3.5)
+  mutate(subtype = "Hub", pt_size = 8)
 
-stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326) %>% st_transform(crs_map)
-cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326) %>% st_transform(crs_map)
+stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326) %>%
+  st_intersection(bbox_wgs84)
 
-ggplot() +
-  geom_sf(data = de_states, fill = "grey96", colour = "grey55", linewidth = 0.35) +
-  geom_sf(data = rivers_eu, colour = "#4292c6", linewidth = 0.45, alpha = 0.7) +
-  geom_sf(data = sites_sf_clust, aes(fill = C_opp),
-          colour = "grey30", linewidth = 0.05, alpha = 0.65, show.legend = TRUE) +
-  scale_fill_gradient2(
-    name = "Opp. cost (€/ha)",
-    low = "#1a9641", mid = "#ffffbf", high = "#d7191c", midpoint = 0,
-    guide = guide_colourbar(barwidth = 0.5, barheight = 3, title.position = "top")
-  ) +
-  ggnewscale::new_scale_colour() +
-  ggnewscale::new_scale("shape") +
-  ggnewscale::new_scale_fill() +
-  geom_sf(data = stor_sf, aes(colour = subtype, shape = subtype, size = pt_size),
-          stroke = 1.2, alpha = 0.92, show.legend = FALSE) +
-  scale_colour_manual(values = c("Hub" = COL_HUB)) +
-  geom_sf(data = cons_sf, aes(fill = kategorie, size = pt_size),
-          shape = 22, colour = "white", stroke = 0.45, alpha = 0.88, show.legend = TRUE) +
-  scale_fill_manual(
-    name = "Consumer type",
-    values = c("Chemical / Pulp (P1)" = COL_P1, "Pulp / Paper (P2)" = COL_P2,
-               "Energy / Biogas (P3)" = COL_P3, "Other" = "grey60")
-  ) +
-  scale_size_continuous(range = c(1.5, 5), guide = "none") +
-  coord_sf(xlim = c(bbox_num["xmin"], bbox_num["xmax"]),
-           ylim = c(bbox_num["ymin"], bbox_num["ymax"]), expand = FALSE) +
-  labs(x = NULL, y = NULL) +
-  theme_minimal(base_size = 9) +
-  theme(panel.grid = element_line(colour = "grey88", linewidth = 0.25),
-        legend.position = "right", legend.key.size = unit(0.40, "cm"),
-        legend.text = element_text(size = 6), legend.title = element_text(size = 7.5, face = "bold"),
-        axis.text = element_text(size = 7))
+cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326) %>%
+  st_intersection(bbox_wgs84)
+
+pal_opp <- colorNumeric(
+  palette = c("#1a9641", "#ffffbf", "#d7191c"),
+  domain = sites_sf_clust$C_opp,
+  na.color = "transparent"
+)
+
+pal_cons <- colorFactor(
+  palette = c(
+    "Chemical / Pulp (P1)" = COL_P1,
+    "Pulp / Paper (P2)"    = COL_P2,
+    "Energy / Biogas (P3)" = COL_P3,
+    "Other"                = "grey60"
+  ),
+  domain = cons_sf$kategorie
+)
+
+leaflet(options = leafletOptions(zoomControl = TRUE)) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addPolygons(
+    data = de_states,
+    color = "grey55",
+    weight = 0.8,
+    fillColor = "grey96",
+    fillOpacity = 0.7,
+    smoothFactor = 0.2,
+    group = "States"
+  ) %>%
+  addPolylines(
+    data = rivers_eu,
+    color = "#4292c6",
+    weight = 1,
+    opacity = 0.7,
+    group = "Rivers"
+  ) %>%
+  addPolygons(
+    data = sites_sf_clust,
+    stroke = TRUE,
+    color = "grey30",
+    weight = 0.3,
+    fillColor = ~pal_opp(C_opp),
+    fillOpacity = 0.65,
+    popup = ~paste0(
+      "<strong>Site ID:</strong> ", site_id,
+      "<br><strong>Cluster:</strong> ", hac_cluster,
+      "<br><strong>Opp. cost:</strong> ", round(C_opp, 1), " €/ha"
+    ),
+    group = "AFS sites"
+  ) %>%
+  addCircleMarkers(
+    data = stor_sf,
+    radius = ~pt_size,
+    color = COL_HUB,
+    stroke = TRUE,
+    weight = 2,
+    fillColor = COL_HUB,
+    fillOpacity = 0.95,
+    popup = ~paste0("<strong>Hub</strong>"),
+    group = "Hubs"
+  ) %>%
+  addCircleMarkers(
+    data = cons_sf,
+    radius = ~pt_size,
+    color = "white",
+    weight = 1,
+    fillColor = ~pal_cons(kategorie),
+    fillOpacity = 0.9,
+    popup = ~paste0(
+      "<strong>Consumer type:</strong> ", kategorie,
+      "<br><strong>Total demand:</strong> ", round(total_demand, 1)
+    ),
+    group = "Consumers"
+  ) %>%
+  addLegend(
+    position = "bottomright",
+    pal = pal_opp,
+    values = sites_sf_clust$C_opp,
+    title = "Opp. cost (€/ha)",
+    opacity = 0.8
+  ) %>%
+  addLegend(
+    position = "topright",
+    pal = pal_cons,
+    values = cons_sf$kategorie,
+    title = "Consumer type",
+    opacity = 0.95
+  ) %>%
+  addLayersControl(
+    overlayGroups = c("States", "Rivers", "AFS sites", "Hubs", "Consumers"),
+    options = layersControlOptions(collapsed = FALSE)
+  ) %>%
+  fitBounds(
+    lng1 = 10.6, lat1 = 50.9,
+    lng2 = 13.2, lat2 = 52.8
+  )
 ```
 ]
 
