@@ -79,7 +79,7 @@ $link-color: $fhg;
 .reveal .slides section.title-slide h1 {
   color:          $fhg;
   font-family:    "Source Serif 4", Georgia, serif;
-  font-size:      2.9em;          /* ← vergrößert */
+  font-size:      1.9em;          /* ← vergrößert */
   font-weight:    700;
   border:         none;
   background:     none;
@@ -122,29 +122,6 @@ $link-color: $fhg;
   font-size: 1.5em;
 }
 
-// Am Ende des TITELFOLIE-Blocks im SCSS einfügen:
-.reveal .slides section.title-slide::before {
-  content:    "";
-  display:    block;
-  background: url("!logos.png") no-repeat center / contain;
-  width:      120px;
-  height:     50px;
-  margin:     0 auto 1em auto;
-}
-
-// Reveal.js setzt .slide-logo auf jeder Folie
-.reveal .slide-logo {
-  // Standard: nur auf Titelfolie
-  display: none !important;
-}
-#title-slide .slide-logo,
-.reveal .slides section.present:first-child .slide-logo {
-  display: block !important;
-  position: absolute;
-  bottom: 1.5rem;
-  right: 2rem;
-  max-height: 52px;
-}
 
 // ============================================================
 // ABSCHNITTS-DIVIDER  (## Titel {.section-divider})

@@ -1,5 +1,9 @@
 ---
 title: "Agroforestry Biomass Supply Chain Design"
+title-slide-attributes:
+  data-background-image: /fig/!logos_bg.png
+  data-background-size: contain
+  data-background-opacity: "0.8"
 subtitle: "Economic assessment and optimisation of AFS-based bioeconomy networks"
 author: "Thomas Kirschstein and Nico Tauchnitz"
 institute: "Fraunhofer IKTS"
@@ -13,28 +17,9 @@ format:
     slide-number: true
     progress: true
     self_contained: true
+    embed-resources: true   # ← neu: alle Assets inline einbetten
 editor: visual
 ---
-
-
-// Reveal.js setzt .slide-logo auf jeder Folie
-.reveal .slide-logo {
-  // Standard: nur auf Titelfolie
-  display: none !important;
-}
-#title-slide .slide-logo,
-.reveal .slides section.present:first-child .slide-logo {
-  display: block !important;
-  position: absolute;
-  bottom: 1.5rem;
-  right: 2rem;
-  max-height: 52px;
-}
-
-::: {.title-logos}
-![](fig/!logos.png){width=50%}
-:::
-
 
 ```{r setup-1, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -2167,11 +2152,11 @@ Fraunhofer IKTS thomas.kirschstein\@ikts.fraunhofer.de
 
 ::::: columns
 ::: {.column width="50%"}
-![](fig/Logo_BFTR-1.svg){width=50%}
+![](fig/Logo_BFTR-1.svg){width="50%"}
 :::
 
 ::: {.column width="50%"}
-![](fig/DiP_Foerderlogos_SA.png){width=50%}
+![](fig/DiP_Foerderlogos_SA.png){width="50%"}
 :::
 :::::
 
