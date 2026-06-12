@@ -1,0 +1,79 @@
+---
+title: "test"
+format: revealjs
+editor: visual
+---
+
+
+```{r setup-1, echo=FALSE, message=FALSE, warning=FALSE}
+
+suppressPackageStartupMessages({
+  
+  library(leaflet)
+  library(htmltools)
+  library(magick)
+  library(dplyr)
+  library(plotly)
+  library(ggplot2)
+  library(tidyr)
+  library(patchwork)
+  library(knitr)
+  library(kableExtra)
+  library(sf)
+  library(tibble)
+  library(stringr)
+  library(leaflet)
+  library(osrm)
+  library(ROI)
+  library(ROI.plugin.glpk)
+  library(gurobi)
+  library(ROI.plugin.gurobi)
+  library(ggrepel)
+  library(ggnewscale)
+  library(rnaturalearth)
+  library(rnaturalearthdata)
+  library(Rcpp)
+  library(RcppArmadillo)
+  library(scatterpie)
+  library(networkD3)
+  library(htmlwidgets)
+  library(webshot2)
+  library(ggalluvial)
+  library(scales)
+  library(purrr)
+  library(broom)
+  library(RefManageR)
+  library(xaringanExtra)
+  library(collapsibleTree)
+  library(tikzDevice)
+  library(pdftools)
+})
+
+```
+
+
+## Quarto
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, out.width="100%", cache=FALSE}
+leaflet(
+  options = leafletOptions(zoomControl = TRUE, preferCanvas = FALSE),
+  width = "100%",
+  height = 430
+) %>%
+  addProviderTiles(providers$CartoDB.Positron, group = "Basemap") 
+```
+
+## Bullets
+
+When you click the **Render** button a document will be generated that includes:
+
+- Content authored with markdown
+- Output from executable code
+
+## Code
+
+When you click the **Render** button a presentation will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
