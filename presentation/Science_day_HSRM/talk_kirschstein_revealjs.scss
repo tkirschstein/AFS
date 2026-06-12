@@ -357,6 +357,38 @@ $link-color: $fhg;
   text-align: center;
 }
 
+
+// ============================================================
+// PLOTLY / HTMLWIDGETS – Größe auf Folie begrenzen
+// ============================================================
+
+// Äußerer Widget-Container (von htmlwidgets erzeugt)
+.reveal .slides section .plotly.html-widget,
+.reveal .slides section .plotly-graph-div,
+.reveal .slides section .js-plotly-plot {
+  max-width:  100% !important;
+  max-height: 75vh !important;  // ← sicherer Puffer unter dem h2-Titel
+  width:      100% !important;
+  height:     auto !important;
+  overflow:   hidden !important;
+}
+
+// SVG innerhalb von Plotly explizit beschränken
+.reveal .slides section .plotly svg {
+  max-width:  100% !important;
+  max-height: 75vh !important;
+  width:      100% !important;
+  height:     auto !important;
+}
+
+// htmlwidgets-Wrapper allgemein (trifft auch networkD3, leaflet etc.)
+.reveal .slides section .html-widget-static-bound {
+  max-width:  100% !important;
+  max-height: 75vh !important;
+  overflow:   hidden;
+}
+
+
 // ============================================================
 // UTILITY-KLASSEN
 // ============================================================
