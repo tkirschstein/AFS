@@ -18,6 +18,9 @@ format:
     progress: true
     self_contained: true
     embed-resources: true   # ← neu: alle Assets inline einbetten
+    scrollable: false          # Scrollbars auf Folien verhindern
+    fig-responsive: false      # Plotly-Responsive-Mechanismus deaktivieren
+    html-math-method: mathjax
 editor: visual
 ---
 
@@ -422,7 +425,7 @@ High-value material uses should be prioritised before energetic use; residual fr
 
 ::: {.column width="66%"}
 | Application | Main products | Suitable fractions |
-|----|----|----|
+|------------------------|------------------------|------------------------|
 | 🪑 **Furniture industry** | Sawn timber, veneers | **Stem wood** |
 | 📄 **Paper industry** | Pulp, fibres, cardboard | **Stem + large branches** |
 | 🧪 **Chemical industry** | Bioplastics, lignin derivatives, resins | **Stem + large branches** |
@@ -1073,7 +1076,7 @@ map_sc
 :::: {.column width="50%"}
 ::: {style="font-size: 0.85em;"}
 | Parameter | Value |
-|----|----|
+|------------------------------------|------------------------------------|
 | Farms $\vert\mathcal{I}\vert$ | `r milp_instance$n_sites` (from `r nrow(afs_workspace$sites)` parcels) |
 | Hubs $\vert\mathcal{J}\vert$ | `r milp_instance$n_storages` |
 | Consumers $\vert\mathcal{K}\vert$ | `r milp_instance$n_consumers` |
@@ -1336,7 +1339,8 @@ Throughput rises as newly established sites reach minimum harvest age, then stab
 ```{r}
 #| label: fig-results-cost-profit-breakdown
 #| fig-width: 9
-#| out-width: 95%
+#| fig-height: 5
+#| out-width: "100%"
 #| cache: false
 #| echo: false
 
@@ -1670,8 +1674,8 @@ subplot(p_wf, p_cf, nrows = 1, widths = c(0.37, 0.55),
     ),
     margin = list(b = 100),
     autosize = FALSE,
-    width    = 850,      # NULL = von CSS gesteuert
-    height   = 420,       # px – passend für Reveal.js-Folie mit Titel
+    width    = 900,      # NULL = von CSS gesteuert
+    height   = 480,       # px – passend für Reveal.js-Folie mit Titel
     margin   = list(l = 40, r = 20, t = 30, b = 40)
   )
 
@@ -1683,7 +1687,9 @@ subplot(p_wf, p_cf, nrows = 1, widths = c(0.37, 0.55),
 
 ```{r}
 #| label: fig-results-site-breakdown
-#| out-width: 95%
+#| fig-width: 9
+#| fig-height: 5
+#| out-width: "100%"
 #| cache: false
 #| echo: false
 
@@ -1991,8 +1997,8 @@ fig %>%
     paper_bgcolor = "white",
     plot_bgcolor  = "#f9f9f9",
     autosize = FALSE,
-    width    = 850,      # NULL = von CSS gesteuert
-    height   = 420,       # px – passend für Reveal.js-Folie mit Titel
+    width    = 900,      # NULL = von CSS gesteuert
+    height   = 480,       # px – passend für Reveal.js-Folie mit Titel
     margin   = list(l = 40, r = 20, t = 30, b = 40)
   )
 
@@ -2006,7 +2012,9 @@ fig %>%
 ::: {.column width="90%"}
 ```{r}
 #| label: fig-results-site-scatter
-#| out-width: 92%
+#| fig-width: 9
+#| fig-height: 5
+#| out-width: "100%"
 #| cache: false
 #| echo: false
 
@@ -2063,8 +2071,8 @@ plot_ly(
     paper_bgcolor = "white",
     plot_bgcolor  = "#f9f9f9",
     autosize = FALSE,
-    width    = 850,      # NULL = von CSS gesteuert
-    height   = 420,       # px – passend für Reveal.js-Folie mit Titel
+    width    = 900,      # NULL = von CSS gesteuert
+    height   = 480,       # px – passend für Reveal.js-Folie mit Titel
     margin   = list(l = 40, r = 20, t = 30, b = 40)
   )
 

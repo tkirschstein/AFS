@@ -388,6 +388,47 @@ $link-color: $fhg;
   overflow:   hidden;
 }
 
+// ─── Plotly Widget Scaling Fix ─────────────────────────────────────
+.reveal .slides section {
+  // Overflow auf Folienebene grundsätzlich verhindern
+  overflow: hidden !important;
+}
+
+.reveal .plotly-graph-div,
+.reveal .js-plotly-plot,
+.reveal .plot-container {
+  // Widget darf nie größer als die Folie werden
+  max-width:  100% !important;
+  max-height: 100% !important;
+  width:      100% !important;
+  height:     auto !important;
+  overflow:   hidden !important;
+}
+
+// Widget-Wrapper, den Quarto um Plotly generiert
+.reveal .cell-output-display > div,
+.reveal figure.quarto-float,
+.reveal .quarto-figure {
+  max-width:  100% !important;
+  max-height: 75vh !important;   // 75% der Viewport-Höhe als hartes Limit
+  overflow:   hidden !important;
+}
+
+// Container für Plotly-Widgets mit fixer Höhe
+.reveal .plotly-container-fixed {
+  position:    relative;
+  width:       100%;
+  height:      52vh;          // ~52% der Viewport-Höhe
+  overflow:    hidden;
+
+  .plotly-graph-div,
+  .js-plotly-plot {
+    position: absolute;
+    inset:    0;
+    width:    100% !important;
+    height:   100% !important;
+  }
+}
 
 // ============================================================
 // UTILITY-KLASSEN
