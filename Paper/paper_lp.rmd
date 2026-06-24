@@ -201,7 +201,7 @@ data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")]  <- data_obj$consume
 # # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
 params_obj <- list(
    n_periods  = 40,
-   max_age    = 15L,    # A_max: LRAFS upper rotation bound
+   max_age    = 20L,    # A_max: LRAFS upper rotation bound
    min_age    =  3L,    # A_min: SRAFS lower rotation bound
    c_tr_raw   = 0.08,   # €/(t·km)  raw biomass  site → storage
    c_tr_pre   = 0.06   # €/(t·km)  chips        storage → consumer
@@ -213,13 +213,13 @@ milp_instance <- build_optimization_instance(
     params       = params_obj
   ) 
 
-# result <- build_and_solve_afs_lp_v11(milp_instance, 
-#                           gurobi_params = list(TimeLimit = 300),
-#                           verbose = TRUE)
+result <- build_and_solve_afs_lp_v11(milp_instance, 
+                           gurobi_params = list(TimeLimit = 300),
+                           verbose = TRUE)
 # 
-#saveRDS(result, "result_lp_v11.rds")
+saveRDS(result, "result_lp_v11.rds")
 
-result <- readRDS("result_lp_v11.rds")
+#result <- readRDS("result_lp_v11.rds")
 
 ext <- result$solution_vector
 
@@ -1612,7 +1612,7 @@ totals `r sum(consumers$demand_P1)` kt/yr for P1,
 `r sum(consumers$demand_P2)` kt/yr for P2, and
 `r sum(consumers$demand_P3)` kt/yr for P3.
 
-```{r tab-consumers, echo=FALSE, message=FALSE, warning=FALSE}
+```{r tab-consumers, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
 
 consumers %>%
   mutate(name_pseudo = paste("consumer ", seq_len(nrow(consumers))) ) %>% 
@@ -1632,7 +1632,7 @@ consumers %>%
   add_header_above(c(" " = 1, "Annual demand" = 3, "Gate price" = 3))
 ```
 
-```{r fig-consumer-demand, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total biomass demand by consumer type and grade (P1 chemical, P2 pulp \\& paper, P3 energy/biogas). Bars show aggregated annual demand in kt wood input per year across all individual plants within each consumer type.", fig.width = 5.5, fig.height = 2.8, out.width="\\textwidth"}
+```{r fig-consumer-demand, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total biomass demand by consumer type and grade (P1 chemical, P2 pulp \\& paper, P3 energy/biogas). Bars show aggregated annual demand in kt wood input per year across all individual plants within each consumer type.", fig.width = 5.5, fig.height = 2.8, out.width="\\textwidth"}
 
 # Re-use consumers_typed from above
 # create unique types of consumers
@@ -1723,7 +1723,7 @@ facility $j$ is bounded by $\overline{S}_j$, and processing capacity by
 $\overline{C}_j$ (kt yr$^{-1}$), both drawn from publicly available
 facility data.
 
-```{r tab-milp-params, echo=FALSE, message=FALSE, warning=FALSE}
+```{r tab-milp-params, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
 params_df <- data.frame(
   Symbol          = c("$|\\mathcal{T}|$", "$|\\mathcal{I}|$", "$|\\mathcal{J}|$",
                       "$|\\mathcal{K}|$", "$|\\mathcal{P}|$",
@@ -2169,6 +2169,7 @@ ggplot(flow_df,
 prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
 
 
+
 # Deliveries aggregated by period × del_product
 delivery_ts <- ext$Xjk %>%
   group_by(period, product = factor(del_product)) %>%
@@ -2204,6 +2205,7 @@ ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
 ```
 
 ```{r fig-results-harvest-cycle-dist, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Distribution of harvesting cycle lengths at active agroforestry sites. Each bar represents the number of individual harvest events (over all periods and active sites) whose cycle length (stand age at harvest, i.e. $t - s$) falls in that year bin. Vertical dashed line: mean cycle length. Active sites are defined as sites with at least one selected harvest arc in the optimal solution.", fig.width=5.5, fig.height=3.5, dev="pdf", out.width="\\textwidth", cache=T, cache.extra = c("ext", "milp_instance")}
+
 
 # --- Extract harvest-arc cycle lengths from binary z variables ---------------
 # ext$z contains one row per selected arc; columns: site_id, s, t, arc_type
@@ -2257,7 +2259,6 @@ ggplot(cycle_df, aes(x = cycle_length)) +
 ```
 
 ```{r fig-results-cost-profit-breakdown, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total cost–profit breakdown across all active sites over the planning horizon. The left panel (waterfall) decomposes the objective value into revenue and individual cost categories; the right panel shows the period-level trajectory of revenues and stacked costs. Cultivation costs are split into establishment, harvesting, maintenance, and opportunity costs; logistics costs cover raw biomass transport (site$\\to$hub) and pre-processed transport (hub$\\to$consumer); storage costs reflect hub inventory holding charges.", fig.width = 7, fig.height = 4.5, dev = "pdf", out.width = "\\textwidth", cache = T, cache.extra = c("ext", "milp_instance", "sites_clustered", "storages", "params_obj")}
-
 
 # ── 0. Colour palette (consistent with paper) ──────────────────────────────
 COL_REV   <- "#1b9e77"   # revenue: green
@@ -2531,7 +2532,6 @@ p_waterfall + p_cashflow +
 
 ```{r fig-results-site-breakdown, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total revenue and cost breakdown per active agroforestry site over the full planning horizon. Each bar represents one active site; revenue (green, above zero axis) and cost components (stacked below) are expressed in thousand euros per hectare for comparability across sites of different size. Sites are ordered by descending net margin.", fig.width = 7, fig.height = 5, dev = "pdf", out.width = "\\textwidth", cache = T, cache.extra = c("ext", "milp_instance", "sites_clustered", "params_obj")}
 
-
 # ── 0. Colour palette (reuse from previous chunk) ───────────────────────────
 COL_REV  <- "#1b9e77"
 COL_EST  <- "#d95f02"
@@ -2787,8 +2787,6 @@ ggplot() +
 
 ```{r fig-results-site-scatter, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Scatterplot of active agroforestry sites: opportunity cost rate (€ ha yr) on the x-axis versus demand-weighted average delivery distance (km) on the y-axis. Point size is proportional to the site's net margin (€ ha yr); sites with negative net margin are shown as open circles. A LOESS smoothing line indicates the joint trend.", fig.width = 5.5, fig.height = 4, dev = "pdf", out.width = "0.72\\textwidth", cache = T, cache.extra = c("ext", "milp_instance", "params_obj")}
 
-
-
 # ── 1. Opportunity cost rate per site (€ ha yr) ─────────────────────────
 # C_opp is already a per-ha-per-year rate stored in site_meta
 opp_rate <- site_meta %>%
@@ -2928,6 +2926,7 @@ rotation-length trade-off in the AFS-SCD formulation
 (Section \@ref(sec:milp)).
 
 ```{r lm-site-profit-sensitivity, echo=FALSE, message=FALSE, warning=FALSE, cache=T}
+
 
 # ── 1. Hilfsfunktion: Site-Level KPIs für ein Szenario extrahieren ──────────
 extract_site_profit <- function(res, scenario_name = NA_character_) {
