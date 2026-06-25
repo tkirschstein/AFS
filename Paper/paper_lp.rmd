@@ -107,6 +107,15 @@ suppressPackageStartupMessages({
   library(scales)
   library(purrr)
   library(broom)
+  library(lme4)        # mixed-effects models
+  library(lmerTest)    # Satterthwaite p-values for lmer
+  library(mgcv)        # GAM + GAMM
+  library(gratia)      # tidy GAM diagnostics & draw()
+  library(MuMIn)       # R² for mixed models (r.squaredGLMM)
+  library(AICcmodavg)  # AICc comparison table
+  library(performance) # model_performance(), compare_performance(
+  library(broom.mixed) # tidy() for lmer objects
+  library(kableExtra)
 })
 options(kableExtra.latex.load_packages = FALSE)
 options(knitr.table.format = "latex")
@@ -126,6 +135,197 @@ source("../Modell/extract_result.R")
 #Rcpp::sourceCpp("../Modell/build_lp_rcpp.cpp")
 #Rcpp::sourceCpp("../Modell/build_and_solve_afs_milp.cpp")
 Rcpp::sourceCpp("../Modell/build_and_solve_afs_lp_v11.cpp")
+
+
+# ── 1. Hilfsfunktion: Site-Level KPIs für ein Szenario extrahieren ──────────
+extract_site_profit <- function(res, scenario_name = NA_character_) {
+  
+  milp_instance <- res$milp_instance
+  ext           <- res$ext
+  setting       <- res$setting
+  
+  # Szenario-Parameter
+  scen_opp     <- if (!any(is.na(setting))) setting$opp     else 150
+  scen_cost    <- if (!any(is.na(setting))) setting$cost    else 1.0
+  scen_revenue <- if (!any(is.na(setting))) setting$revenue else 1.0
+  
+  # Aktive Standorte
+  active_site_ids <- ext$z %>%
+    filter(arc_type == "harvest") %>%
+    pull(site_id) %>% unique()
+  
+  site_meta <- milp_instance$sites %>%
+    mutate(site_id = row_number()) %>%
+    filter(site_id %in% active_site_ids)
+  
+  # Preistabelle
+  price_df <- as.data.frame(milp_instance$consumer_prices) %>%
+    setNames(c("consumer_id", "del_product", "price")) %>%
+    mutate(consumer_id = as.integer(consumer_id),
+           del_product  = as.integer(del_product))
+  
+  # ── Distanzmatrizen ────────────────────────────────────────────────────────
+  dist_ij_m <- as.matrix(milp_instance$d_ij)
+  dist_jk_m <- as.matrix(milp_instance$d_jk)
+  
+  # Hub-Anteile pro Standort und Periode (für Kostenzurechnung)
+  hub_site_share <- ext$Xij %>%
+    group_by(hub_id, period) %>%
+    mutate(hub_total = sum(value)) %>%
+    ungroup() %>%
+    mutate(share = ifelse(hub_total > 0, value / hub_total, 0)) %>%
+    select(site_id, hub_id, period, share)
+  
+  # ── Kosten je Standort ─────────────────────────────────────────────────────
+  sc_est <- ext$z %>% filter(arc_type == "establishment") %>%
+    left_join(site_meta, by = "site_id") %>%
+    mutate(cost = C_est * value) %>%
+    group_by(site_id) %>% summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+    mutate(component = "Establishment")
+  
+  sc_harv <- ext$z %>% filter(arc_type == "harvest") %>%
+    left_join(site_meta, by = "site_id") %>%
+    mutate(cost = C_harv * value) %>%
+    group_by(site_id) %>% summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+    mutate(component = "Harvesting")
+  
+  sc_main <- ext$z %>% filter(arc_type == "harvest") %>%
+    mutate(age_len = t - s) %>%
+    left_join(site_meta, by = "site_id") %>%
+    mutate(cost = C_main * value * age_len) %>%
+    group_by(site_id) %>% summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+    mutate(component = "Maintenance")
+  
+  sc_opp <- ext$z %>% filter(arc_type == "harvest") %>%
+    mutate(age_len = t - s) %>%
+    left_join(site_meta, by = "site_id") %>%
+    mutate(cost = C_opp * value * age_len) %>%
+    group_by(site_id) %>% summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+    mutate(component = "Opportunity")
+  
+  sc_tr_raw <- ext$Xij %>%
+    mutate(dist_km = mapply(function(i, j) dist_ij_m[i, j], site_id, hub_id),
+           cost    = milp_instance$c_tr_raw * dist_km * value) %>%
+    group_by(site_id) %>% summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+    mutate(component = "Transport_raw")
+  
+  sc_tr_pre <- ext$Xjk %>%
+    mutate(dist_km  = mapply(function(j, k) dist_jk_m[j, k], hub_id, consumer_id),
+           cost_jkt = milp_instance$c_tr_pre * dist_km * value) %>%
+    left_join(hub_site_share, by = c("hub_id", "period"), relationship = "many-to-many") %>%
+    mutate(site_cost = cost_jkt * share) %>%
+    group_by(site_id) %>% summarise(cost = sum(site_cost, na.rm = TRUE), .groups = "drop") %>%
+    filter(!is.na(site_id)) %>%
+    mutate(component = "Transport_pre")
+  
+  sc_stor <- ext$S %>%
+    left_join(milp_instance$storages %>% mutate(hub_id = row_number()) %>% select(hub_id, c_stor),
+              by = "hub_id") %>%
+    mutate(stor_cost = c_stor * value) %>%
+    select(hub_id, period, stor_cost) %>%
+    left_join(hub_site_share, by = c("hub_id", "period"), relationship = "many-to-many") %>%
+    mutate(site_cost = stor_cost * share) %>%
+    group_by(site_id) %>% summarise(cost = sum(site_cost, na.rm = TRUE), .groups = "drop") %>%
+    filter(!is.na(site_id)) %>%
+    mutate(component = "Storage")
+  
+  # ── Erlöse je Standort ─────────────────────────────────────────────────────
+  site_revenue <- ext$Xjk %>%
+    left_join(price_df, by = c("consumer_id", "del_product")) %>%
+    mutate(rev_jkt = value * coalesce(price, 0)) %>%
+    left_join(hub_site_share, by = c("hub_id", "period"), relationship = "many-to-many") %>%
+    mutate(site_rev = rev_jkt * share) %>%
+    group_by(site_id) %>%
+    summarise(revenue = sum(site_rev, na.rm = TRUE), .groups = "drop") %>%
+    filter(!is.na(site_id))
+  
+  # ── Normierung: €/ha/a (nur aktive Produktionsjahre) ──────────────────────
+  #est_p  <- ext$z %>% filter(arc_type == "establishment") %>% select(site_id, t_est = t)
+  #term_p <- ext$z %>% filter(arc_type == "termination")  %>% select(site_id, t_term = s)
+  active_p <- ext$z %>% filter(arc_type == "establishment") %>% 
+    group_by(site_id) %>% 
+    summarise(tot_value = sum(value))
+# 
+  est_p  <- ext$z %>% filter(arc_type == "establishment") %>% group_by(site_id) %>% summarise(t_est = mean(sum(t*value)/sum(value)))
+  term_p <- ext$z %>% filter(arc_type == "termination")  %>% group_by(site_id) %>% summarise(t_term = mean(sum(s*value)/sum(value)))
+ 
+  site_norm <- site_meta %>%
+    #select(site_id, area_ha) %>%
+    left_join(active_p,  by = "site_id") %>%
+    left_join(est_p,  by = "site_id") %>%
+    left_join(term_p, by = "site_id") %>%
+    mutate(t_term       = ifelse(is.na(t_term), milp_instance$n_periods, t_term),
+           active_years = pmax(t_term - t_est, 1L),
+           denom        = tot_value * active_years)
+  
+  all_costs <- bind_rows(sc_est, sc_harv, sc_main, sc_opp,
+                         sc_tr_raw, sc_tr_pre, sc_stor) %>%
+    group_by(site_id) %>%
+    summarise(total_cost = sum(cost, na.rm = TRUE), .groups = "drop")
+  
+  # ── Durchschnittliche Distanzen je Standort ────────────────────────────────
+  # (a) Ø Distanz Standort → Hub (gewichtet nach Liefervolumen)
+  avg_dist_to_hub <- ext$Xij %>%
+    mutate(dist_km = mapply(function(i, j) dist_ij_m[i, j], site_id, hub_id)) %>%
+    group_by(site_id) %>%
+    summarise(avg_dist_hub_km = weighted.mean(dist_km, w = pmax(value, 0), na.rm = TRUE),
+              .groups = "drop")
+  
+  # (b) Ø Distanz Hub → Kunden (anteilig auf Standort zurückgerechnet)
+  avg_dist_to_consumer <- ext$Xjk %>%
+    mutate(dist_km = mapply(function(j, k) dist_jk_m[j, k], hub_id, consumer_id)) %>%
+    left_join(hub_site_share, by = c("hub_id", "period"), relationship = "many-to-many") %>%
+    filter(!is.na(site_id), share > 0) %>%
+    group_by(site_id) %>%
+    summarise(avg_dist_consumer_km = weighted.mean(dist_km, w = pmax(share * value, 0), na.rm = TRUE),
+              .groups = "drop")
+  
+  # ── Weitere strukturelle Variablen ─────────────────────────────────────────
+  # (c) Ø Erntezyklus-Länge (Rotationsalter) je Standort
+  avg_rotation <- ext$z %>%
+    filter(arc_type == "harvest") %>%
+    mutate(cycle_len = t - s) %>%
+    group_by(site_id) %>%
+    summarise(avg_rotation_yr = sum(cycle_len*value/sum(value), na.rm = TRUE),
+              n_harvests       = n(),
+              .groups = "drop")
+  
+  # (d) Produktmix-Index: Anteil hochwertiger Biomasse (P1 Stämme) an Gesamtlieferung
+  p1_share <- ext$Xij %>%
+    group_by(site_id) %>%
+    summarise(
+      vol_total = sum(value, na.rm = TRUE),
+      vol_p1    = sum(value[p == 1], na.rm = TRUE),
+      .groups   = "drop"
+    ) %>%
+    mutate(share_p1 = ifelse(vol_total > 0, vol_p1 / vol_total, NA_real_)) %>%
+    select(site_id, share_p1, vol_total)
+  
+  # ── Zusammenführen ─────────────────────────────────────────────────────────
+  result_df <- site_norm %>%
+    left_join(site_revenue,          by = "site_id") %>%
+    left_join(all_costs,             by = "site_id") %>%
+    left_join(avg_dist_to_hub,       by = "site_id") %>%
+    left_join(avg_dist_to_consumer,  by = "site_id") %>%
+    left_join(avg_rotation,          by = "site_id") %>%
+    left_join(p1_share,              by = "site_id") %>%
+    mutate(
+      profit_ha_yr         = (coalesce(revenue, 0) - coalesce(total_cost, 0)) / denom,
+      scenario             = scenario_name,
+      opp_cost             = scen_opp,
+      cost_level           = scen_cost,
+      revenue_level        = scen_revenue,
+      opp_cost_site        = C_opp
+    ) %>%
+    select(site_id, scenario, profit_ha_yr,
+           opp_cost, opp_cost_site, cost_level, revenue_level,
+           avg_dist_hub_km, avg_dist_consumer_km,
+           avg_rotation_yr, n_harvests, share_p1,
+           area_ha, active_years, n_sites)
+  
+  return(result_df)
+}
+
 
 #load("../Modell/afs_workspace.RData")
 load("afs_workspace_red.RData")
@@ -213,13 +413,13 @@ milp_instance <- build_optimization_instance(
     params       = params_obj
   ) 
 
-result <- build_and_solve_afs_lp_v11(milp_instance, 
-                           gurobi_params = list(TimeLimit = 300),
-                           verbose = TRUE)
+#result <- build_and_solve_afs_lp_v11(milp_instance, 
+#                           gurobi_params = list(TimeLimit = 300),
+#                           verbose = TRUE)
 # 
-saveRDS(result, "result_lp_v11.rds")
+#saveRDS(result, "result_lp_v11.rds")
 
-#result <- readRDS("result_lp_v11.rds")
+result <- readRDS("result_lp_v11.rds")
 
 ext <- result$solution_vector
 
@@ -238,97 +438,119 @@ ext$S <- ext$S %>%
   rename(hub_id = j, period = t)
 
 # sensitivity analysis ##########################################
-# 
-# scen.mat <- expand.grid(opp = c(10, 150, 300, 450), cost = c(.5, 2), revenue = c(.5, .75, 1.25 ,1.5)  )
-# nb.rep <- 10
-# 
-# res.sens.list <- vector("list", nrow(scen.mat)*nb.rep)
-# 
-# for(i in seq_len(nrow(scen.mat))){
-#   tmp.setting <- list(opp = scen.mat$opp[i], cost = scen.mat$cost[i], revenue = scen.mat$revenue[i])
-# 
-#   # storage cost
-#   tmp.storages <- storages
-#   tmp.storages$c_stor <- tmp.storages$c_stor * tmp.setting$cost
-#   # consumers
-#   tmp.consumers <- consumers
-#   tmp.consumers$P1 <- tmp.consumers$P1 * tmp.setting$revenue
-#   tmp.consumers$P2 <- tmp.consumers$P2 * tmp.setting$revenue
-#   tmp.consumers$P3 <- tmp.consumers$P3 * tmp.setting$revenue
-# 
-#   # # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
-#     tmp.params_obj <- list(
-#        n_periods  = 40,
-#        max_age    = 15L,    # A_max: LRAFS upper rotation bound
-#        min_age    =  3L,    # A_min: SRAFS lower rotation bound
-#        c_tr_raw   = 0.08 * tmp.setting$cost,   # €/(t·km)  raw biomass  site → storage
-#        c_tr_pre   = 0.06 * tmp.setting$cost   # €/(t·km)  chips        storage → consumer
-#      )
-#     #
-# 
-#   for(j in seq_len(nb.rep)){
-#     tmp.c.opp.vec <- rnorm(nrow(sites_clustered), 1, .75)
-# 
-#     # opportunity cost
-#     tmp.c.opp.vec <- tmp.c.opp.vec*tmp.setting$opp
-# 
-#     # site details
-#     tmp.sites_clustered <- sites_clustered %>%
-#        mutate(
-#          C_est  = 2500 * tmp.setting$cost,   # €/ha  establishment (Section 2.1 mid-range)
-#          C_harv = 150 * tmp.setting$cost,    # €/ha  harvest cost  (Section 2.1 mid-range)
-#          C_main = 10 * tmp.setting$cost, #  €/ha  maintenance cost  (Section 2.1 mid-range)
-#          C_opp  = tmp.c.opp.vec #  €/ha  opportunity cost  (Section 2.1 mid-range)
-#        )
-#     #
-#     tmp.data_obj <- list(
-#        sites    = tmp.sites_clustered,
-#        storages = tmp.storages,
-#        consumers = tmp.consumers,
-#        dist_ij  = afs_workspace$dist_ij_clust,
-#        dist_jk  = dist_jk,
-#        yields_by_age = yields_by_age
-#      )
-# 
-#     # rescale demands in consumers to tons
-#     tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")]  <- tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")] * 1000
-# 
-#     # ── 4. generate instance ─────────────────────────────────────
-#     tmp.milp_instance <- build_optimization_instance(
-#         data         = tmp.data_obj,
-#         params       = tmp.params_obj
-#       )
-#     #
-#      tmp.result <- build_and_solve_afs_lp_v11(
-#        tmp.milp_instance,
-#        gurobi_params = list(
-#          TimeLimit = 600),
-#        verbose = TRUE)
-#     #
-# 
-#     tmp.ext <- tmp.result$solution_vector
-#     #  renaming
-# 
-#     tmp.ext$Xjk <- tmp.ext$Xjk %>%
-#       rename(src_product = p, del_product = q, period = t, hub_id = j, consumer_id = k)
-# 
-#     tmp.ext$Xij <- tmp.ext$Xij %>%
-#       rename(period = t, site_id = i, hub_id = j)
-# 
-#     tmp.ext$z <- tmp.ext$z %>%
-#       rename(arc_type = type, site_id = i )
-# 
-#     tmp.ext$S <- tmp.ext$S %>%
-#       rename(hub_id = j, period = t)
-# 
-#     res.sens.list[[(i-1)*nb.rep + j]] <- list(setting = tmp.setting, milp_instance = tmp.milp_instance, ext = tmp.ext)
-#   }
-# 
-# }
-# 
-# saveRDS(res.sens.list, "res_sens_list_lp_v11.rds")
 
-res.sens.list <- readRDS("res_sens_list_lp_v11.rds")
+scen.mat <- expand.grid(opp = c(75, 150, 300), cost.log = c(.5, 1.5, 2), cost.est = c(.5, 1.5, 2), revenue = c(.5, .75, 1.25)  )
+nb.rep <- 10
+
+res.sens.list <- vector("list", nrow(scen.mat)*nb.rep)
+
+for(i in seq_len(nrow(scen.mat))){
+  tmp.setting <- list(
+    opp = scen.mat$opp[i], 
+    cost.log = scen.mat$cost.log[i],
+    cost.est = scen.mat$cost.est[i],
+    revenue = scen.mat$revenue[i]
+    )
+
+  # storage cost
+  tmp.storages <- storages
+  tmp.storages$c_stor <- tmp.storages$c_stor * tmp.setting$cost.log
+  # consumers
+  tmp.consumers <- consumers
+  tmp.consumers$P1 <- tmp.consumers$P1 * tmp.setting$revenue
+  tmp.consumers$P2 <- tmp.consumers$P2 * tmp.setting$revenue
+  tmp.consumers$P3 <- tmp.consumers$P3 * tmp.setting$revenue
+
+  # # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
+  tmp.params_obj <- list(
+       n_periods  = 40,
+       max_age    = 20L,    # A_max: LRAFS upper rotation bound
+       min_age    =  3L,    # A_min: SRAFS lower rotation bound
+       c_tr_raw   = 0.08 * tmp.setting$cost.log,   # €/(t·km)  raw biomass  site → storage
+       c_tr_pre   = 0.06 * tmp.setting$cost.log   # €/(t·km)  chips        storage → consumer
+     )
+    #
+
+  for(j in seq_len(nb.rep)){
+    tmp.c.opp.vec <- rnorm(nrow(sites_clustered), 1, .75)
+
+    # opportunity cost
+    tmp.c.opp.vec <- tmp.c.opp.vec * tmp.setting$opp
+
+    # site details
+    tmp.sites_clustered <- sites_clustered %>%
+       mutate(
+         C_est  = 2500 * tmp.setting$cost.est,   # €/ha  establishment 
+         C_harv = 150 * tmp.setting$cost.log,    # €/ha  harvest cost  
+         C_main = 10 * tmp.setting$opp/150, #  €/ha  maintenance cost  
+         C_opp  = tmp.c.opp.vec #  €/ha  opportunity cost  
+       )
+    #
+    tmp.data_obj <- list(
+       sites    = tmp.sites_clustered,
+       storages = tmp.storages,
+       consumers = tmp.consumers,
+       dist_ij  = afs_workspace$dist_ij_clust,
+       dist_jk  = dist_jk,
+       yields_by_age = yields_by_age
+     )
+
+    # rescale demands in consumers to tons
+    tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")]  <- tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")] * 1000
+
+    # ── 4. generate instance ─────────────────────────────────────
+    tmp.milp_instance <- build_optimization_instance(
+        data         = tmp.data_obj,
+        params       = tmp.params_obj
+      )
+    #
+    tmp.result <- build_and_solve_afs_lp_v11(
+       tmp.milp_instance,
+       gurobi_params = list(
+         TimeLimit = 600),
+       verbose = TRUE)
+    #
+
+    tmp.ext <- tmp.result$solution_vector
+    #  renaming
+
+    tmp.ext$Xjk <- tmp.ext$Xjk %>%
+      rename(src_product = p, del_product = q, period = t, hub_id = j, consumer_id = k)
+
+    tmp.ext$Xij <- tmp.ext$Xij %>%
+      rename(period = t, site_id = i, hub_id = j)
+
+    tmp.ext$z <- tmp.ext$z %>%
+      rename(arc_type = type, site_id = i )
+
+    tmp.ext$S <- tmp.ext$S %>%
+      rename(hub_id = j, period = t)
+
+    res.sens.list[[(i-1)*nb.rep + j]] <- list(setting = tmp.setting, milp_instance = tmp.milp_instance, ext = tmp.ext)
+  }
+
+}
+
+saveRDS(res.sens.list, "res_sens_list_lp_v11.rds")
+
+#res.sens.list <- readRDS("res_sens_list_lp_v11.rds")
+
+
+# ── 2. Benchmark + alle Sensitivitätsszenarien zusammenführen ────────────────
+res_bench_full <- list(
+  setting       = list(opp = 150, cost = 1.0, revenue = 1.0),
+  milp_instance = milp_instance,
+  ext           = ext,
+  result        = result
+)
+
+df_bench <- extract_site_profit(res_bench_full, "Bench.")
+
+df_sens <- purrr::imap_dfr(
+  res.sens.list,
+  ~ extract_site_profit(.x, scenario_name = paste0("S", .y))
+)
+
 
 ```
 
@@ -990,6 +1212,7 @@ follows: \begin{align}
 
 ```{tikz fig-set-S-tikz, echo=FALSE, fig.cap="Network structure of set $\\mathcal{S}$ for $T=8$, $A_{\\min}=3$, $A_{\\max}=5$. Dashed blue arcs: establishment arcs $(0,t)$, $t\\in\\{1,\\ldots,T-1\\}$. Solid green arcs above: harvest arcs $(s,t)$ with odd $s$; below: harvest arcs with even $s$. Solid red arcs:    termination arcs $(s,T+1)$, $s\\in\\{A_{\\min}+1,\\ldots,T\\}$.",    fig.align="center", out.width="\\textwidth", engine.opts=list(extra.preamble=c(      "\\usetikzlibrary{arrows.meta,bending,positioning}"   )), cache=TRUE}
 
+
 \begin{tikzpicture}[
   x=1.55cm, y=1cm,
   node/.style={circle, draw, fill=#1, text=white,
@@ -1000,20 +1223,17 @@ follows: \begin{align}
   term/.style ={-{Stealth[length=4pt]}, red!70!black,   semithick},
 ]
 
-%% ---- Nodes ----
 \node[node=blue!70!black]  (n0) at (0,0) {$0$};
 \foreach \i in {1,...,8} {
   \node[node=gray!50!black] (n\i) at (\i,0) {$\i$};
 }
 \node[node=red!70!black]   (n9) at (9,0) {$9$};
 
-%% ---- Establishment arcs ----
 \draw[est] (n0) -- (n1);
-\foreach \t/\l in {2/1.3, 3/1.0, 4/0.80, 5/0.65, 6/0.55, 7/0.48}{
+\foreach \t/\l in {2/1.3, 3/1.0, 4/0.80, 5/0.65}{
   \draw[est] (n0) to[out=55, in=125, looseness=\l] (n\t);
 }
 
-%% ---- Harvest arcs ----
 \draw[harva] (n1) to[out=55,  in=125,  looseness=0.55] (n4);
 \draw[harvb] (n2) to[out=-55, in=-125, looseness=0.55] (n5);
 \draw[harva] (n3) to[out=55,  in=125,  looseness=0.55] (n6);
@@ -1027,30 +1247,25 @@ follows: \begin{align}
 \draw[harvb] (n2) to[out=-65, in=-115, looseness=0.35] (n7);
 \draw[harva] (n3) to[out=65,  in=115,  looseness=0.35] (n8);
 
-%% ---- Termination arcs ----
 \foreach \s/\l in {4/0.80, 5/0.65, 6/0.55, 7/0.48}{
   \draw[term] (n\s) to[out=55, in=125, looseness=\l] (n9);
 }
 \draw[term] (n8) -- (n9);
 
-%% ---- Legend ----
-\node[anchor=north west] at (0.0,-0.85) {%
+\node[anchor=north west] at (0.0,2.5) {%
   \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
     \draw[est]   (0,0)--(1,0);
-    \node[font=\small, anchor=west] at (1.1,0)
-      {Establishment arc $(0,t)$};
+    \node[font=\small, anchor=west] at (1.1,0) {Establishment arc $(0,t)$};
   \end{tikzpicture}};
-\node[anchor=north west] at (4.2,-0.85) {%
+\node[anchor=north west] at (3.5,2.5) {%
   \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
     \draw[harva] (0,0)--(1,0);
-    \node[font=\small, anchor=west] at (1.1,0)
-      {Harvest arc $(s,t)$};
+    \node[font=\small, anchor=west] at (1.1,0) {Harvest arc $(s,t)$};
   \end{tikzpicture}};
-\node[anchor=north west] at (7.6,-0.85) {%
+\node[anchor=north west] at (6.3,2.5) {%
   \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
     \draw[term]  (0,0)--(1,0);
-    \node[font=\small, anchor=west] at (1.1,0)
-      {Termination arc $(s,T{+}1)$};
+    \node[font=\small, anchor=west] at (1.1,0) {Termination arc $(s,9)$};
   \end{tikzpicture}};
 
 \end{tikzpicture}
@@ -1075,7 +1290,6 @@ Temporal flow Variables $z_{ist}$ indicate on which quantity of the area of site
   term/.style    ={patharc, red!70!black},
 ]
 
-%% ---- Nodes ----
 \node[n0style]   (n0) at (0,0) {$0$};
 \foreach \i in {2,3,4,6,7} {
   \node[inactive] (n\i) at (\i,0) {$\i$};
@@ -1085,37 +1299,21 @@ Temporal flow Variables $z_{ist}$ indicate on which quantity of the area of site
 }
 \node[n9style]   (n9) at (9,0) {$9$};
 
-%% ---- Path arcs ----
 \draw[est]     (n0) -- (n1);
 \draw[patharc] (n1) to[out=60, in=120, looseness=0.42] (n5);
+\draw[term] (n5) to[out=-50, in=-130, looseness=0.42] (n9);
 \draw[patharc] (n5) to[out=55, in=125, looseness=0.55] (n8);
 \draw[term]    (n8) -- (n9);
 
-%% ---- Arc labels ----
 \node[font=\footnotesize, text=blue!70!black]   at (0.5, 0.28) {est.};
-\node[font=\footnotesize, text=green!40!black]  at (3.0, 0.6) {$t-s=4$};
+\node[font=\footnotesize, text=blue!70!black]   at (0.5, -0.3) {$100$};
+\node[font=\footnotesize, text=green!40!black]  at (3.0, 1.1)  {$100$};
+\node[font=\footnotesize, text=green!40!black]  at (3.0, 0.6)  {$t-s=4$};
+\node[font=\footnotesize, text=green!40!black]  at (6.5, 1) {$70$};
+\node[font=\footnotesize, text=red!70!black]  at (7, -1.0) {$30$};
+\node[font=\footnotesize, text=red!70!black]  at (8.5, -0.3) {$70$};
 \node[font=\footnotesize, text=green!40!black]  at (6.5, 0.55) {$t-s=3$};
 \node[font=\footnotesize, text=red!70!black]    at (8.5, 0.28) {term.};
-
-%% ---- Legend ----
-\node[anchor=north west] at (0.0,-0.78) {%
-  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
-    \draw[est]     (0,0)--(1,0);
-    \node[font=\small, anchor=west] at (1.1,0)
-      {Establishment arc $(0,t)$};
-  \end{tikzpicture}};
-\node[anchor=north west] at (4.2,-0.78) {%
-  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
-    \draw[patharc] (0,0)--(1,0);
-    \node[font=\small, anchor=west] at (1.1,0)
-      {Harvest arc $(s,t)$};
-  \end{tikzpicture}};
-\node[anchor=north west] at (7.6,-0.78) {%
-  \begin{tikzpicture}[x=0.6cm,y=0.35cm,baseline=0pt]
-    \draw[term]    (0,0)--(1,0);
-    \node[font=\small, anchor=west] at (1.1,0)
-      {Termination arc $(s,T{+}1)$};
-  \end{tikzpicture}};
 
 \end{tikzpicture}
 ```
@@ -1228,29 +1426,11 @@ As discussed in Section \@ref(sec:lit-afs), the economic attractiveness of AFS s
 &- \sum_{j \in \Jc}\sum_{p \in \Pc}\sum_{t \in \Tc}  c^{{stor}}_j \cdot S_{jpt}  \notag
 \end{align}
 
-Here, $R_{kp}$ are product- and consumer-specific revenues for each ton of biomass fraction (\euro{}/t). The opportunity cost term penalises the land use when AFS are established. Thereby, $c^{{opp}}_i$ can be negative or positive depending on the site-specific conditions. It comprises effect of lost field crop revenues due to AFS as well as higher yields of remaining field crop areas e.g. due to wind and water erosion protection by AFS. While the assessment of lost field crop revenues is usually well predictable, the economic evaluation of positive ecological effects of AFS (e.g. on neighboring crop yields) is more difficult. Thus, $c^{{opp}}_i$ can also contain regulatory subsidies to support establishing and maintaining AFS. Transport cost terms mirror the two-stage flow structure of the AFS supply chain with differentiated rates for raw and pre-treated biomass depending on the biomass type. Cost rates differ because as e.g. the density and water content of the shipped biomasses differ or because specialized equippment (e.g. for log transports) is used [REFERENCES]. Moreover, site-specific establishment cost for planting the AFS trees is considered, next to yearly maintenance costs
-and harvesting cost. All these costs scale with the size of a site
-($AREA_i$) measured in hectar. Maintenance cost comprise e.g. costs for
-trimming, replanting, and pruning unnecessary shoots. Storage costs are
-considered if biomasses are stored for more than a year to compensate
-direct costs (e.g. for storage site maintenance) but primarily
-opportunity cost due to potential material losses and capital
-commitment. The usual case is that AFS are harvested at the beginning of
-a year. Harvested biomass dry during spring and summer such that the
-biomasses can be used in autumn or winter the same year. As drying is
-necessary for most industrial applications and beneficial for transport
-economics, drying storage in the year of harvest is not associated with
-additional cost.
+Here, $R_{kp}$ are product- and consumer-specific revenues for each ton of biomass fraction (\euro{}/t). The opportunity cost term penalises the land use when AFS are established. Thereby, $c^{{opp}}_i$ can be negative or positive depending on the site-specific conditions. It comprises effect of lost field crop revenues due to AFS as well as higher yields of remaining field crop areas e.g. due to wind and water erosion protection by AFS. While the assessment of lost field crop revenues is usually well predictable, the economic evaluation of positive ecological effects of AFS (e.g. on neighboring crop yields) is more difficult. Thus, $c^{{opp}}_i$ can also contain regulatory subsidies to support establishing and maintaining AFS. Transport cost terms mirror the two-stage flow structure of the AFS supply chain with differentiated rates for raw and pre-treated biomass depending on the biomass type. Cost rates differ because as e.g. the density and water content of the shipped biomasses differ or because specialized equippment (e.g. for log transports) is used [REFERENCES]. Moreover, site-specific establishment cost for planting the AFS trees is considered, next to yearly maintenance and harvesting costs. All these costs scale with the size of a site ($AREA_i$) measured in hectar. Maintenance cost comprise e.g. costs for trimming, replanting, and pruning unnecessary shoots. Storage costs are considered if biomasses are stored for more than a year. Storage cost rate $c^{{stor}}_j$ measures the costs for storing a ton of biomass for one year and comprises direct storage cost (e.g. for storage site maintenance) as well as opportunity cost due to potential material losses and capital commitment. Biomasses harvested and consumed in the same year incur no storage cost, as usually AFS are harvested at the beginning of a year. Harvested biomass has to dry during spring and summer such that the biomasses can be used in autumn or winter the same year. As under-year drying is necessary for most industrial applications and beneficial for transport economics, drying storage in the year of harvest is not associated with additional cost.
 
 ## Constraints
 
-Constraints \eqref{eq:C1} limit each site to at most one establishment
-decision over the planning horizon. Constraints \eqref{eq:C2} enforce
-flow conservation in each period. If an activity in period $t \in \Tc$
-takes place, there needs to be a preceeding activity (harvest or
-establishment) and a succeeding activity (harvest or termination). This
-way, \eqref{eq:C2} guarantee valid (possibly empty) activity paths over
-the complete time horizon for each site. Constraints \eqref{eq:C3} links
+Constraints \eqref{eq:C1} limits the area dedicated to AFS operations to the maximum size of site $i$. Constraints \eqref{eq:C2} enforce flow conservation in each period. If AFS systems of size $z_{ist}$ are established or harvested in period $t \in \Tc$, there needs to be a succeeding activity (harvest or termination) of this area. This way, \eqref{eq:C2} guarantee valid (possibly empty) AFS activity  over the complete time horizon for each site. Constraints \eqref{eq:C3} links
 the binary harvest-cycle variables to physical yield quantities via the
 age-dependent yield coefficients $\eta_{p(t-s)}$. These coefficients are
 pre-computed by evaluating the component-specific Gompertz functions
@@ -1303,12 +1483,8 @@ rationale.
 The yield coefficients $\eta_{pa}$ in \eqref{eq:C3} are the critical
 bridge between the stand-level growth model of Chapter\~2 and the supply
 chain optimisation. For stand age $a = t - s$ and product component $p$,
-they are computed as: \begin{equation}
-  \eta_{pa} = f_p(a) \cdot M^{sl}(a)
-  = \frac{h_p(a)}{\sum_{p'} h_{p'}(a)}
-    \cdot a^{\infty} \cdot e^{-e^{-b'^1 \cdot (a - \tau)}},
-  \label{eq:yield-coeff}
-\end{equation} where $M^{sl}(a)$ follows from
+they are computed as: 
+where $M^{sl}(a)$ follows from
 \eqref{eq:total-stand-biomass} and $f_p(a)$ follows from
 \eqref{eq:component-share}. For poplar clone Max\~3 under SRAFS
 conditions, the component-specific Gompertz parameterisations from
@@ -1826,6 +2002,7 @@ selected in the optimal solution.
 
 ```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Optimal agroforestry supply chain network. Green polygons: active super-sites with biomass harvest; grey polygons: non-selected sites. Pie charts at active sites show the product mix of harvested biomass (stem = P1, branches = P2, residues = P3), scaled by total harvested volume. Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub). Coloured squares: consumer sites by dominant demand category.", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth", cache=T, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 
+
 crs_map <- 25833
 
 # ── Colour palette constants ─────────────────────────────────────────────────
@@ -2059,6 +2236,7 @@ ggplot() +
 
 ```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total production quantity of biomass types and its industrial usage over planning horizon (in tons).", fig.width=7, fig.height=5.5, dev="pdf", out.width="\\textwidth", cache=T, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 
+
 # ── Labels & colours ──────────────────────────────────────────────────────────
 # Source side (axis 1): biomass fractions delivered from sites → hubs (Xij)
 #   product index 1 = Stems, 2 = Branches, 3 = Residues  [§2.2, f_p(t)]
@@ -2169,7 +2347,6 @@ ggplot(flow_df,
 prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
 
 
-
 # Deliveries aggregated by period × del_product
 delivery_ts <- ext$Xjk %>%
   group_by(period, product = factor(del_product)) %>%
@@ -2205,7 +2382,6 @@ ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
 ```
 
 ```{r fig-results-harvest-cycle-dist, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Distribution of harvesting cycle lengths at active agroforestry sites. Each bar represents the number of individual harvest events (over all periods and active sites) whose cycle length (stand age at harvest, i.e. $t - s$) falls in that year bin. Vertical dashed line: mean cycle length. Active sites are defined as sites with at least one selected harvest arc in the optimal solution.", fig.width=5.5, fig.height=3.5, dev="pdf", out.width="\\textwidth", cache=T, cache.extra = c("ext", "milp_instance")}
-
 
 # --- Extract harvest-arc cycle lengths from binary z variables ---------------
 # ext$z contains one row per selected arc; columns: site_id, s, t, arc_type
@@ -2532,6 +2708,7 @@ p_waterfall + p_cashflow +
 
 ```{r fig-results-site-breakdown, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total revenue and cost breakdown per active agroforestry site over the full planning horizon. Each bar represents one active site; revenue (green, above zero axis) and cost components (stacked below) are expressed in thousand euros per hectare for comparability across sites of different size. Sites are ordered by descending net margin.", fig.width = 7, fig.height = 5, dev = "pdf", out.width = "\\textwidth", cache = T, cache.extra = c("ext", "milp_instance", "sites_clustered", "params_obj")}
 
+
 # ── 0. Colour palette (reuse from previous chunk) ───────────────────────────
 COL_REV  <- "#1b9e77"
 COL_EST  <- "#d95f02"
@@ -2787,6 +2964,7 @@ ggplot() +
 
 ```{r fig-results-site-scatter, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Scatterplot of active agroforestry sites: opportunity cost rate (€ ha yr) on the x-axis versus demand-weighted average delivery distance (km) on the y-axis. Point size is proportional to the site's net margin (€ ha yr); sites with negative net margin are shown as open circles. A LOESS smoothing line indicates the joint trend.", fig.width = 5.5, fig.height = 4, dev = "pdf", out.width = "0.72\\textwidth", cache = T, cache.extra = c("ext", "milp_instance", "params_obj")}
 
+
 # ── 1. Opportunity cost rate per site (€ ha yr) ─────────────────────────
 # C_opp is already a per-ha-per-year rate stored in site_meta
 opp_rate <- site_meta %>%
@@ -2927,225 +3105,35 @@ rotation-length trade-off in the AFS-SCD formulation
 
 ```{r lm-site-profit-sensitivity, echo=FALSE, message=FALSE, warning=FALSE, cache=T}
 
-
-# ── 1. Hilfsfunktion: Site-Level KPIs für ein Szenario extrahieren ──────────
-extract_site_profit <- function(res, scenario_name = NA_character_) {
-  
-  milp_instance <- res$milp_instance
-  ext           <- res$ext
-  setting       <- res$setting
-  
-  # Szenario-Parameter
-  scen_opp     <- if (!any(is.na(setting))) setting$opp     else 150
-  scen_cost    <- if (!any(is.na(setting))) setting$cost    else 1.0
-  scen_revenue <- if (!any(is.na(setting))) setting$revenue else 1.0
-  
-  # Aktive Standorte
-  active_site_ids <- ext$z %>%
-    filter(arc_type == "harvest") %>%
-    pull(site_id) %>% unique()
-  
-  site_meta <- milp_instance$sites %>%
-    mutate(site_id = row_number()) %>%
-    filter(site_id %in% active_site_ids)
-  
-  # Preistabelle
-  price_df <- as.data.frame(milp_instance$consumer_prices) %>%
-    setNames(c("consumer_id", "del_product", "price")) %>%
-    mutate(consumer_id = as.integer(consumer_id),
-           del_product  = as.integer(del_product))
-  
-  # ── Distanzmatrizen ────────────────────────────────────────────────────────
-  dist_ij_m <- as.matrix(milp_instance$d_ij)
-  dist_jk_m <- as.matrix(milp_instance$d_jk)
-  
-  # Hub-Anteile pro Standort und Periode (für Kostenzurechnung)
-  hub_site_share <- ext$Xij %>%
-    group_by(hub_id, period) %>%
-    mutate(hub_total = sum(value)) %>%
-    ungroup() %>%
-    mutate(share = ifelse(hub_total > 0, value / hub_total, 0)) %>%
-    select(site_id, hub_id, period, share)
-  
-  # ── Kosten je Standort ─────────────────────────────────────────────────────
-  sc_est <- ext$z %>% filter(arc_type == "establishment") %>%
-    left_join(site_meta, by = "site_id") %>%
-    mutate(cost = C_est * value) %>%
-    group_by(site_id) %>% summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
-    mutate(component = "Establishment")
-  
-  sc_harv <- ext$z %>% filter(arc_type == "harvest") %>%
-    left_join(site_meta, by = "site_id") %>%
-    mutate(cost = C_harv * value) %>%
-    group_by(site_id) %>% summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
-    mutate(component = "Harvesting")
-  
-  sc_main <- ext$z %>% filter(arc_type == "harvest") %>%
-    mutate(age_len = t - s) %>%
-    left_join(site_meta, by = "site_id") %>%
-    mutate(cost = C_main * value * age_len) %>%
-    group_by(site_id) %>% summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
-    mutate(component = "Maintenance")
-  
-  sc_opp <- ext$z %>% filter(arc_type == "harvest") %>%
-    mutate(age_len = t - s) %>%
-    left_join(site_meta, by = "site_id") %>%
-    mutate(cost = C_opp * value * age_len) %>%
-    group_by(site_id) %>% summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
-    mutate(component = "Opportunity")
-  
-  sc_tr_raw <- ext$Xij %>%
-    mutate(dist_km = mapply(function(i, j) dist_ij_m[i, j], site_id, hub_id),
-           cost    = milp_instance$c_tr_raw * dist_km * value) %>%
-    group_by(site_id) %>% summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
-    mutate(component = "Transport_raw")
-  
-  sc_tr_pre <- ext$Xjk %>%
-    mutate(dist_km  = mapply(function(j, k) dist_jk_m[j, k], hub_id, consumer_id),
-           cost_jkt = milp_instance$c_tr_pre * dist_km * value) %>%
-    left_join(hub_site_share, by = c("hub_id", "period"), relationship = "many-to-many") %>%
-    mutate(site_cost = cost_jkt * share) %>%
-    group_by(site_id) %>% summarise(cost = sum(site_cost, na.rm = TRUE), .groups = "drop") %>%
-    filter(!is.na(site_id)) %>%
-    mutate(component = "Transport_pre")
-  
-  sc_stor <- ext$S %>%
-    left_join(milp_instance$storages %>% mutate(hub_id = row_number()) %>% select(hub_id, c_stor),
-              by = "hub_id") %>%
-    mutate(stor_cost = c_stor * value) %>%
-    select(hub_id, period, stor_cost) %>%
-    left_join(hub_site_share, by = c("hub_id", "period"), relationship = "many-to-many") %>%
-    mutate(site_cost = stor_cost * share) %>%
-    group_by(site_id) %>% summarise(cost = sum(site_cost, na.rm = TRUE), .groups = "drop") %>%
-    filter(!is.na(site_id)) %>%
-    mutate(component = "Storage")
-  
-  # ── Erlöse je Standort ─────────────────────────────────────────────────────
-  site_revenue <- ext$Xjk %>%
-    left_join(price_df, by = c("consumer_id", "del_product")) %>%
-    mutate(rev_jkt = value * coalesce(price, 0)) %>%
-    left_join(hub_site_share, by = c("hub_id", "period"), relationship = "many-to-many") %>%
-    mutate(site_rev = rev_jkt * share) %>%
-    group_by(site_id) %>%
-    summarise(revenue = sum(site_rev, na.rm = TRUE), .groups = "drop") %>%
-    filter(!is.na(site_id))
-  
-  # ── Normierung: €/ha/a (nur aktive Produktionsjahre) ──────────────────────
-  #est_p  <- ext$z %>% filter(arc_type == "establishment") %>% select(site_id, t_est = t)
-  #term_p <- ext$z %>% filter(arc_type == "termination")  %>% select(site_id, t_term = s)
-  active_p <- ext$z %>% filter(arc_type == "establishment") %>% 
-    group_by(site_id) %>% 
-    summarise(tot_value = sum(value))
-# 
-  est_p  <- ext$z %>% filter(arc_type == "establishment") %>% group_by(site_id) %>% summarise(t_est = mean(sum(t*value)/sum(value)))
-  term_p <- ext$z %>% filter(arc_type == "termination")  %>% group_by(site_id) %>% summarise(t_term = mean(sum(s*value)/sum(value)))
- 
-  site_norm <- site_meta %>%
-    #select(site_id, area_ha) %>%
-    left_join(active_p,  by = "site_id") %>%
-    left_join(est_p,  by = "site_id") %>%
-    left_join(term_p, by = "site_id") %>%
-    mutate(t_term       = ifelse(is.na(t_term), milp_instance$n_periods, t_term),
-           active_years = pmax(t_term - t_est, 1L),
-           denom        = tot_value * active_years)
-  
-  all_costs <- bind_rows(sc_est, sc_harv, sc_main, sc_opp,
-                         sc_tr_raw, sc_tr_pre, sc_stor) %>%
-    group_by(site_id) %>%
-    summarise(total_cost = sum(cost, na.rm = TRUE), .groups = "drop")
-  
-  # ── Durchschnittliche Distanzen je Standort ────────────────────────────────
-  # (a) Ø Distanz Standort → Hub (gewichtet nach Liefervolumen)
-  avg_dist_to_hub <- ext$Xij %>%
-    mutate(dist_km = mapply(function(i, j) dist_ij_m[i, j], site_id, hub_id)) %>%
-    group_by(site_id) %>%
-    summarise(avg_dist_hub_km = weighted.mean(dist_km, w = pmax(value, 0), na.rm = TRUE),
-              .groups = "drop")
-  
-  # (b) Ø Distanz Hub → Kunden (anteilig auf Standort zurückgerechnet)
-  avg_dist_to_consumer <- ext$Xjk %>%
-    mutate(dist_km = mapply(function(j, k) dist_jk_m[j, k], hub_id, consumer_id)) %>%
-    left_join(hub_site_share, by = c("hub_id", "period"), relationship = "many-to-many") %>%
-    filter(!is.na(site_id), share > 0) %>%
-    group_by(site_id) %>%
-    summarise(avg_dist_consumer_km = weighted.mean(dist_km, w = pmax(share * value, 0), na.rm = TRUE),
-              .groups = "drop")
-  
-  # ── Weitere strukturelle Variablen ─────────────────────────────────────────
-  # (c) Ø Erntezyklus-Länge (Rotationsalter) je Standort
-  avg_rotation <- ext$z %>%
-    filter(arc_type == "harvest") %>%
-    mutate(cycle_len = t - s) %>%
-    group_by(site_id) %>%
-    summarise(avg_rotation_yr = sum(cycle_len*value/sum(value), na.rm = TRUE),
-              n_harvests       = n(),
-              .groups = "drop")
-  
-  # (d) Produktmix-Index: Anteil hochwertiger Biomasse (P1 Stämme) an Gesamtlieferung
-  p1_share <- ext$Xij %>%
-    group_by(site_id) %>%
-    summarise(
-      vol_total = sum(value, na.rm = TRUE),
-      vol_p1    = sum(value[p == 1], na.rm = TRUE),
-      .groups   = "drop"
-    ) %>%
-    mutate(share_p1 = ifelse(vol_total > 0, vol_p1 / vol_total, NA_real_)) %>%
-    select(site_id, share_p1, vol_total)
-  
-  # ── Zusammenführen ─────────────────────────────────────────────────────────
-  result_df <- site_norm %>%
-    left_join(site_revenue,          by = "site_id") %>%
-    left_join(all_costs,             by = "site_id") %>%
-    left_join(avg_dist_to_hub,       by = "site_id") %>%
-    left_join(avg_dist_to_consumer,  by = "site_id") %>%
-    left_join(avg_rotation,          by = "site_id") %>%
-    left_join(p1_share,              by = "site_id") %>%
-    mutate(
-      profit_ha_yr         = (coalesce(revenue, 0) - coalesce(total_cost, 0)) / denom,
-      scenario             = scenario_name,
-      opp_cost             = scen_opp,
-      cost_level           = scen_cost,
-      revenue_level        = scen_revenue
-    ) %>%
-    select(site_id, scenario, profit_ha_yr,
-           opp_cost, cost_level, revenue_level,
-           avg_dist_hub_km, avg_dist_consumer_km,
-           avg_rotation_yr, n_harvests, share_p1,
-           area_ha, active_years, n_sites)
-  
-  return(result_df)
-}
-
-# ── 2. Benchmark + alle Sensitivitätsszenarien zusammenführen ────────────────
-res_bench_full <- list(
-  setting       = list(opp = 150, cost = 1.0, revenue = 1.0),
-  milp_instance = milp_instance,
-  ext           = ext,
-  result        = result
-)
-
-df_bench <- extract_site_profit(res_bench_full, "Bench.")
-
-df_sens <- purrr::imap_dfr(
-  res.sens.list,
-  ~ extract_site_profit(.x, scenario_name = paste0("S", .y))
-)
-
 df_lm <- bind_rows(df_bench, df_sens) %>%
   filter(!is.na(profit_ha_yr),
          !is.na(avg_dist_hub_km),
          !is.na(avg_dist_consumer_km))
 
+# ── 1. Data preparation ───────────────────────────────────────────────────────
+# Ensure grouping factors are proper factors
+df_mod <- df_lm %>%
+  mutate(
+    site_id_f    = factor(site_id),
+    scenario_f   = factor(scenario),
+    # Centre continuous predictors for numerical stability and interpretability
+    opp_cost_c   = scale(opp_cost_site,       center = TRUE, scale = FALSE)[,1],
+    rot_c        = scale(avg_rotation_yr, center = TRUE, scale = FALSE)[,1],
+    log_area     = log(area_ha),
+    log_area_c   = scale(log(area_ha),   center = TRUE, scale = FALSE)[,1],
+    avg_rotation_yr_c   = scale(avg_rotation_yr,   center = TRUE, scale = FALSE)[,1]
+  )
+
 # ── 3. Lineares Modell ────────────────────────────────────────────────────────
 # Vollständiges Modell inkl. Interaktion opp_cost × cost_level
 lm_full <- lm(
   profit_ha_yr ~
-    opp_cost *               # Opportunitätskosten (€/ha)
-    cost_level *             # Allgemeines Kostenniveau (Szenario-Multiplikator)
-    revenue_level +          # Preisniveau (Szenario-Multiplikator)
-    avg_rotation_yr +        # Ø Rotationslänge (Erntealter in Jahren)
-    log(area_ha),             # Standortgröße (log-transformiert wegen Skaleneffekten)
-  data = df_lm
+    opp_cost_site +            # Opportunitätskosten (€/ha)
+    cost_level +            # Allgemeines Kostenniveau (Szenario-Multiplikator)
+    revenue_level +         # Preisniveau (Szenario-Multiplikator)
+    avg_rotation_yr +     # Ø Rotationslänge (Erntealter in Jahren)
+    log_area,             # Standortgröße (log-transformiert wegen Skaleneffekten)
+  data = df_mod
 )
 
 
@@ -3155,6 +3143,165 @@ sum.lm <- summary(lm_full)
 tmp.lm.adj.r2 <- round(sum.lm$adj.r.squared*100,0)
 tmp.lm.nobs <- sum.lm$df[2]
 tmp.lm.sigma <- round(sum.lm$sigma,0)
+
+# Fixed effects mirror lm_full but use centred predictors
+lmm_full <- lmer(
+  profit_ha_yr ~
+    opp_cost_site + 
+    cost_level + 
+    revenue_level +
+    avg_rotation_yr +
+    log_area +
+#    (1 | site_id_f) +     # site-level random intercept
+    (1 | scenario_f),     # scenario-level random intercept
+  data    = df_mod,
+  REML    = TRUE,         # REML for variance component estimation
+  control = lmerControl(optimizer = "bobyqa",
+                        optCtrl   = list(maxfun = 2e5))
+)
+
+
+# ── 4. Generalised Additive Model (GAM) ──────────────────────────────────────
+# Smooth terms for:
+#   s(opp_cost_c)   : nonlinear opportunity cost effect (expected threshold behaviour)
+#   s(rot_c)        : nonlinear rotation-age effect (Gompertz upstream → nonlinear profit)
+#   s(log_area_c)   : nonlinear scale economies
+# Parametric terms retain scenario multipliers (discrete factor-like variables)
+# bs="tp" (thin-plate regression splines) — default, scale-invariant
+# k=5 chosen conservatively given the scenario grid resolution
+
+gam_full <- gam(
+  profit_ha_yr ~
+    s(opp_cost_site,  bs = "tp", k = 5) +
+    s(avg_rotation_yr,       bs = "tp", k = 5) +
+    s(log_area,  bs = "tp", k = 5) +
+    cost_level + revenue_level ,       # parametric interaction (discrete multipliers)
+  data   = df_mod,
+  method = "REML",                    # REML smoothness selection
+  family = gaussian()
+)
+
+
+# ── 5. Generalised Additive Mixed Model (GAMM) ───────────────────────────────
+# Combines GAM smooth terms with mixed-effects random structure via mgcv::gam
+# Site-level random intercept modelled as a factor smooth: s(site_id_f, bs="re")
+# This is equivalent to (1|site_id_f) in lmer notation within the mgcv framework
+
+gamm_full <- gam(
+  profit_ha_yr ~
+    s(opp_cost_site,  bs = "tp", k = 5) +
+    s(avg_rotation_yr, bs = "tp", k = 5) +
+    s(log_area,  bs = "tp", k = 5) +
+    cost_level + revenue_level + 
+    #s(site_id_f,   bs = "re")# +       # site random intercept
+    s(scenario_f,  bs = "re")
+    ,         # scenario random intercept
+  data   = df_mod,
+  method = "REML",
+  family = gaussian()
+)
+
+
+# ── 6. Model Comparison ───────────────────────────────────────────────────────
+
+# 6a. Information criteria table
+# Note: AIC for lmer uses ML (not REML) — refit with ML for fair comparison
+lmm_full_ml  <- refitML(lmm_full)
+#lmm_slope_ml <- refitML(lmm_slope)
+
+aic_tab <- data.frame(
+  Model = c("OLS (baseline)", "LMM (random intercepts)",
+ "GAM"),
+  K     = c(
+    length(coef(lm_full)),
+    attr(logLik(lmm_full_ml),  "df"),
+    sum(gam_full$edf) + 1
+  ),
+  LogLik = c(
+    as.numeric(logLik(lm_full)),
+    as.numeric(logLik(lmm_full_ml)),
+    as.numeric(logLik(gam_full))
+    ),
+  AIC = c(
+    AIC(lm_full),
+    AIC(lmm_full_ml),
+    AIC(gam_full)
+  ),
+  BIC = c(
+    BIC(lm_full),
+    BIC(lmm_full_ml),       # approximate
+    BIC(gam_full)
+  )
+) %>%
+  mutate(
+    delta_AIC = AIC - min(AIC),
+    AIC_weight = exp(-0.5 * delta_AIC) / sum(exp(-0.5 * delta_AIC)),
+    across(c(LogLik, AIC, BIC, delta_AIC), ~ round(.x, 2)),
+    AIC_weight = round(AIC_weight, 3),
+    K          = round(K, 1)
+  ) %>%
+  arrange(AIC)
+
+# 6b. R² comparison
+r2_ols  <- summary(lm_full)$r.squared
+r2_lmm  <- MuMIn::r.squaredGLMM(lmm_full)   # returns marginal + conditional R²
+r2_gam  <- summary(gam_full)$r.sq
+
+r2_tab <- data.frame(
+  Model         = c("OLS", "LMM", "GAM"),
+  R2_marginal   = c(r2_ols,
+                    r2_lmm[1, "R2m"],
+                    r2_gam),
+  R2_conditional = c(r2_ols,              # OLS has no random structure
+                     r2_lmm[1, "R2c"],
+                     NA_real_)
+) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
+
+# 6c. Likelihood ratio tests for LMM random structure
+#lrt_slope_vs_intercept <- anova(lmm_full_ml, lmm_slope_ml)
+
+
+# ── 7. Output: AIC comparison table ──────────────────────────────────────────
+aic_tab %>%
+  kbl(
+    format    = "latex",
+    booktabs  = TRUE,
+    escape    = FALSE,
+    caption   = paste0(
+      "Model comparison by information criteria. $K$: effective degrees of freedom ",
+      "(edf for GAM/GAMM); $\\Delta$AIC: AIC difference relative to best model; ",
+      "AIC weight: Akaike weight. Models ranked by ascending AIC."
+    ),
+    col.names = c("Model", "$K$", "Log-Lik.", "AIC", "BIC",
+                  "$\\Delta$AIC", "AIC weight"),
+    label     = "tab-model-comparison",
+    align     = c("l", "r", "r", "r", "r", "r", "r")
+  ) %>%
+  kable_styling(
+    font_size     = 8,
+    latex_options = c("hold_position", "scale_down")
+  ) %>%
+  row_spec(1, bold = TRUE)   # highlight best model
+
+
+# ── 8. Output: R² table ───────────────────────────────────────────────────────
+r2_tab %>%
+  kbl(
+    format    = "latex",
+    booktabs  = TRUE,
+    escape    = FALSE,
+    caption   = paste0(
+      "$R^2$ comparison across models. For the LMM, marginal $R^2$ reflects ",
+      "variance explained by fixed effects only; conditional $R^2$ includes ",
+      "random effects. GAM/GAMM report deviance-based $R^2$."
+    ),
+    col.names = c("Model", "$R^2$ marginal", "$R^2$ conditional"),
+    label     = "tab-r2-comparison",
+    align     = c("l", "r", "r")
+  ) %>%
+  kable_styling(font_size = 8, latex_options = "hold_position")
+
 
 ```
 
@@ -3297,8 +3444,6 @@ tidy(lm_full, conf.int = TRUE) %>%
                 latex_options = c("hold_position", "scale_down"))
 ```
 
-
-
 ```{r lm-efffect-plot, echo=F, message=FALSE, warning=FALSE}
 # ── 6. Koeffizientenplot ──────────────────────────────────────────────────────
 tidy(lm_full, conf.int = TRUE) %>%
@@ -3320,7 +3465,6 @@ tidy(lm_full, conf.int = TRUE) %>%
   theme(legend.position  = "bottom",
         panel.grid.minor = element_blank())
 ```
-
 
 
 # Conclusion
@@ -3654,8 +3798,6 @@ kpi_all %>%
 par(mfrow = c(2, 2), mar = c(4, 4, 2, 1))
 plot(lm_full, which = 1:4, cex = 0.5, col = "grey40")
 ```
-
-
 
 
 
