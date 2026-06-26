@@ -438,102 +438,102 @@ ext$S <- ext$S %>%
   rename(hub_id = j, period = t)
 
 # sensitivity analysis ##########################################
+# 
+# scen.mat <- expand.grid(opp = c(75, 150, 300), cost.log = c(.5, 1.5, 2), cost.est = c(.5, 1.5, 2), revenue = c(.5, .75, 1.25)  )
+# nb.rep <- 10
+# 
+# res.sens.list <- vector("list", nrow(scen.mat)*nb.rep)
+# 
+# for(i in seq_len(nrow(scen.mat))){
+#   tmp.setting <- list(
+#     opp = scen.mat$opp[i], 
+#     cost.log = scen.mat$cost.log[i],
+#     cost.est = scen.mat$cost.est[i],
+#     revenue = scen.mat$revenue[i]
+#     )
+# 
+#   # storage cost
+#   tmp.storages <- storages
+#   tmp.storages$c_stor <- tmp.storages$c_stor * tmp.setting$cost.log
+#   # consumers
+#   tmp.consumers <- consumers
+#   tmp.consumers$P1 <- tmp.consumers$P1 * tmp.setting$revenue
+#   tmp.consumers$P2 <- tmp.consumers$P2 * tmp.setting$revenue
+#   tmp.consumers$P3 <- tmp.consumers$P3 * tmp.setting$revenue
+# 
+#   # # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
+#   tmp.params_obj <- list(
+#        n_periods  = 40,
+#        max_age    = 20L,    # A_max: LRAFS upper rotation bound
+#        min_age    =  3L,    # A_min: SRAFS lower rotation bound
+#        c_tr_raw   = 0.08 * tmp.setting$cost.log,   # €/(t·km)  raw biomass  site → storage
+#        c_tr_pre   = 0.06 * tmp.setting$cost.log   # €/(t·km)  chips        storage → consumer
+#      )
+#     #
+# 
+#   for(j in seq_len(nb.rep)){
+#     tmp.c.opp.vec <- rnorm(nrow(sites_clustered), 1, .75)
+# 
+#     # opportunity cost
+#     tmp.c.opp.vec <- tmp.c.opp.vec * tmp.setting$opp
+# 
+#     # site details
+#     tmp.sites_clustered <- sites_clustered %>%
+#        mutate(
+#          C_est  = 2500 * tmp.setting$cost.est,   # €/ha  establishment 
+#          C_harv = 150 * tmp.setting$cost.log,    # €/ha  harvest cost  
+#          C_main = 10 * tmp.setting$opp/150, #  €/ha  maintenance cost  
+#          C_opp  = tmp.c.opp.vec #  €/ha  opportunity cost  
+#        )
+#     #
+#     tmp.data_obj <- list(
+#        sites    = tmp.sites_clustered,
+#        storages = tmp.storages,
+#        consumers = tmp.consumers,
+#        dist_ij  = afs_workspace$dist_ij_clust,
+#        dist_jk  = dist_jk,
+#        yields_by_age = yields_by_age
+#      )
+# 
+#     # rescale demands in consumers to tons
+#     tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")]  <- tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")] * 1000
+# 
+#     # ── 4. generate instance ─────────────────────────────────────
+#     tmp.milp_instance <- build_optimization_instance(
+#         data         = tmp.data_obj,
+#         params       = tmp.params_obj
+#       )
+#     #
+#     tmp.result <- build_and_solve_afs_lp_v11(
+#        tmp.milp_instance,
+#        gurobi_params = list(
+#          TimeLimit = 600),
+#        verbose = TRUE)
+#     #
+# 
+#     tmp.ext <- tmp.result$solution_vector
+#     #  renaming
+# 
+#     tmp.ext$Xjk <- tmp.ext$Xjk %>%
+#       rename(src_product = p, del_product = q, period = t, hub_id = j, consumer_id = k)
+# 
+#     tmp.ext$Xij <- tmp.ext$Xij %>%
+#       rename(period = t, site_id = i, hub_id = j)
+# 
+#     tmp.ext$z <- tmp.ext$z %>%
+#       rename(arc_type = type, site_id = i )
+# 
+#     tmp.ext$S <- tmp.ext$S %>%
+#       rename(hub_id = j, period = t)
+# 
+#     res.sens.list[[(i-1)*nb.rep + j]] <- list(setting = tmp.setting, milp_instance = tmp.milp_instance, ext = tmp.ext)
+#   }
+# 
+# }
+# 
+# saveRDS(res.sens.list, "res_sens_list_lp_v11.rds")
 
-scen.mat <- expand.grid(opp = c(75, 150, 300), cost.log = c(.5, 1.5, 2), cost.est = c(.5, 1.5, 2), revenue = c(.5, .75, 1.25)  )
-nb.rep <- 10
-
-res.sens.list <- vector("list", nrow(scen.mat)*nb.rep)
-
-for(i in seq_len(nrow(scen.mat))){
-  tmp.setting <- list(
-    opp = scen.mat$opp[i], 
-    cost.log = scen.mat$cost.log[i],
-    cost.est = scen.mat$cost.est[i],
-    revenue = scen.mat$revenue[i]
-    )
-
-  # storage cost
-  tmp.storages <- storages
-  tmp.storages$c_stor <- tmp.storages$c_stor * tmp.setting$cost.log
-  # consumers
-  tmp.consumers <- consumers
-  tmp.consumers$P1 <- tmp.consumers$P1 * tmp.setting$revenue
-  tmp.consumers$P2 <- tmp.consumers$P2 * tmp.setting$revenue
-  tmp.consumers$P3 <- tmp.consumers$P3 * tmp.setting$revenue
-
-  # # ── 3. PARAMS OBJECT — all scalar parameters ──────────────────────────────────
-  tmp.params_obj <- list(
-       n_periods  = 40,
-       max_age    = 20L,    # A_max: LRAFS upper rotation bound
-       min_age    =  3L,    # A_min: SRAFS lower rotation bound
-       c_tr_raw   = 0.08 * tmp.setting$cost.log,   # €/(t·km)  raw biomass  site → storage
-       c_tr_pre   = 0.06 * tmp.setting$cost.log   # €/(t·km)  chips        storage → consumer
-     )
-    #
-
-  for(j in seq_len(nb.rep)){
-    tmp.c.opp.vec <- rnorm(nrow(sites_clustered), 1, .75)
-
-    # opportunity cost
-    tmp.c.opp.vec <- tmp.c.opp.vec * tmp.setting$opp
-
-    # site details
-    tmp.sites_clustered <- sites_clustered %>%
-       mutate(
-         C_est  = 2500 * tmp.setting$cost.est,   # €/ha  establishment 
-         C_harv = 150 * tmp.setting$cost.log,    # €/ha  harvest cost  
-         C_main = 10 * tmp.setting$opp/150, #  €/ha  maintenance cost  
-         C_opp  = tmp.c.opp.vec #  €/ha  opportunity cost  
-       )
-    #
-    tmp.data_obj <- list(
-       sites    = tmp.sites_clustered,
-       storages = tmp.storages,
-       consumers = tmp.consumers,
-       dist_ij  = afs_workspace$dist_ij_clust,
-       dist_jk  = dist_jk,
-       yields_by_age = yields_by_age
-     )
-
-    # rescale demands in consumers to tons
-    tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")]  <- tmp.data_obj$consumers[,c("demand_P1","demand_P2","demand_P3")] * 1000
-
-    # ── 4. generate instance ─────────────────────────────────────
-    tmp.milp_instance <- build_optimization_instance(
-        data         = tmp.data_obj,
-        params       = tmp.params_obj
-      )
-    #
-    tmp.result <- build_and_solve_afs_lp_v11(
-       tmp.milp_instance,
-       gurobi_params = list(
-         TimeLimit = 600),
-       verbose = TRUE)
-    #
-
-    tmp.ext <- tmp.result$solution_vector
-    #  renaming
-
-    tmp.ext$Xjk <- tmp.ext$Xjk %>%
-      rename(src_product = p, del_product = q, period = t, hub_id = j, consumer_id = k)
-
-    tmp.ext$Xij <- tmp.ext$Xij %>%
-      rename(period = t, site_id = i, hub_id = j)
-
-    tmp.ext$z <- tmp.ext$z %>%
-      rename(arc_type = type, site_id = i )
-
-    tmp.ext$S <- tmp.ext$S %>%
-      rename(hub_id = j, period = t)
-
-    res.sens.list[[(i-1)*nb.rep + j]] <- list(setting = tmp.setting, milp_instance = tmp.milp_instance, ext = tmp.ext)
-  }
-
-}
-
-saveRDS(res.sens.list, "res_sens_list_lp_v11.rds")
-
-#res.sens.list <- readRDS("res_sens_list_lp_v11.rds")
+res.sens.list <- readRDS("res_sens_list_lp_v11.rds")
 
 
 # ── 2. Benchmark + alle Sensitivitätsszenarien zusammenführen ────────────────
