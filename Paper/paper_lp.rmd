@@ -3363,6 +3363,7 @@ gam_area <- mgcv::gam(
     s(opp_cost, k = 2, bs = "cr") +
     s(cost_log_level, k = 2, bs = "cr") +
     s(cost_est_level, k = 2, bs = "cr") +
+    te(cost_log_level, cost_est_level, k = 4) +
     s(revenue_level, k = 2, bs = "cr"),
   data   = df_scen_area,
   method = "REML",
