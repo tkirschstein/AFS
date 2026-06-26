@@ -145,9 +145,10 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
   setting       <- res$setting
   
   # Szenario-Parameter
-  scen_opp     <- if (!any(is.na(setting))) setting$opp     else 150
-  scen_cost    <- if (!any(is.na(setting))) setting$cost    else 1.0
-  scen_revenue <- if (!any(is.na(setting))) setting$revenue else 1.0
+  scen_opp      <- if (!any(is.na(setting))) setting$opp      else 150
+  scen_cost_log <- if (!any(is.na(setting))) setting$cost.log else 1.0   
+  scen_cost_est <- if (!any(is.na(setting))) setting$cost.est else 1.0   
+  scen_revenue  <- if (!any(is.na(setting))) setting$revenue  else 1.0
   
   # Aktive Standorte
   active_site_ids <- ext$z %>%
@@ -313,12 +314,13 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
       profit_ha_yr         = (coalesce(revenue, 0) - coalesce(total_cost, 0)) / denom,
       scenario             = scenario_name,
       opp_cost             = scen_opp,
-      cost_level           = scen_cost,
+      cost_log_level       = scen_cost_log,   # renamed: was cost_level
+      cost_est_level       = scen_cost_est,   # new
       revenue_level        = scen_revenue,
       opp_cost_site        = C_opp
     ) %>%
     select(site_id, scenario, profit_ha_yr,
-           opp_cost, opp_cost_site, cost_level, revenue_level,
+           opp_cost, opp_cost_site, cost_log_level, cost_est_level, revenue_level,
            avg_dist_hub_km, avg_dist_consumer_km,
            avg_rotation_yr, n_harvests, share_p1,
            area_ha, active_years, n_sites)
@@ -535,10 +537,9 @@ ext$S <- ext$S %>%
 
 res.sens.list <- readRDS("res_sens_list_lp_v11.rds")
 
-
 # ── 2. Benchmark + alle Sensitivitätsszenarien zusammenführen ────────────────
 res_bench_full <- list(
-  setting       = list(opp = 150, cost = 1.0, revenue = 1.0),
+  setting       = list(opp = 150, cost.log = 1.0, cost.est = 1.0, revenue = 1.0),
   milp_instance = milp_instance,
   ext           = ext,
   result        = result
@@ -546,11 +547,14 @@ res_bench_full <- list(
 
 df_bench <- extract_site_profit(res_bench_full, "Bench.")
 
+df_bench <- df_bench %>% mutate(opp_cost = opp_cost/150)
+
 df_sens <- purrr::imap_dfr(
   res.sens.list,
   ~ extract_site_profit(.x, scenario_name = paste0("S", .y))
 )
 
+df_sens <- df_sens %>% mutate(opp_cost = opp_cost/150)
 
 ```
 
@@ -3124,41 +3128,43 @@ df_mod <- df_lm %>%
     avg_rotation_yr_c   = scale(avg_rotation_yr,   center = TRUE, scale = FALSE)[,1]
   )
 
-# ── 3. Lineares Modell ────────────────────────────────────────────────────────
-# Vollständiges Modell inkl. Interaktion opp_cost × cost_level
-lm_full <- lm(
-  profit_ha_yr ~
-    opp_cost_site +            # Opportunitätskosten (€/ha)
-    cost_level +            # Allgemeines Kostenniveau (Szenario-Multiplikator)
-    revenue_level +         # Preisniveau (Szenario-Multiplikator)
-    avg_rotation_yr +     # Ø Rotationslänge (Erntealter in Jahren)
-    log_area,             # Standortgröße (log-transformiert wegen Skaleneffekten)
-  data = df_mod
-)
-
-
-
-sum.lm <- summary(lm_full)
-
-tmp.lm.adj.r2 <- round(sum.lm$adj.r.squared*100,0)
-tmp.lm.nobs <- sum.lm$df[2]
-tmp.lm.sigma <- round(sum.lm$sigma,0)
-
-# Fixed effects mirror lm_full but use centred predictors
-lmm_full <- lmer(
-  profit_ha_yr ~
-    opp_cost_site + 
-    cost_level + 
-    revenue_level +
-    avg_rotation_yr +
-    log_area +
-#    (1 | site_id_f) +     # site-level random intercept
-    (1 | scenario_f),     # scenario-level random intercept
-  data    = df_mod,
-  REML    = TRUE,         # REML for variance component estimation
-  control = lmerControl(optimizer = "bobyqa",
-                        optCtrl   = list(maxfun = 2e5))
-)
+# # ── 3. Lineares Modell ────────────────────────────────────────────────────────
+# # Vollständiges Modell inkl. Interaktion opp_cost × cost_level
+# lm_full <- lm(
+#   profit_ha_yr ~
+#     opp_cost_site +            # Opportunitätskosten (€/ha)
+#     cost_log_level +      
+#     cost_est_level + 
+#     revenue_level +         # Preisniveau (Szenario-Multiplikator)
+#     avg_rotation_yr +     # Ø Rotationslänge (Erntealter in Jahren)
+#     log_area,             # Standortgröße (log-transformiert wegen Skaleneffekten)
+#   data = df_mod
+# )
+# 
+# 
+# 
+# sum.lm <- summary(lm_full)
+# 
+# tmp.lm.adj.r2 <- round(sum.lm$adj.r.squared*100,0)
+# tmp.lm.nobs <- sum.lm$df[2]
+# tmp.lm.sigma <- round(sum.lm$sigma,0)
+# 
+# # Fixed effects mirror lm_full but use centred predictors
+# lmm_full <- lmer(
+#   profit_ha_yr ~
+#     opp_cost_site + 
+#     cost_log_level +      
+#     cost_est_level + 
+#     revenue_level +
+#     avg_rotation_yr +
+#     log_area +
+# #    (1 | site_id_f) +     # site-level random intercept
+#     (1 | scenario_f),     # scenario-level random intercept
+#   data    = df_mod,
+#   REML    = TRUE,         # REML for variance component estimation
+#   control = lmerControl(optimizer = "bobyqa",
+#                         optCtrl   = list(maxfun = 2e5))
+# )
 
 
 # ── 4. Generalised Additive Model (GAM) ──────────────────────────────────────
@@ -3175,133 +3181,115 @@ gam_full <- gam(
     s(opp_cost_site,  bs = "tp", k = 5) +
     s(avg_rotation_yr,       bs = "tp", k = 5) +
     s(log_area,  bs = "tp", k = 5) +
-    cost_level + revenue_level ,       # parametric interaction (discrete multipliers)
+    cost_log_level +      
+    cost_est_level + 
+    revenue_level ,       # parametric interaction (discrete multipliers)
   data   = df_mod,
   method = "REML",                    # REML smoothness selection
   family = gaussian()
 )
 
 
-# ── 5. Generalised Additive Mixed Model (GAMM) ───────────────────────────────
-# Combines GAM smooth terms with mixed-effects random structure via mgcv::gam
-# Site-level random intercept modelled as a factor smooth: s(site_id_f, bs="re")
-# This is equivalent to (1|site_id_f) in lmer notation within the mgcv framework
-
-gamm_full <- gam(
-  profit_ha_yr ~
-    s(opp_cost_site,  bs = "tp", k = 5) +
-    s(avg_rotation_yr, bs = "tp", k = 5) +
-    s(log_area,  bs = "tp", k = 5) +
-    cost_level + revenue_level + 
-    #s(site_id_f,   bs = "re")# +       # site random intercept
-    s(scenario_f,  bs = "re")
-    ,         # scenario random intercept
-  data   = df_mod,
-  method = "REML",
-  family = gaussian()
-)
-
-
 # ── 6. Model Comparison ───────────────────────────────────────────────────────
-
-# 6a. Information criteria table
-# Note: AIC for lmer uses ML (not REML) — refit with ML for fair comparison
-lmm_full_ml  <- refitML(lmm_full)
-#lmm_slope_ml <- refitML(lmm_slope)
-
-aic_tab <- data.frame(
-  Model = c("OLS (baseline)", "LMM (random intercepts)",
- "GAM"),
-  K     = c(
-    length(coef(lm_full)),
-    attr(logLik(lmm_full_ml),  "df"),
-    sum(gam_full$edf) + 1
-  ),
-  LogLik = c(
-    as.numeric(logLik(lm_full)),
-    as.numeric(logLik(lmm_full_ml)),
-    as.numeric(logLik(gam_full))
-    ),
-  AIC = c(
-    AIC(lm_full),
-    AIC(lmm_full_ml),
-    AIC(gam_full)
-  ),
-  BIC = c(
-    BIC(lm_full),
-    BIC(lmm_full_ml),       # approximate
-    BIC(gam_full)
-  )
-) %>%
-  mutate(
-    delta_AIC = AIC - min(AIC),
-    AIC_weight = exp(-0.5 * delta_AIC) / sum(exp(-0.5 * delta_AIC)),
-    across(c(LogLik, AIC, BIC, delta_AIC), ~ round(.x, 2)),
-    AIC_weight = round(AIC_weight, 3),
-    K          = round(K, 1)
-  ) %>%
-  arrange(AIC)
-
-# 6b. R² comparison
-r2_ols  <- summary(lm_full)$r.squared
-r2_lmm  <- MuMIn::r.squaredGLMM(lmm_full)   # returns marginal + conditional R²
-r2_gam  <- summary(gam_full)$r.sq
-
-r2_tab <- data.frame(
-  Model         = c("OLS", "LMM", "GAM"),
-  R2_marginal   = c(r2_ols,
-                    r2_lmm[1, "R2m"],
-                    r2_gam),
-  R2_conditional = c(r2_ols,              # OLS has no random structure
-                     r2_lmm[1, "R2c"],
-                     NA_real_)
-) %>%
-  mutate(across(where(is.numeric), ~ round(.x, 3)))
+# 
+# # 6a. Information criteria table
+# # Note: AIC for lmer uses ML (not REML) — refit with ML for fair comparison
+# lmm_full_ml  <- refitML(lmm_full)
+# #lmm_slope_ml <- refitML(lmm_slope)
+# 
+# aic_tab <- data.frame(
+#   Model = c("OLS (baseline)", "LMM (random intercepts)",
+#  "GAM"),
+#   K     = c(
+#     length(coef(lm_full)),
+#     attr(logLik(lmm_full_ml),  "df"),
+#     sum(gam_full$edf) + 1
+#   ),
+#   LogLik = c(
+#     as.numeric(logLik(lm_full)),
+#     as.numeric(logLik(lmm_full_ml)),
+#     as.numeric(logLik(gam_full))
+#     ),
+#   AIC = c(
+#     AIC(lm_full),
+#     AIC(lmm_full_ml),
+#     AIC(gam_full)
+#   ),
+#   BIC = c(
+#     BIC(lm_full),
+#     BIC(lmm_full_ml),       # approximate
+#     BIC(gam_full)
+#   )
+# ) %>%
+#   mutate(
+#     delta_AIC = AIC - min(AIC),
+#     AIC_weight = exp(-0.5 * delta_AIC) / sum(exp(-0.5 * delta_AIC)),
+#     across(c(LogLik, AIC, BIC, delta_AIC), ~ round(.x, 2)),
+#     AIC_weight = round(AIC_weight, 3),
+#     K          = round(K, 1)
+#   ) %>%
+#   arrange(AIC)
+# 
+# # 6b. R² comparison
+# r2_ols  <- summary(lm_full)$r.squared
+# r2_lmm  <- MuMIn::r.squaredGLMM(lmm_full)   # returns marginal + conditional R²
+# r2_gam  <- summary(gam_full)$r.sq
+# 
+# r2_tab <- data.frame(
+#   Model         = c("OLS", "LMM", "GAM"),
+#   R2_marginal   = c(r2_ols,
+#                     r2_lmm[1, "R2m"],
+#                     r2_gam),
+#   R2_conditional = c(r2_ols,              # OLS has no random structure
+#                      r2_lmm[1, "R2c"],
+#                      NA_real_)
+# ) %>%
+#   mutate(across(where(is.numeric), ~ round(.x, 3)))
 
 # 6c. Likelihood ratio tests for LMM random structure
 #lrt_slope_vs_intercept <- anova(lmm_full_ml, lmm_slope_ml)
 
-
-# ── 7. Output: AIC comparison table ──────────────────────────────────────────
-aic_tab %>%
-  kbl(
-    format    = "latex",
-    booktabs  = TRUE,
-    escape    = FALSE,
-    caption   = paste0(
-      "Model comparison by information criteria. $K$: effective degrees of freedom ",
-      "(edf for GAM/GAMM); $\\Delta$AIC: AIC difference relative to best model; ",
-      "AIC weight: Akaike weight. Models ranked by ascending AIC."
-    ),
-    col.names = c("Model", "$K$", "Log-Lik.", "AIC", "BIC",
-                  "$\\Delta$AIC", "AIC weight"),
-    label     = "tab-model-comparison",
-    align     = c("l", "r", "r", "r", "r", "r", "r")
-  ) %>%
-  kable_styling(
-    font_size     = 8,
-    latex_options = c("hold_position", "scale_down")
-  ) %>%
-  row_spec(1, bold = TRUE)   # highlight best model
-
-
-# ── 8. Output: R² table ───────────────────────────────────────────────────────
-r2_tab %>%
-  kbl(
-    format    = "latex",
-    booktabs  = TRUE,
-    escape    = FALSE,
-    caption   = paste0(
-      "$R^2$ comparison across models. For the LMM, marginal $R^2$ reflects ",
-      "variance explained by fixed effects only; conditional $R^2$ includes ",
-      "random effects. GAM/GAMM report deviance-based $R^2$."
-    ),
-    col.names = c("Model", "$R^2$ marginal", "$R^2$ conditional"),
-    label     = "tab-r2-comparison",
-    align     = c("l", "r", "r")
-  ) %>%
-  kable_styling(font_size = 8, latex_options = "hold_position")
-
+# 
+# # ── 7. Output: AIC comparison table ──────────────────────────────────────────
+# aic_tab %>%
+#   kbl(
+#     format    = "latex",
+#     booktabs  = TRUE,
+#     escape    = FALSE,
+#     caption   = paste0(
+#       "Model comparison by information criteria. $K$: effective degrees of freedom ",
+#       "(edf for GAM/GAMM); $\\Delta$AIC: AIC difference relative to best model; ",
+#       "AIC weight: Akaike weight. Models ranked by ascending AIC."
+#     ),
+#     col.names = c("Model", "$K$", "Log-Lik.", "AIC", "BIC",
+#                   "$\\Delta$AIC", "AIC weight"),
+#     label     = "tab-model-comparison",
+#     align     = c("l", "r", "r", "r", "r", "r", "r")
+#   ) %>%
+#   kable_styling(
+#     font_size     = 8,
+#     latex_options = c("hold_position", "scale_down")
+#   ) %>%
+#   row_spec(1, bold = TRUE)   # highlight best model
+# 
+# 
+# # ── 8. Output: R² table ───────────────────────────────────────────────────────
+# r2_tab %>%
+#   kbl(
+#     format    = "latex",
+#     booktabs  = TRUE,
+#     escape    = FALSE,
+#     caption   = paste0(
+#       "$R^2$ comparison across models. For the LMM, marginal $R^2$ reflects ",
+#       "variance explained by fixed effects only; conditional $R^2$ includes ",
+#       "random effects. GAM/GAMM report deviance-based $R^2$."
+#     ),
+#     col.names = c("Model", "$R^2$ marginal", "$R^2$ conditional"),
+#     label     = "tab-r2-comparison",
+#     align     = c("l", "r", "r")
+#   ) %>%
+#   kable_styling(font_size = 8, latex_options = "hold_position")
+# 
 
 ```
 
