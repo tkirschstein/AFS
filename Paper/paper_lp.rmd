@@ -317,13 +317,14 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
       cost_log_level       = scen_cost_log,   # renamed: was cost_level
       cost_est_level       = scen_cost_est,   # new
       revenue_level        = scen_revenue,
-      opp_cost_site        = C_opp
+      opp_cost_site        = C_opp,
+      area_afs             = tot_value
     ) %>%
     select(site_id, scenario, profit_ha_yr,
            opp_cost, opp_cost_site, cost_log_level, cost_est_level, revenue_level,
            avg_dist_hub_km, avg_dist_consumer_km,
            avg_rotation_yr, n_harvests, share_p1,
-           area_ha, active_years, n_sites)
+           area_ha, area_afs, active_years, n_sites)
   
   return(result_df)
 }
@@ -3292,6 +3293,121 @@ gam_full <- gam(
 # 
 
 ```
+
+
+```{r lm-site-profit-sensitivity2, echo=FALSE, message=FALSE, warning=FALSE, cache=T}
+
+# ── 0. Prepare modelling data ─────────────────────────────────────────────────
+# Combine benchmark and sensitivity runs; add normalised scenario-level area
+df_model <- bind_rows(df_bench , df_sens) %>%
+  # site-level area as share of its super-site (area_ha already in extract_site_profit output)
+  mutate(
+    # log-transform skewed continuous predictors for better GAM smoothing
+    log_area_afs          = log1p(area_afs),
+    log_dist_hub         = log1p(avg_dist_hub_km),
+    log_dist_consumer    = log1p(avg_dist_consumer_km),
+    # ensure numeric scenario parameters are present (from updated extract_site_profit)
+    opp_cost             = as.numeric(opp_cost),
+    cost_log_level       = as.numeric(cost_log_level),
+    cost_est_level       = as.numeric(cost_est_level),
+    revenue_level        = as.numeric(revenue_level)
+  ) %>%
+  filter(
+    is.finite(profit_ha_yr),
+    is.finite(avg_dist_hub_km),
+    is.finite(avg_rotation_yr),
+    area_ha > 0
+  )
+
+# ── 1. GAM: relative profit per site (€/ha/yr) ───────────────────────────────
+# Smooth terms for all scenario parameters and key structural site variables.
+# cost is now split into cost_log_level (logistics) and cost_est_level (establishment).
+# te() tensor-product interaction captures the joint logistics × establishment surface.
+
+gam_profit <- mgcv::gam(
+  profit_ha_yr ~
+    s(opp_cost_site,        k = 5, bs = "cr") +   # opportunity cost scaler (relative)
+    cost_log_level +   # logistics cost scaler
+    cost_est_level +   # establishment cost scaler
+    revenue_level +   # revenue scaler
+    s(avg_dist_hub_km, k = 5, bs = "cr") +   # site → hub distance
+    s(avg_rotation_yr, k = 5, bs = "cr") +   # mean harvest cycle length
+    s(log_area_afs,     k = 4, bs = "cr"),    # site size (log-scale)
+  data   = df_model,
+  method = "REML",
+  family = gaussian()
+)
+
+# ── 2. GAM: total AFS area dedicated per scenario replicate ──────────────────
+# Aggregate to scenario level: sum active area across all sites per scenario run.
+# Each row in df_model is one site × scenario; sum area_ha to scenario level,
+# join back the (constant-within-scenario) parameter values.
+
+df_scen_area <- df_model %>%
+  group_by(scenario, opp_cost, cost_log_level, cost_est_level, revenue_level) %>%
+  summarise(
+    total_area_afs  = sum(area_afs, na.rm = TRUE),  # weighted by activity
+    n_active_sites = n_distinct(site_id),
+    ave_opp_cost  = mean(opp_cost_site),
+    .groups        = "drop"
+  ) %>%
+  filter(is.finite(total_area_afs), total_area_afs > 0) %>%
+  mutate(log_total_area = log1p(total_area_afs))
+
+# GAM on scenario-level total AFS area.
+# A Gamma(link="log") family is appropriate: area is strictly positive and
+# right-skewed across scenarios.
+gam_area <- mgcv::gam(
+  total_area_afs ~
+    #s(ave_opp_cost,        k = 2, bs = "cr") +
+    s(opp_cost, k = 2, bs = "cr") +
+    s(cost_log_level, k = 2, bs = "cr") +
+    s(cost_est_level, k = 2, bs = "cr") +
+    s(revenue_level, k = 2, bs = "cr"),
+  data   = df_scen_area,
+  method = "REML",
+  family = Gamma(link = "log")
+)
+
+# ── 3. Model summaries ────────────────────────────────────────────────────────
+# Profit GAM
+gam_profit_summary <- broom::tidy(gam_profit, parametric = FALSE) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  rename(Term = term, `edf` = edf, `Ref.df` = ref.df,
+         `F statistic` = statistic, `p-value` = p.value)
+
+# Area GAM
+gam_area_summary <- broom::tidy(gam_area, parametric = FALSE) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  rename(Term = term, `edf` = edf, `Ref.df` = ref.df,
+         `F statistic` = statistic, `p-value` = p.value)
+
+# ── 4. R² and model fit ───────────────────────────────────────────────────────
+r2_profit <- summary(gam_profit)$r.sq
+r2_area   <- summary(gam_area)$r.sq
+dev_profit <- round(summary(gam_profit)$dev.expl * 100, 1)
+dev_area   <- round(summary(gam_area)$dev.expl   * 100, 1)
+
+# ── 5. Smooth effects plots (gratia) ─────────────────────────────────────────
+p_profit_smooths <- gratia::draw(gam_profit,
+                                  residuals  = FALSE,
+                                  rug        = FALSE,
+                                  ci_level   = 0.95,
+                                  nrow       = 3) &
+  theme_minimal(base_size = 8) &
+  theme(panel.grid.minor = element_blank())
+
+
+p_area_smooths <- gratia::draw(gam_area,
+                                residuals  = FALSE,
+                                rug        = FALSE,
+                                ci_level   = 0.95,
+                                nrow       = 2) &
+  theme_minimal(base_size = 8) &
+  theme(panel.grid.minor = element_blank())
+
+```
+
 
 ```{r fig-boxplot-scenario-profit, echo=FALSE, message=FALSE, warning=FALSE,    fig.cap="Verteilung des Standortprofits (€ ha yr) über die Ausprägungen der Szenarienparameter Opportunitätskosten (opp\\_cost), Kostenniveau (cost\\_level) und Preisniveau (revenue\\_level). Jeder Boxplot fasst alle aktiven Standorte aller Replikationen der jeweiligen Parameterkombination zusammen.",  fig.width = 7, fig.height = 5.5, dev = "pdf", out.width = "\\textwidth", cache = FALSE}
 
