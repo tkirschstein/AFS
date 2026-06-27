@@ -3410,118 +3410,185 @@ p_area_smooths <- gratia::draw(gam_area,
 ```
 
 
-```{r fig-boxplot-scenario-profit, echo=FALSE, message=FALSE, warning=FALSE,    fig.cap="Verteilung des Standortprofits (€ ha yr) über die Ausprägungen der Szenarienparameter Opportunitätskosten (opp\\_cost), Kostenniveau (cost\\_level) und Preisniveau (revenue\\_level). Jeder Boxplot fasst alle aktiven Standorte aller Replikationen der jeweiligen Parameterkombination zusammen.",  fig.width = 7, fig.height = 5.5, dev = "pdf", out.width = "\\textwidth", cache = FALSE}
+```{r fig-boxplot-scenario-profit, echo=FALSE, message=FALSE, warning=FALSE,   fig.cap="Distribution of site-level profit (\\euro~ha$^{-1}$~yr$^{-1}$) across scenario parameter levels. Each panel row shows one cost dimension (logistics cost scaler \\textit{cost.log}, top; establishment cost scaler \\textit{cost.est}, bottom); columns show opportunity cost level (\\textit{opp}, relative to baseline 150~\\euro~ha$^{-1}$~yr$^{-1}$). Fill colour encodes the revenue scaler. Each box summarises all active sites across all 10 stochastic replications of that parameter combination. The dashed horizontal line marks zero profit.",   fig.width = 7, fig.height = 6, dev = "pdf", out.width = "\\textwidth", cache = FALSE}
 
-df_lm %>%
+# ── Colour palette for revenue_level ─────────────────────────────────────────
+rev_cols <- c(
+  "0.5"  = "#d7191c",
+  "0.75" = "#fdae61",
+  "1.25" = "#2c7bb6"
+)
+rev_labels <- c("0.5"  = "Revenue ×0.5",
+                "0.75" = "Revenue ×0.75",
+                "1.25" = "Revenue ×1.25")
+
+# ── Prepare data: label factors clearly ──────────────────────────────────────
+df_plot_profit <- df_sens %>%
+  filter(is.finite(profit_ha_yr)) %>%
   mutate(
-    opp_cost_lbl     = factor(
-      paste0("Opp. cost: ", opp_cost, " €/ha"),
-      levels = paste0("Opp. cost: ", sort(unique(opp_cost)), " €/ha")
-    ),
-    cost_level_lbl   = factor(
-      paste0("Cost ×", cost_level),
-      levels = paste0("Cost ×", sort(unique(cost_level)))
-    ),
-    revenue_level_lbl = factor(
-      paste0("Rev. ×", revenue_level),
-      levels = paste0("Rev. ×", sort(unique(revenue_level)))
-    )
-  ) %>%
-  ggplot(aes(x = revenue_level_lbl, y = profit_ha_yr, fill = cost_level_lbl)) +
-  geom_hline(yintercept = 0, colour = "grey50", linetype = "dashed", linewidth = 0.4) +
-  geom_boxplot(
-    outlier.size   = 0.8,
-    outlier.alpha  = 0.5,
-    linewidth      = 0.4,
-    width          = 0.65,
-    position       = position_dodge(width = 0.75)
-  ) +
-  facet_wrap(~ opp_cost_lbl, ncol = 2, scales = "fixed") +
-  scale_fill_manual(
-    name   = "Cost level",
-    values = c("Cost ×0.5" = "#74c476", "Cost ×2"   = "#fd8d3c")
-  ) +
-  scale_y_continuous(
-    name   = "Profit (€ ha yr)",
-    labels = scales::label_number(big.mark = ",")
-  ) +
-  labs(x = "Revenue level") +
-  theme_minimal(base_size = 9) +
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor   = element_blank(),
-    strip.text         = element_text(face = "bold", size = 8),
-    legend.position    = "bottom",
-    legend.key.size    = unit(0.4, "cm"),
-    legend.text        = element_text(size = 7),
-    legend.title       = element_text(size = 7.5, face = "bold")
+    opp_lbl      = factor(paste0("Opp. ×", opp_cost),
+                          levels = paste0("Opp. ×", sort(unique(opp_cost)))),
+    revenue_lbl  = factor(as.character(revenue_level),
+                          levels = c("0.5", "0.75", "1.25")),
+    cost_log_lbl = factor(paste0("×", cost_log_level),
+                          levels = paste0("×", sort(unique(cost_log_level)))),
+    cost_est_lbl = factor(paste0("×", cost_est_level),
+                          levels = paste0("×", sort(unique(cost_est_level))))
   )
+
+# ── Panel A: profit by logistics cost (cost_log_level) ───────────────────────
+p_log <- ggplot(df_plot_profit,
+                aes(x     = cost_log_lbl,
+                    y     = profit_ha_yr,
+                    fill  = revenue_lbl)) +
+  geom_hline(yintercept = 0, linetype = "dashed",
+             colour = "grey40", linewidth = 0.45) +
+  geom_boxplot(
+    outlier.size   = 0.35,
+    outlier.alpha  = 0.35,
+    linewidth      = 0.35,
+    position       = position_dodge(width = 0.78),
+    width          = 0.68
+  ) +
+  facet_wrap(~ opp_lbl, nrow = 1, labeller = label_value) +
+  scale_fill_manual(values = rev_cols, labels = rev_labels,
+                    name = "Revenue scaler") +
+  scale_y_continuous(labels = scales::label_number(big.mark = ",")) +
+  labs(
+    x     = "Logistics cost scaler (cost.log)",
+    y     = expression("Profit ("*euro*" ha"^{-1}*" yr"^{-1}*")"),
+    title = "(a) Logistics cost dimension"
+  ) +
+  theme_minimal(base_size = 8) +
+  theme(
+    strip.text       = element_text(size = 7.5, face = "bold"),
+    legend.position  = "none",
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank()
+  )
+
+# ── Panel B: profit by establishment cost (cost_est_level) ───────────────────
+p_est <- ggplot(df_plot_profit,
+                aes(x    = cost_est_lbl,
+                    y    = profit_ha_yr,
+                    fill = revenue_lbl)) +
+  geom_hline(yintercept = 0, linetype = "dashed",
+             colour = "grey40", linewidth = 0.45) +
+  geom_boxplot(
+    outlier.size   = 0.35,
+    outlier.alpha  = 0.35,
+    linewidth      = 0.35,
+    position       = position_dodge(width = 0.78),
+    width          = 0.68
+  ) +
+  facet_wrap(~ opp_lbl, nrow = 1, labeller = label_value) +
+  scale_fill_manual(values = rev_cols, labels = rev_labels,
+                    name = "Revenue scaler") +
+  scale_y_continuous(labels = scales::label_number(big.mark = ",")) +
+  labs(
+    x     = "Establishment cost scaler (cost.est)",
+    y     = expression("Profit ("*euro*" ha"^{-1}*" yr"^{-1}*")"),
+    title = "(b) Establishment cost dimension"
+  ) +
+  theme_minimal(base_size = 8) +
+  theme(
+    strip.text         = element_text(size = 7.5, face = "bold"),
+    legend.position    = "bottom",
+    legend.key.size    = unit(0.38, "cm"),
+    legend.text        = element_text(size = 7),
+    legend.title       = element_text(size = 7.5, face = "bold"),
+    panel.grid.minor   = element_blank(),
+    panel.grid.major.x = element_blank()
+  )
+
+# ── Assemble ──────────────────────────────────────────────────────────────────
+p_log / p_est + plot_layout(heights = c(1, 1))
 ```
 
+```{r fig-boxplot-scenario-area, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Distribution of total AFS area dedicated per scenario replicate (ha) across parameter levels. Each panel row shows one cost dimension (logistics cost scaler \\textit{cost.log}, top; establishment cost scaler \\textit{cost.est}, bottom); columns show opportunity cost level. Fill colour encodes the revenue scaler. Each box summarises the 10 stochastic replications of that parameter combination. Higher values indicate broader spatial activation of the AFS potential.", fig.width = 7, fig.height = 6, dev = "pdf", out.width = "\\textwidth", cache = FALSE}
 
-```{r fig-boxplot-scenario-area, echo=FALSE, message=FALSE, warning=FALSE,    fig.cap="Verteilung der bewirtschafteten AFS-Fläche (ha) über die Ausprägungen der Szenarienparameter Opportunitätskosten (opp\\_cost), Kostenniveau (cost\\_level) und Preisniveau (revenue\\_level). Jeder Boxplot fasst die Summe der aktiven Standortflächen je Replikation und Parameterkombination zusammen. Höhere Werte zeigen eine breitere räumliche Aktivierung des AFS-Potenzials an.", fig.width = 7, fig.height = 5.5, dev = "pdf", out.width = "\\textwidth", cache = FALSE}
-
-df_lm %>%
-  # Aggregiere pro Szenario-Replikation: Gesamtfläche aller aktiven Standorte
-  group_by(scenario, opp_cost, cost_level, revenue_level) %>%
-  summarise(
-    total_area_ha = sum(area_ha, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
+# ── Aggregate to scenario level: total active AFS area per replicate ──────────
+# area_afs = tot_value (established ha) from extract_site_profit; sum over sites
+df_scen_area_plot <- df_sens %>%
+  group_by(scenario, opp_cost, cost_log_level, cost_est_level, revenue_level) %>%
+  summarise(total_area_ha = sum(area_afs, na.rm = TRUE),
+            .groups = "drop") %>%
+  filter(is.finite(total_area_ha)) %>%
   mutate(
-    opp_cost_lbl      = factor(
-      paste0("Opp. cost: ", opp_cost, " €/ha"),
-      levels = paste0("Opp. cost: ", sort(unique(opp_cost)), " €/ha")
-    ),
-    cost_level_lbl    = factor(
-      paste0("Cost ×", cost_level),
-      levels = paste0("Cost ×", sort(unique(cost_level)))
-    ),
-    revenue_level_lbl = factor(
-      paste0("Rev. ×", revenue_level),
-      levels = paste0("Rev. ×", sort(unique(revenue_level)))
-    )
-  ) %>%
-  ggplot(aes(x = revenue_level_lbl, y = total_area_ha, fill = cost_level_lbl)) +
-  geom_boxplot(
-    outlier.size  = 0.8,
-    outlier.alpha = 0.5,
-    linewidth     = 0.4,
-    width         = 0.65,
-    position      = position_dodge(width = 0.75)
-  ) +
-  geom_jitter(
-    aes(colour = cost_level_lbl),
-    position      = position_jitterdodge(jitter.width = 0.15, dodge.width = 0.75),
-    size          = 1.0,
-    alpha         = 0.55,
-    show.legend   = FALSE
-  ) +
-  facet_wrap(~ opp_cost_lbl, ncol = 2, scales = "fixed") +
-  scale_fill_manual(
-    name   = "Cost level",
-    values = c("Cost ×0.5" = "#74c476", "Cost ×2" = "#fd8d3c")
-  ) +
-  scale_colour_manual(
-    values = c("Cost ×0.5" = "#41ab5d", "Cost ×2" = "#e6550d")
-  ) +
-  scale_y_continuous(
-    name   = "Bewirtschaftete AFS-Fläche (ha)",
-    labels = scales::label_number(big.mark = ",")
-  ) +
-  labs(x = "Revenue level") +
-  theme_minimal(base_size = 9) +
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor   = element_blank(),
-    strip.text         = element_text(face = "bold", size = 8),
-    legend.position    = "bottom",
-    legend.key.size    = unit(0.4, "cm"),
-    legend.text        = element_text(size = 7),
-    legend.title       = element_text(size = 7.5, face = "bold")
+    opp_lbl      = factor(paste0("Opp. ×", opp_cost),
+                          levels = paste0("Opp. ×", sort(unique(opp_cost)))),
+    revenue_lbl  = factor(as.character(revenue_level),
+                          levels = c("0.5", "0.75", "1.25")),
+    cost_log_lbl = factor(paste0("×", cost_log_level),
+                          levels = paste0("×", sort(unique(cost_log_level)))),
+    cost_est_lbl = factor(paste0("×", cost_est_level),
+                          levels = paste0("×", sort(unique(cost_est_level))))
   )
-```
 
+# ── Panel A: area by logistics cost ──────────────────────────────────────────
+p_area_log <- ggplot(df_scen_area_plot,
+                     aes(x    = cost_log_lbl,
+                         y    = total_area_ha,
+                         fill = revenue_lbl)) +
+  geom_boxplot(
+    outlier.size  = 0.5,
+    outlier.alpha = 0.45,
+    linewidth     = 0.35,
+    position      = position_dodge(width = 0.78),
+    width         = 0.68
+  ) +
+  facet_wrap(~ opp_lbl, nrow = 1, labeller = label_value) +
+  scale_fill_manual(values = rev_cols, labels = rev_labels,
+                    name = "Revenue scaler") +
+  scale_y_continuous(labels = scales::label_number(big.mark = ",")) +
+  labs(
+    x     = "Logistics cost scaler (cost.log)",
+    y     = "Total AFS area (ha)",
+    title = "(a) Logistics cost dimension"
+  ) +
+  theme_minimal(base_size = 8) +
+  theme(
+    strip.text         = element_text(size = 7.5, face = "bold"),
+    legend.position    = "none",
+    panel.grid.minor   = element_blank(),
+    panel.grid.major.x = element_blank()
+  )
+
+# ── Panel B: area by establishment cost ──────────────────────────────────────
+p_area_est <- ggplot(df_scen_area_plot,
+                     aes(x    = cost_est_lbl,
+                         y    = total_area_ha,
+                         fill = revenue_lbl)) +
+  geom_boxplot(
+    outlier.size  = 0.5,
+    outlier.alpha = 0.45,
+    linewidth     = 0.35,
+    position      = position_dodge(width = 0.78),
+    width         = 0.68
+  ) +
+  facet_wrap(~ opp_lbl, nrow = 1, labeller = label_value) +
+  scale_fill_manual(values = rev_cols, labels = rev_labels,
+                    name = "Revenue scaler") +
+  scale_y_continuous(labels = scales::label_number(big.mark = ",")) +
+  labs(
+    x     = "Establishment cost scaler (cost.est)",
+    y     = "Total AFS area (ha)",
+    title = "(b) Establishment cost dimension"
+  ) +
+  theme_minimal(base_size = 8) +
+  theme(
+    strip.text         = element_text(size = 7.5, face = "bold"),
+    legend.position    = "bottom",
+    legend.key.size    = unit(0.38, "cm"),
+    legend.text        = element_text(size = 7),
+    legend.title       = element_text(size = 7.5, face = "bold"),
+    panel.grid.minor   = element_blank(),
+    panel.grid.major.x = element_blank()
+  )
+
+# ── Assemble ──────────────────────────────────────────────────────────────────
+p_area_log / p_area_est + plot_layout(heights = c(1, 1))
+```
 
 
 ```{r lm-table, echo=F, message=FALSE, warning=FALSE, cache=F, fig.cap="Effect plot of explaining variables of OLS regression model.", fig.width = 5.5, fig.height = 4, dev = "pdf", out.width = "0.72\\textwidth"}
