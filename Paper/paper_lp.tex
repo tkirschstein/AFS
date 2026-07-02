@@ -1,65 +1,44 @@
-\documentclass[preprint,review,1p,authoryear]{elsarticle} %review=doublespace preprint=single 5p=2 column
-%%% Begin My package additions %%%%%%%%%%%%%%%%%%%
-
-\usepackage[hyphens]{url}
-
-  \journal{Journal of Industrial Ecology} % Sets Journal name
-
-\usepackage{graphicx}
-%%%%%%%%%%%%%%%% end my additions to header
-
-\usepackage[T1]{fontenc}
-\usepackage{lmodern}
-\usepackage{amssymb,amsmath}
-% TODO: Currently lineno needs to be loaded after amsmath because of conflict
-% https://github.com/latex-lineno/lineno/issues/5
-\usepackage{lineno} % add
-  \linenumbers % turns line numbering on
-\usepackage{ifxetex,ifluatex}
-\usepackage{fixltx2e} % provides \textsubscript
-% use upquote if available, for straight quotes in verbatim environments
-\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
-\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
-  \usepackage[utf8]{inputenc}
-\else % if luatex or xelatex
-  \usepackage{fontspec}
-  \ifxetex
-    \usepackage{xltxtra,xunicode}
-  \fi
-  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
-  \newcommand{\euro}{€}
-\fi
-% use microtype if available
-\IfFileExists{microtype.sty}{\usepackage{microtype}}{}
-\usepackage[]{natbib}
-\bibliographystyle{plainnat}
-
-\ifxetex
-  \usepackage[setpagesize=false, % page size defined by xetex
-              unicode=false, % unicode breaks when used with xetex
-              xetex]{hyperref}
-\else
-  \usepackage[unicode=true]{hyperref}
-\fi
-\hypersetup{breaklinks=true,
-            bookmarks=true,
-            pdfauthor={},
-            pdftitle={Startegic Plannig of Agroforestry Supply Chains},
-            colorlinks=false,
-            urlcolor=blue,
-            linkcolor=magenta,
-            pdfborder={0 0 0}}
-
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+  preprint,review,1p,authoryear]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
 \setcounter{secnumdepth}{5}
-% Pandoc toggle for numbering sections (defaults to be off)
-
-
-% tightlist command for lists without linebreak
-\providecommand{\tightlist}{%
-  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-
-% From pandoc table feature
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
 \usepackage{longtable,booktabs,array}
+\newcounter{none} % for unnumbered tables
 \usepackage{calc} % for calculating minipage widths
 % Correct order of tables after \paragraph or \subparagraph
 \usepackage{etoolbox}
@@ -69,9 +48,57 @@
 % Allow footnotes in longtable head/foot
 \IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
 \makesavenoteenv{longtable}
-
-
-
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  % set entry spacing
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{array}
@@ -105,34 +132,32 @@
 \usepackage[normalem]{ulem}
 \usepackage{makecell}
 \usepackage{xcolor}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Startegic Plannig of Agroforestry Supply Chains},
+  pdfkeywords={Industrial symbiosis, Agroforestry, Biomass cascading, Bioeconomy network, supply chain optimisation, biobased production},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
 
-
+\title{Startegic Plannig of Agroforestry Supply Chains}
+\author{true}
+\date{2026-07-02}
 
 \begin{document}
+\maketitle
+\begin{abstract}
+Agroforestry systems that integrate fast-growing woody perennials into agricultural land form a structurally novel type of biological-industrial symbiosis: they simultaneously deliver multiple biomass fractions of differing quality to chemical, pulp-and-paper, and energy industries through a shared regional supply network, thereby substituting fossil feedstocks and storing biogenic carbon in long-lived products. Despite this environmental potential, the material flows through such networks are poorly understood because stand-level age dynamics, multi-fraction biomass composition, and product quality cascading across industrial sectors have never been jointly optimised. This paper presents the AFS-SCD model, a mixed-integer linear programming (MILP) formulation that endogenises agroforestry establishment timing and consecutive harvest scheduling through arc-based age-lag constraints, couples component-specific Gompertz yield functions for stem, branch, and residue fractions with a multi-echelon network design model, and implements a product quality cascade allocating biomass grades to chemical, pulp, and energy consumers within a unified framework. Applied to a real-world case study in the Saxony-Anhalt tri-state region of Germany --- a cluster of chemical and paper industries seeking bio-based feedstock transition --- the model identifies the profit-optimal spatial configuration, rotation lengths, and product allocation across a 40-year planning horizon. Sensitivity analyses across opportunity-cost, logistics-cost, and revenue scenarios reveal that product cascading is the dominant lever for AFS viability, that sites with opportunity costs above approximately 300 EUR per hectare per year are rarely activated, and that high-value stem allocation to chemical applications substantially outperforms energy-only offtake strategies. The findings demonstrate that integrated optimisation of biological production dynamics and industrial network design is essential for designing viable and cleaner agroforestry bioeconomy ecosystems.
+\end{abstract}
 
-
-\begin{frontmatter}
-
-  \title{Startegic Plannig of Agroforestry Supply Chains}
-    \author[Fraunhofer IKTS Center for Economics and Management of Materials, Leipziger Str. 70/71, 06108, Halle, GermanyHochschule RheinMain -- University of Applied Sciences and Arts, Wiesbaden Business School, Bleichstr. 44, 65183 Wiesbaden, Germany]{Thomas Kirschstein%
-  \corref{cor1}%
-  }
-   \ead{thomas.kirschstein@ikts.fraunhofer.de} 
-      \cortext[cor1]{Corresponding author}
-  
-  \begin{abstract}
-  Agroforestry systems that integrate fast-growing woody perennials into agricultural land form a structurally novel type of biological-industrial symbiosis: they simultaneously deliver multiple biomass fractions of differing quality to chemical, pulp-and-paper, and energy industries through a shared regional supply network, thereby substituting fossil feedstocks and storing biogenic carbon in long-lived products. Despite this environmental potential, the material flows through such networks are poorly understood because stand-level age dynamics, multi-fraction biomass composition, and product quality cascading across industrial sectors have never been jointly optimised. This paper presents the AFS-SCD model, a mixed-integer linear programming (MILP) formulation that endogenises agroforestry establishment timing and consecutive harvest scheduling through arc-based age-lag constraints, couples component-specific Gompertz yield functions for stem, branch, and residue fractions with a multi-echelon network design model, and implements a product quality cascade allocating biomass grades to chemical, pulp, and energy consumers within a unified framework. Applied to a real-world case study in the Saxony-Anhalt tri-state region of Germany --- a cluster of chemical and paper industries seeking bio-based feedstock transition --- the model identifies the profit-optimal spatial configuration, rotation lengths, and product allocation across a 40-year planning horizon. Sensitivity analyses across opportunity-cost, logistics-cost, and revenue scenarios reveal that product cascading is the dominant lever for AFS viability, that sites with opportunity costs above approximately 300 EUR per hectare per year are rarely activated, and that high-value stem allocation to chemical applications substantially outperforms energy-only offtake strategies. The findings demonstrate that integrated optimisation of biological production dynamics and industrial network design is essential for designing viable and cleaner agroforestry bioeconomy ecosystems.
-  \end{abstract}
-    \begin{keyword}
-    Industrial symbiosis \sep Agroforestry \sep Biomass cascading \sep Bioeconomy network \sep Material flow optimisation \sep 
-    Cleaner production
-  \end{keyword}
-  
- \end{frontmatter}
-
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
 \section{Introduction}\label{introduction}
 
-The industrial ecology of biobased economies depends on one central challenge: connecting primary biological production systems to multiple industrial sectors through networks that efficiently allocate biomass fractions of varying quality to their highest-value application --- the principle of industrial symbiosis applied to renewable material flows \citep{Hildebrandt2019}.
+The industrial ecology of biobased economies depends on connecting primary biological production systems to multiple industrial sectors through networks that efficiently allocate biomass fractions of varying quality to their highest-value application (Hildebrandt et al., 2019).
 Agroforestry systems (AFS) that deliberately integrate fast-growing woody
 perennials into agricultural land represent a structurally novel
 realisation of this principle. By co-producing stem wood suitable for
@@ -140,17 +165,17 @@ chemical and paper industry, branch wood suitable for pulping, and
 residue fractions suitable for energy generation, AFS create a
 multi-fraction feedstock that can simultaneously serve multiple
 industrial consumer sectors through a shared regional supply network
-\citep{Toensmeier2017_Carbon_Agroforestry}. This biological-industrial
+(Toensmeier, 2017). This biological-industrial
 symbiosis substitutes fossil feedstocks with renewable bio-based
 alternatives and stores biogenic carbon in long-lived material products
 --- a cascade strategy explicitly preferred over energetic use from a
-cleaner production perspective \citep{Huber2018_SRAFS_growth}.
+cleaner production perspective (Huber et al., 2018).
 
 Despite their ecological and industrial symbiosis potential, temperate
 AFS occupy only a marginal share of agricultural land in practice. In
 Germany, approximately 1,200 hectares of silvoarable AFS were
 established in 2025, accounting for barely 0.02\% of total agricultural
-land \citep{DEFAF}. This gap between potential and practice reflects an
+land (Deutscher Fachverband für Agroforstwirtschaft (DeFAF) e.V., 2026). This gap between potential and practice reflects an
 unresolved material flow planning problem: establishing AFS at regional
 scale requires coordinated decisions on stand establishment timing,
 multi-cycle harvest scheduling, and biomass fraction allocation across
@@ -159,7 +184,7 @@ through the age-dependent composition of harvested biomass. At short
 rotation ages, harvested biomass is dominated by residue and branch
 fractions of limited merchantability; at longer rotations, stem diameters
 surpass quality thresholds and the share of chemical- and paper-grade
-material rises markedly \citep{Huber2018_SRAFS_growth, Niemczyk2021_Poplar_Rotation}. The material flow structure of an
+material rises markedly (Huber et al., 2018; Niemczyk \& Thomas, 2021). The material flow structure of an
 AFS-based bioeconomy network therefore depends endogenously on the
 rotation strategy, which cannot be set independently of the product
 cascade and the industrial demand structure. Current biomass supply chain
@@ -167,7 +192,7 @@ models, reviewed in Section \ref{sec:lit-sc}, do not capture this
 coupling: they either treat biomass availability as an exogenous time
 series --- decoupling it from age-class dynamics --- or optimise a single
 downstream value chain rather than a multi-sector product cascade
-\citep{Zahraee2020_BSC_review, DeMeyer2016_tOPTIMASS}.
+(De Meyer et al., 2016; Zahraee et al., 2020).
 
 This paper closes that gap by developing the \textbf{AFS Supply Chain Design
 (AFS-SCD)} model, a mixed-integer linear programming (MILP) formulation
@@ -210,7 +235,7 @@ Agroforestry biomass systems, stand-level growth models, and biomass
 supply chain optimisation have each been studied extensively, but they
 are rarely combined in an integrated framework that links age-dependent
 stand dynamics to regional product-cascading value chains
-\citep{Zahraee2020_BSC_review, Sharma2013_BSC_review, Espinoza2017_Biorefinery_SC_review}. This section reviews (i)
+(Espinoza et al., 2017; Sharma et al., 2013; Zahraee et al., 2020). This section reviews (i)
 agroforestry systems with emphasis on system types, economics, and the
 cascading use of biomass as the primary revenue driver; (ii) biomass
 growth models at tree and stand level with explicit attention to the
@@ -223,7 +248,7 @@ identifying the modelling gap addressed in this paper.
 Agroforestry deliberately integrates woody perennials with crops and/or
 livestock on the same management unit, with the aim of enhancing
 productivity, profitability, and environmental performance
-\citep{Nair1993_IntroAgroforestry, Toensmeier2017_Carbon_Agroforestry}. In
+(Nair, 1993; Toensmeier, 2017). In
 the temperate zone, three distinct system types can be distinguished
 based on the spatial arrangement of trees and the rotation length at
 which woody biomass is harvested.
@@ -233,24 +258,24 @@ of fast-growing woody species covering the entire management unit, with
 planting densities of 8,000--20,000 cuttings\textasciitilde ha\(^{-1}\). After each
 harvest the root system regenerates without replanting. Rotation cycles
 are typically 3--7\textasciitilde years and total stand lifetime is 20--25\textasciitilde years
-\citep{Trnka2008_Poplar_SRF, Faasch2012_SRC_Economics}. SRCs are no AFSs in
+(Faasch \& Patenaude, 2012; Trnka et al., 2008). SRCs are no AFSs in
 the narrow sense, but it is helpful to benchmark biomass production.
 
 \textbf{Short-rotation agroforestry systems (SRAFS)} integrate SRC-type tree
 strips (typically 1--4 rows of the same fast-growing species like poplar
 or willow) into an otherwise arable field in an alley-cropping
 arrangement. Crop production continues in the inter-row strips
-\citep{Huber2018_SRAFS_growth, Graves2007_Agroforestry_Economics}. Thus,
+(Graves et al., 2007; Huber et al., 2018). Thus,
 tree strips typically cover 10--30\% of the total parcel area. Rotation
 lengths and total stand lifetime in SRAFS are comparable to SRCs. In
 SRAFS all trees are effectively edge trees, exposed to higher light and
 water availability than interior SRC trees. This boundary effect raises
 individual-tree biomass accumulation but also intensifies competition
-with adjacent crop rows \citep{Huber2018_SRAFS_growth}.
+with adjacent crop rows (Huber et al., 2018).
 
 \textbf{Long-rotation agroforestry systems (LRAFS)} use the same
 alley-cropping spatial structure as SRAFS but with rotation cycles of
-12--15\textasciitilde years or longer \citep{Graves2007_Agroforestry_Economics, Nair1993_IntroAgroforestry}. At this rotation length, individual trees
+12--15\textasciitilde years or longer (Graves et al., 2007; Nair, 1993). At this rotation length, individual trees
 develop substantial stem diameters and the proportion of high-value
 timber increases markedly, enabling premium material uses (veneer,
 sawlogs, engineered wood products) that are inaccessible in
@@ -273,15 +298,15 @@ substantial up-front costs and long-term opportunity costs against a
 diversified revenue stream. On the cost side, establishment requires
 site preparation, planting material, and planting labour, typically
 amounting to 1,500--3,500 \euro/ha for SRC or SRAFS
-\citep{Faasch2012_SRC_Economics, Testa2014_Poplar_Economics}. Recurrent
+(Faasch \& Patenaude, 2012; Testa et al., 2014). Recurrent
 harvest and refitting costs (machine hire, chipping, transport to
 roadside) add approximately 200--400 \euro/ha per rotation depending on
-stand density and equipment availability \citep{Testa2014_Poplar_Economics, Spinelli2009_SRC_Harvesting}. During the rotation, maintenance costs of
+stand density and equipment availability (Spinelli et al., 2009; Testa et al., 2014). During the rotation, maintenance costs of
 AFS arise on a yearly basis. Next to expenses for establishment,
 maintenance and harvesting, opportunity costs arise as no revenues from
 crops are generated on tree strips. In regions with fertile soils and
 high cereal prices, yearly crop revenues may sum up to 400--600 \euro/ha
-\citep{Faasch2012_SRC_Economics, Graves2007_Agroforestry_Economics}. Thus,
+(Faasch \& Patenaude, 2012; Graves et al., 2007). Thus,
 opportunity costs are often the dominant cost driver in SRAFS
 profitability analyses.
 
@@ -289,21 +314,21 @@ On the \textbf{benefit side}, the primary revenue of AFS is the sale of
 harvested woody biomass, whose magnitude depends critically on rotation
 length, species, and site productivity. For poplar-based SRAFS in
 Central Europe, typical yields range from 10 to 25 t of dry matter
-biomass per ha for typical rotation lengths \citep{Huber2018_SRAFS_growth, Niemczyk2021_Poplar_Rotation}. Additionally, positive crop-yield
+biomass per ha for typical rotation lengths (Huber et al., 2018; Niemczyk \& Thomas, 2021). Additionally, positive crop-yield
 effects in the inter-row strips of SRAFS and LRAFS may result. Tree rows
 act as windbreaks, reducing soil erosion and evapotranspiration; they
 provide partial shading that moderates heat stress during drought years;
 and their root systems may improve water retention in the topsoil
-\citep{Graves2007_Agroforestry_Economics, Grunewald2007_Robinia_AFS}.
+(Graves et al., 2007; Grünewald et al., 2007).
 Empirical measurements in Central European alley-cropping trials
 indicate that these microclimate effects can increase cereal yields in
 adjacent strips by 5--15\% relative to open-field controls, partially or
 fully compensating the loss of arable area occupied by the tree strips
-\citep{Graves2007_Agroforestry_Economics}. Beyond direct yield effects, AFS
+(Graves et al., 2007). Beyond direct yield effects, AFS
 deliver broader ecosystem services (like soil organic matter
 accumulation, carbon sequestration, biodiversity enhancement) that may
 lead to agri-environment subsidies and carbon credits
-\citep{Toensmeier2017_Carbon_Agroforestry, Faasch2012_SRC_Economics}.
+(Faasch \& Patenaude, 2012; Toensmeier, 2017).
 
 Nonetheless, economic attractiveness of AFS depends primarily on
 revenues of AFS biomass. Thereby, revenues are different for the types
@@ -313,19 +338,19 @@ digestion, which typically creates low prices per tonne of biomass.{[}REF{]}
 Alternatively, woody parts of the biomass (i.e., the stem and large
 branches) can also be used as pulp and paper grade material as well as
 feedstock for chemical industry or as timber achieving higher prices
-\citep{Lamers2015_Feedstock_Design} {[}EXTEND REFS{]}. Thus, fostering
+(Lamers et al., 2011) {[}EXTEND REFS{]}. Thus, fostering
 AFS establishment by maximizing economic returns from AFS biomass
 requires a strategic approach to product cascading that allocates
 different biomass fractions to the highest-value applications, while
 ensuring that the rotation length is aligned with the growth dynamics of
 the stand and the market demand for different biomass types
-\citep{Lamers2015_Feedstock_Design}.
+(Lamers et al., 2011).
 
 Thus, for making educated decisions on AFS establishment and harvesting,
 the expected biomass quantities at harvest for stem, branches, and
 residues need to be estimated. Thereby, the shares of the biomass types
 change with stand age. E.g.\textasciitilde the share of stem weight rises from roughly
-55\% at age 4 to over 75\% at age 10 \citep{Huber2018_SRAFS_growth, Testa2014_Poplar_Economics}. Therefore, in Section
+55\% at age 4 to over 75\% at age 10 (Huber et al., 2018; Testa et al., 2014). Therefore, in Section
 \ref{sec:lit-growth} growth modelling approaches are reviewed that
 capture the age-dependent growth dynamics of different biomass types in
 AFS.
@@ -334,7 +359,7 @@ AFS.
 
 Reliable estimation of stand-level biomass quantities and their age-dependent composition is a necessary prerequisite for any strategic
 analysis of AFS-based supply chains. Individual-tree biomass is commonly approximated by species-specific allometric power laws relating shoot
-dry matter to stem base diameter, and these relationships have been calibrated for Central European poplar clones under SRC and SRAFS conditions \citep{Huber2016_Allometric_SRAFS, Huber2018_SRAFS_growth}. For supply chain planning, however, the relevant quantity is stand-level
+dry matter to stem base diameter, and these relationships have been calibrated for Central European poplar clones under SRC and SRAFS conditions (Huber et al., 2016; Huber et al., 2018). For supply chain planning, however, the relevant quantity is stand-level
 biomass per hectare over a multi-decade rotation horizon, which requires a temporal growth model that captures the characteristic sigmoidal accumulation trajectory of woody biomass. Therefore, a set of variables is used summarized in \autoref{tab-notation-growth}.
 
 \subsubsection{Stand-level growth model}\label{stand-level-growth-model}
@@ -343,7 +368,7 @@ Stand-level aboveground and belowground dry biomass per hectare,
 \(M(t)\), accumulates in a right-skewed sigmoidal pattern with a
 relatively early inflection point, driven by rapid juvenile shoot growth
 followed by self-thinning and competitive deceleration as canopy closure
-intensifies \citep{Niemczyk2021_Poplar_Rotation, Testa2014_Poplar_Economics}. This trajectory is described by a Gompertz
+intensifies (Niemczyk \& Thomas, 2021; Testa et al., 2014). This trajectory is described by a Gompertz
 model: \begin{equation}
   M(t) \;=\; A(N) \cdot \exp\!\bigl(-\exp(-k \cdot (t - t_0))\bigr),
   \label{eq:gomp-stand}
@@ -351,14 +376,14 @@ model: \begin{equation}
 increment and \(k\) determines how quickly the stand approaches its
 site-specific asymptote \(A(N)\). For Central European poplar under
 medium-rotation AFS management (10--20 yr), analysing
-empirical data from \citet{Huber2018_SRAFS_growth},
-\citet{Niemczyk2021_Poplar_Rotation}, and \citet{Jha2018_Poplar_AFS_Biomass} yields parameter intervals of
+empirical data from Huber et al. (2018),
+Niemczyk \& Thomas (2021), and Jha (2018) yields parameter intervals of
 \(k \in [0.17,0.2]\) and \(t_0 \in [9,10]\) years, depending on local specifications of the AFS under study.
 Parameter \(t_0\) indicates an upper bound on the optimal rotation age
 as growth slows down or diminishes entirely close to this age.
 
 The asymptote \(A(N)\) depends largerly on planting density and can be modelled by a competition-density power law
-\citep{Shinozaki1961_CD_Effect}:
+(Kira et al., 1961):
 \begin{equation}
   A(N) \;=\; C_{\mathrm{site}} \cdot N^{1-\beta},
   \label{eq:A-density}
@@ -367,23 +392,14 @@ where \(C_{\mathrm{site}}\) encodes site quality, \(N\) indiactes tree density (
 \(\beta\) is the competition exponent. Equivalently, the per-tree
 asymptote \(A_{\mathrm{tree}}(N) = A(N)/N = C_{\mathrm{site}}\cdot N^{-\beta}\)
 decreases with density as individual trees have access to less growing
-space. Parameters \(C_{\mathrm{site}}\) and \(\beta\) are highly site- and specicies-specific. For Poplar clones under European conditions, \(\beta \in [0.3,0.5]\) and \(C_{\mathrm{site}} \in [4,6.5]\) \citep[\citet{Shinozaki1961_CD_Effect}]{Niemczyk2021_Poplar_Rotation}. \autoref{fig:growth-asymptote-functions} shows asymptote functions according to \eqref{eq:A-density} for advantageous and disadvantageous site conditions.
-
-\begin{figure}
-
-{\centering \includegraphics[width=\textwidth]{figures/growth-asymptote-functions-1} 
-
-}
-
-\caption{Tree-level and stand-level Gompertz asymptote functions $A_{tree}(N)$ and $A(N)$ for advanteguous ($N=4$, $\beta=-0.3$) and disadvantageous ($N=6.5$, $\beta=-0.5$) site conditions.}\label{fig:growth-asymptote-functions}
-\end{figure}
+space. Parameters \(C_{\mathrm{site}}\) and \(\beta\) are highly site- and specicies-specific. For Poplar clones under European conditions, \(\beta \in [0.3,0.5]\) and \(C_{\mathrm{site}} \in [4,6.5]\) Kira et al. (1961). \autoref{fig:growth-asymptote-functions} in the appendix shows asymptote functions according to \eqref{eq:A-density} for advantageous and disadvantageous site conditions.
 
 When assessing potential downstream application of AFS biomass, biomass fraction are to be defined meeting the requirements of downstream consumers. E.g. for timber and biochemical applications, stem diameters of AFS trees need to exceed a minimum threshold in order to qualify as a suitable feedstock. In the following three biomass fractions are distinguished: stems, branch wood, and residue. The stem fraction consists of stems with a diameter of at least 15 cm, while branch wood requires a diameter of at least 7 cm. The residue fraction comprises are smaler parts of the tree. To subdivide the total AFS biomass modelled by \eqref{eq:gomp-stand} into the three fractions depending on tree age, a logistic growth model is used:
 \begin{equation}
   q_p(t) \;=\; \frac{f_p}{1 + \exp\!\bigl(-r_p \cdot (t - t_{50,p})\bigr)},
   \label{eq:logistic-merch}
 \end{equation}
-where \(t_{50,p}\) is the age at which 50\% of compartment \(p\) biomass surpasses the diameter threshold and \(f_p\) denotes the asymptotic share of component \(p\) for mature trees. Using empirical data from data from \citet{Civitarese2019_Poplar_Harvest}, \citet{Jha2018_Poplar_AFS_Biomass} and \citet{Niemczyk2021_Poplar_Rotation}, \(r_{stem} = 0.467\),yr\(^{-1}\), \(t_{50,stem} = 8.19\) years, and \(f_{stem} = 0.75\) is estimated for the stem fraction (threshold \(d > 15\) cm) and \(r_{bran} = 0.698\) yr\(^{-1}\), \(t_{50,bran} = 7.55\),yr, and \(f_{bran} = 0.15\) for the branch fraction (diameter at least 7 cm at insertion). \autoref{fig:afs-model-functions} illustrates the development of the fraction shares over stand age.
+where \(t_{50,p}\) is the age at which 50\% of compartment \(p\) biomass surpasses the diameter threshold and \(f_p\) denotes the asymptotic share of component \(p\) for mature trees. Using empirical data from data from Civitarese et al. (2019), Jha (2018) and Niemczyk \& Thomas (2021), \(r_{stem} = 0.467\),yr\(^{-1}\), \(t_{50,stem} = 8.19\) years, and \(f_{stem} = 0.75\) is estimated for the stem fraction (threshold \(d > 15\) cm) and \(r_{bran} = 0.698\) yr\(^{-1}\), \(t_{50,bran} = 7.55\),yr, and \(f_{bran} = 0.15\) for the branch fraction (diameter at least 7 cm at insertion). \autoref{fig:afs-model-functions} illustrates the development of the fraction shares over stand age.
 
 \begin{figure}
 
@@ -398,7 +414,7 @@ Combining equations \eqref{eq:gomp-stand}--\eqref{eq:logistic-merch}, the dry bi
   \eta_p(t) \;=\; q_p(t)\cdot M(t),
   \label{eq:yield}
 \end{equation}
-with all non-merchantable fractions aggregated into the residue fraction. Fresh-weight yields at felling are obtained from dry matter yields via \(\eta_p^{\mathrm{fw}}(t) = \eta_p(t)/(1-\omega)\), where the moisture content at felling \(\omega = 0.55\) is taken from \citet{Civitarese2019_Poplar_Harvest}. \autoref{fig:afs-growth-curves} shows the fractions' stacked biomass quantities \(\eta_p(t)\) depending on stand age compared with empirical observations from \citet{Jha2018_Poplar_AFS_Biomass}
+with all non-merchantable fractions aggregated into the residue fraction. Fresh-weight yields at felling are obtained from dry matter yields via \(\eta_p^{\mathrm{fw}}(t) = \eta_p(t)/(1-\omega)\), where the moisture content at felling \(\omega = 0.55\) is taken from Civitarese et al. (2019). \autoref{fig:afs-growth-curves} shows the fractions' stacked biomass quantities \(\eta_p(t)\) depending on stand age compared with empirical observations from Jha (2018)
 
 \begin{figure}
 
@@ -413,19 +429,19 @@ with all non-merchantable fractions aggregated into the residue fraction. Fresh-
 
 The design and planning of biomass supply chains has attracted substantial research attention over the past two decades, driven by the
 need to ensure cost-efficient and sustainable feedstock provision for bioenergy and biorefinery applications. Several systematic reviews
-provide comprehensive overviews of this literature. \citet{Cambero2014_ForestBSC_Review} survey economic, social, and environmental
+provide comprehensive overviews of this literature. Cambero \& Sowlati (2014) survey economic, social, and environmental
 assessment and optimisation studies for forest biomass supply chains, identifying MILP as the dominant modelling approach and noting a growing
 trend towards multi-objective formulations integrating life cycle assessment.
 
-\citet{Yue2014_BSC_Optimization_Overview} review biomass-to-bioenergy and
+Yue et al. (2014) review biomass-to-bioenergy and
 biofuel supply chain models with a focus on multi-scale modelling,
 uncertainty treatment, and sustainability metrics, and conclude that the
 coupling of upstream feedstock dynamics with downstream network design
-remains an underexplored area. \citet{Malladi2018_BSC_Logistics} survey
+remains an underexplored area. Malladi \& Sowlati (2018) survey
 logistics-specific features of biomass supply chain models---seasonal
 availability, moisture content degradation, preprocessing steps---and
 highlight that most models treat biomass as a homogeneous commodity,
-neglecting quality differentiation. \citet{Zahraee2020_BSC_review} provide a
+neglecting quality differentiation. Zahraee et al. (2020) provide a
 recent meta-review of 140+ studies, confirming that cost minimisation is
 still the dominant objective, and that multi-product cascading
 formulations are rare.
@@ -437,7 +453,7 @@ scheduling, seasonal flows, inventory), and (iii) operational routing.
 The following paragraphs discuss key individual contributions and their
 specific methodological advances.
 
-\citet{Eksioglu2009_Biorefinery_SC} develop one of the earliest large-scale
+Ekşioğlu et al. (2009) develop one of the earliest large-scale
 MILP models for biomass-to-biorefinery supply chain design, integrating
 facility location, capacity sizing, and multimodal transport for
 lignocellulosic feedstocks. Their model minimises total system cost and
@@ -445,47 +461,47 @@ introduces binary facility-opening variables that have since become
 standard in the field. A key limitation, however, is that biomass supply
 is treated as an exogenous input, so feedstock availability is not
 endogenised as a function of land-use or growth decisions.
-\citet{Mansoornejad2013_Forest_Biorefinery_SC} extend the strategic design
+Mansoornejad et al. (2013) extend the strategic design
 perspective to forest biorefineries by integrating product portfolio
 design with supply chain configuration in a single MILP. Their model
 explicitly accounts for product conversion efficiencies along different
 processing pathways, enabling joint optimisation of process technology
 selection and logistics.
 
-\citet{DeMeyer2015_OPTIMASS} introduce the OPTIMASS framework, a generic MILP
+De Meyer et al. (2014) introduce the OPTIMASS framework, a generic MILP
 for biomass-based supply chain optimisation that explicitly models
 product quality cascades: higher-quality biomass classes can substitute
 for lower-quality demands downstream, whereas the reverse is infeasible.
 This cascade hierarchy, formalised through ordered product sets, is
 particularly relevant for woody biomass where stem, branch, and residue
 fractions command different market prices. The companion t-OPTIMASS
-extension \citep{DeMeyer2016_tOPTIMASS} incorporates temporal dynamics by
+extension (De Meyer et al., 2016) incorporates temporal dynamics by
 explicitly representing biomass growth and regeneration over multiple
 periods, enabling simultaneous optimisation of harvest timing and
 network flows. However, in both OPTIMASS formulations the growth
 dynamics are represented as exogenous time-series rather than as
 age-structured stand models, so rotation-length decisions and
 age-dependent biomass quality are not endogenised.
-\citet{Arabi2019_Microalgae_Biobutanol_SC} demonstrate multi-period MILP
+Arabi et al. (2019) demonstrate multi-period MILP
 extensions for bio-based supply chains with production dynamics, but
 focus on microalgae rather than woody biomass and do not address product
 quality cascades.
 
-\citet{Sharma2013_BSC_review} identify supply-side uncertainty (yield
+Sharma et al. (2013) identify supply-side uncertainty (yield
 variability, seasonal availability, moisture content) as the most
 critical source of risk in biomass supply chains. In response, a strand
 of literature has developed stochastic and robust optimisation
-extensions. \citet{Zahraee2020_BSC_review} document that two-stage stochastic
+extensions. Zahraee et al. (2020) document that two-stage stochastic
 MILP and robust optimisation approaches now account for roughly 30\% of
 the modelling literature, with biomass yield uncertainty and price
 volatility as the dominant stochastic parameters.
 
 Biomass supply chain research focusing specifically on agroforestry or
 SRC contexts is comparatively sparse.
-\citet{Espinoza2017_Biorefinery_SC_review} note that most supply chain models
+Espinoza et al. (2017) note that most supply chain models
 assume continuous feedstock availability and do not represent the
 periodic harvest cycles characteristic of coppice systems.
-\citet{Lamers2015_Feedstock_Design} analyse feedstock design principles for
+Lamers et al. (2011) analyse feedstock design principles for
 lignocellulosic supply chains and argue that the allocation of different
 biomass fractions to valorisation pathways---product cascading---is a key
 lever for economic viability, yet is rarely optimised jointly with
@@ -839,14 +855,14 @@ energy-only offtake strategies.
 
 Methodologically, the AFS-SCD model bridges the gap between stand-level
 growth modelling and regional supply chain optimisation identified in
-the literature \citep{Zahraee2020_BSC_review, Lamers2015_Feedstock_Design}.
+the literature (Lamers et al., 2011; Zahraee et al., 2020).
 The age-lag constraint structure generalises to other perennial biomass
 crops with periodic coppice cycles, such as willow or black locust, and
 to long-rotation silvoarable systems in which rotation length is a
 strategic variable. The model is extensible to stochastic settings by
 replacing deterministic yield coefficients with scenario-weighted
 counterparts or by incorporating robust optimisation over yield
-uncertainty intervals \citep{Sharma2013_BSC_review}.
+uncertainty intervals (Sharma et al., 2013).
 
 Several limitations point to directions for future research. First,
 consumer demand is treated as exogenous and time-invariant; endogenising
@@ -862,6 +878,15 @@ or constraints would support a more comprehensive sustainability
 evaluation, consistent with the cleaner production framing of this work.
 
 \section{Appendix}\label{appendix}
+
+\begin{figure}
+
+{\centering \includegraphics[width=\textwidth]{figures/growth-asymptote-functions-1} 
+
+}
+
+\caption{Tree-level and stand-level Gompertz asymptote functions $A_{tree}(N)$ and $A(N)$ for advanteguous ($N=4$, $\beta=-0.3$) and disadvantageous ($N=6.5$, $\beta=-0.5$) site conditions.}\label{fig:growth-asymptote-functions}
+\end{figure}
 
 \begin{table}[!h]
 \centering
@@ -950,7 +975,92 @@ consumer  28 & 18.5 & – & – & 27.5 & – & –\\
 \caption{Total production quantity of biomass types and its industrial usage over planning horizon (in tons).}\label{fig:fig-results-harvest-gantt}
 \end{figure}
 
-\bibliography{references.bib}
+\protect\phantomsection\label{refs}
+\begin{CSLReferences}{1}{0}
+\bibitem[\citeproctext]{ref-Arabi2019_Microalgae_Biobutanol_SC}
+Arabi, M., Yaghoubi, S., \& Tajik, H. (2019). Optimal design of a microalgae-based biofuel supply chain with CO2 reduction and hydrogen production. \emph{Computers \& Chemical Engineering}, \emph{130}, 106530. \url{https://doi.org/10.1016/j.compchemeng.2019.106530}
 
+\bibitem[\citeproctext]{ref-Cambero2014_ForestBSC_Review}
+Cambero, C., \& Sowlati, T. (2014). Assessment and optimization of forest biomass supply chains from economic, social and environmental perspectives---a review of literature. \emph{Renewable and Sustainable Energy Reviews}, \emph{36}, 62--73. \url{https://doi.org/10.1016/j.rser.2014.04.041}
+
+\bibitem[\citeproctext]{ref-Civitarese2019_Poplar_Harvest}
+Civitarese, V., Acampora, A., Sperandio, G., Assirelli, A., \& Picchio, R. (2019). Production of wood pellets from poplar trees managed as coppices with different harvesting cycles. \emph{Energies}, \emph{12}(15), 2973. \url{https://doi.org/10.3390/en12152973}
+
+\bibitem[\citeproctext]{ref-DeMeyer2015_OPTIMASS}
+De Meyer, A., Cattrysse, D., Rasinmäki, J., \& Van Orshoven, J. (2014). Methods to optimise the design and management of biomass-for-bioenergy supply chains: {A} review. \emph{Renewable and Sustainable Energy Reviews}, \emph{31}, 657--670. \url{https://doi.org/10.1016/j.rser.2013.12.036}
+
+\bibitem[\citeproctext]{ref-DeMeyer2016_tOPTIMASS}
+De Meyer, A., Cattrysse, D., \& Van Orshoven, J. (2016). A generic mathematical model to optimise strategic and tactical decisions in biomass-based supply chains ({OPTIMASS}). \emph{European Journal of Operational Research}, \emph{249}(1), 293--307. \url{https://doi.org/10.1016/j.ejor.2015.08.003}
+
+\bibitem[\citeproctext]{ref-DEFAF}
+Deutscher Fachverband für Agroforstwirtschaft (DeFAF) e.V. (2026). \emph{Annual review of the {Agroforestry Map of Germany} 2025}. \url{https://agroforst-info.de/wp-content/uploads/2026/02/DeFAF-2026-Annual-review-of-the-Agroforestry-Map-of-Germany-2025.pdf}
+
+\bibitem[\citeproctext]{ref-Eksioglu2009_Biorefinery_SC}
+Ekşioğlu, S. D., Acharya, A., Leightley, L. E., \& Arora, S. (2009). Analyzing the design and management of biomass-to-biorefinery supply chain. \emph{Computers \& Industrial Engineering}, \emph{57}(4), 1342--1352. \url{https://doi.org/10.1016/j.cie.2009.07.003}
+
+\bibitem[\citeproctext]{ref-Espinoza2017_Biorefinery_SC_review}
+Espinoza, V., Bautista, S., Narvaez, P. C., Alfaro, M., \& Camargo, M. (2017). Sustainability assessment to support governmental biodiesel policy in {Colombia}: {A} system dynamics model. \emph{Journal of Cleaner Production}, \emph{141}, 1145--1163. \url{https://doi.org/10.1016/j.jclepro.2016.09.168}
+
+\bibitem[\citeproctext]{ref-Faasch2012_SRC_Economics}
+Faasch, R. J., \& Patenaude, G. (2012). The economics of short rotation coppice in {Germany}. \emph{Biomass and Bioenergy}, \emph{45}, 27--40. \url{https://doi.org/10.1016/j.biombioe.2012.04.012}
+
+\bibitem[\citeproctext]{ref-Graves2007_Agroforestry_Economics}
+Graves, A. R., Burgess, P. J., Liagre, F., Pisanelli, A., Paris, P., Moreno, G., Bellido, M., Mayus, M., Postma, M., Schindler, B., Mantzanas, K., \& Dupraz, C. (2007). Development and application of bio-economic modelling to compare silvoarable, arable, and forestry systems in three {European} countries. \emph{Ecological Engineering}, \emph{29}(4), 434--449. \url{https://doi.org/10.1016/j.ecoleng.2006.09.018}
+
+\bibitem[\citeproctext]{ref-Grunewald2007_Robinia_AFS}
+Grünewald, H., Böcker, R., Schneider, B. U., Bens, O., \& Hüttl, R. F. (2007). Biomass production of black locust ({Robinia pseudoacacia} {L}.) short rotation plantations in {Germany}: Growth and economics of different clones and management practices. \emph{Bioresource Technology}, \emph{98}(2), 281--286. \url{https://doi.org/10.1016/j.biortech.2006.01.004}
+
+\bibitem[\citeproctext]{ref-Hildebrandt2019}
+Hildebrandt, J., O'Keeffe, S., Bezama, A., \& Thrän, D. (2019). Revealing the environmental advantages of industrial symbiosis in wood-based bioeconomy networks: An assessment from a life cycle perspective. \emph{Journal of Industrial Ecology}, \emph{23}(4), 808--822. \url{https://doi.org/10.1111/jiec.12818}
+
+\bibitem[\citeproctext]{ref-Huber2018_SRAFS_growth}
+Huber, G., Amann, C., Hülsbergen, K.-J., \& Schmid, H. (2018). Yield potential of tree species in organic and conventional short-rotation agroforestry systems in {Southern Germany}. \emph{Heliyon}, \emph{4}(1), e00543. \url{https://doi.org/10.1016/j.heliyon.2018.e00543}
+
+\bibitem[\citeproctext]{ref-Huber2016_Allometric_SRAFS}
+Huber, G., Hülsbergen, K.-J., \& Schmid, H. (2016). Allometric equations for above-ground tree-biomass estimation in {Southern German} short-rotation agroforestry systems. \emph{Bioenergy Research}, \emph{9}(3), 955--968. \url{https://doi.org/10.1007/s12155-016-9744-z}
+
+\bibitem[\citeproctext]{ref-Jha2018_Poplar_AFS_Biomass}
+Jha, K. K. (2018). Biomass production and carbon balance in two hybrid poplar ({\emph{Populus euramericana}}) plantations raised with and without agriculture in southern {France}. \emph{Journal of Forestry Research}, \emph{29}(6), 1689--1701. \url{https://doi.org/10.1007/s11676-017-0555-3}
+
+\bibitem[\citeproctext]{ref-Shinozaki1961_CD_Effect}
+Kira, T., Shinozaki, K., \& Hozumi, K. (1961). The {C-D} rule, its theory and practical uses. ({Intraspecific competition among higher plants. X.}). \emph{Journal of Biology, Osaka City University}, \emph{12}, 69--82.
+
+\bibitem[\citeproctext]{ref-Lamers2015_Feedstock_Design}
+Lamers, P., Junginger, M., Hamelinck, C., \& Faaij, A. (2011). Developments in liquid biofuels commodity trade. \emph{Biofuels, Bioproducts and Biorefining}, \emph{5}(4), 403--437. \url{https://doi.org/10.1002/bbb.303}
+
+\bibitem[\citeproctext]{ref-Malladi2018_BSC_Logistics}
+Malladi, K. T., \& Sowlati, T. (2018). Biomass logistics: A review of important features, optimization modelling and the new trends. \emph{Renewable and Sustainable Energy Reviews}, \emph{94}, 587--599. \url{https://doi.org/10.1016/j.rser.2018.06.052}
+
+\bibitem[\citeproctext]{ref-Mansoornejad2013_Forest_Biorefinery_SC}
+Mansoornejad, B., Pistikopoulos, E. N., \& Stuart, P. R. (2013). Integrating forest biorefinery metrics into supply chain design and analysis. \emph{Forest Policy and Economics}, \emph{26}, 43--54. \url{https://doi.org/10.1016/j.forpol.2012.08.003}
+
+\bibitem[\citeproctext]{ref-Nair1993_IntroAgroforestry}
+Nair, P. K. R. (1993). \emph{An introduction to agroforestry}. Kluwer Academic Publishers.
+
+\bibitem[\citeproctext]{ref-Niemczyk2021_Poplar_Rotation}
+Niemczyk, M., \& Thomas, B. R. (2021). Does intensive management affect wood density and fiber properties of hybrid poplar grown in short-rotation plantation? \emph{Forests}, \emph{12}(4), 399. \url{https://doi.org/10.3390/f12040399}
+
+\bibitem[\citeproctext]{ref-Sharma2013_BSC_review}
+Sharma, B., Ingalls, R. G., Jones, C. L., \& Khanchi, A. (2013). Biomass supply chain design and analysis: Basis, overview, modeling, challenges, and future. \emph{Renewable and Sustainable Energy Reviews}, \emph{24}, 608--627. \url{https://doi.org/10.1016/j.rser.2013.03.049}
+
+\bibitem[\citeproctext]{ref-Spinelli2009_SRC_Harvesting}
+Spinelli, R., Nati, C., \& Magagnotti, N. (2009). Using modified foragers to harvest short-rotation poplar plantations. \emph{Biomass and Bioenergy}, \emph{33}(5), 817--821. \url{https://doi.org/10.1016/j.biombioe.2009.01.002}
+
+\bibitem[\citeproctext]{ref-Testa2014_Poplar_Economics}
+Testa, R., Di Trapani, A. M., Foderà, M., Sgroi, F., \& Tudisca, S. (2014). Economic evaluation of introduction of poplar as biomass crop in {Italy}. \emph{Renewable and Sustainable Energy Reviews}, \emph{38}, 498--506. \url{https://doi.org/10.1016/j.rser.2014.07.007}
+
+\bibitem[\citeproctext]{ref-Toensmeier2017_Carbon_Agroforestry}
+Toensmeier, E. (2017). The carbon farming solution: A global toolkit of perennial crops and regenerative agriculture practices for climate change mitigation and food security. In \emph{The carbon farming solution}. Chelsea Green Publishing.
+
+\bibitem[\citeproctext]{ref-Trnka2008_Poplar_SRF}
+Trnka, M., Fialová, J., Koutecký, V., Fajman, M., Žalud, Z., \& Havlíček, M. (2008). Biomass production and survival rates of selected poplar clones grown under a short-rotation system on agricultural land. \emph{Plant, Soil and Environment}, \emph{54}(2), 78--88. \url{https://doi.org/10.17221/2752-PSE}
+
+\bibitem[\citeproctext]{ref-Yue2014_BSC_Optimization_Overview}
+Yue, D., You, F., \& Snyder, S. W. (2014). Biomass-to-bioenergy and biofuel supply chain optimization: Overview, key issues and challenges. \emph{Computers \& Chemical Engineering}, \emph{66}, 36--56. \url{https://doi.org/10.1016/j.compchemeng.2013.11.016}
+
+\bibitem[\citeproctext]{ref-Zahraee2020_BSC_review}
+Zahraee, S. M., Shiwakoti, N., \& Stasinopoulos, P. (2020). Biomass supply chain environmental, economic, and social sustainability: {A} systematic literature review. \emph{Industrial Crops and Products}, \emph{145}, 112144. \url{https://doi.org/10.1016/j.indcrop.2020.112144}
+
+\end{CSLReferences}
 
 \end{document}

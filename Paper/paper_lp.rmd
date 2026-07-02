@@ -5,7 +5,7 @@ author:
     affiliation: 
       - "Fraunhofer IKTS Center for Economics and Management of Materials, Leipziger Str. 70/71, 06108, Halle, Germany"
       - "Hochschule RheinMain – University of Applied Sciences and Arts, Wiesbaden Business School, Bleichstr. 44, 65183 Wiesbaden, Germany"
-    email: "thomas.kirschstein@ikts.fraunhofer.de"
+    #email: "thomas.kirschstein@ikts.fraunhofer.de"
     correspondingauthor: true
   
 journal: "Journal of Industrial Ecology"
@@ -22,15 +22,16 @@ keywords:
   - Agroforestry
   - Biomass cascading
   - Bioeconomy network
-  - Material flow optimisation
-  - Cleaner production
+  - supply chain optimisation
+  - biobased production
 
 abstract: |
   Agroforestry systems that integrate fast-growing woody perennials into agricultural land form a structurally novel type of biological-industrial symbiosis: they simultaneously deliver multiple biomass fractions of differing quality to chemical, pulp-and-paper, and energy industries through a shared regional supply network, thereby substituting fossil feedstocks and storing biogenic carbon in long-lived products. Despite this environmental potential, the material flows through such networks are poorly understood because stand-level age dynamics, multi-fraction biomass composition, and product quality cascading across industrial sectors have never been jointly optimised. This paper presents the AFS-SCD model, a mixed-integer linear programming (MILP) formulation that endogenises agroforestry establishment timing and consecutive harvest scheduling through arc-based age-lag constraints, couples component-specific Gompertz yield functions for stem, branch, and residue fractions with a multi-echelon network design model, and implements a product quality cascade allocating biomass grades to chemical, pulp, and energy consumers within a unified framework. Applied to a real-world case study in the Saxony-Anhalt tri-state region of Germany — a cluster of chemical and paper industries seeking bio-based feedstock transition — the model identifies the profit-optimal spatial configuration, rotation lengths, and product allocation across a 40-year planning horizon. Sensitivity analyses across opportunity-cost, logistics-cost, and revenue scenarios reveal that product cascading is the dominant lever for AFS viability, that sites with opportunity costs above approximately 300 EUR per hectare per year are rarely activated, and that high-value stem allocation to chemical applications substantially outperforms energy-only offtake strategies. The findings demonstrate that integrated optimisation of biological production dynamics and industrial network design is essential for designing viable and cleaner agroforestry bioeconomy ecosystems.
 
 output:
   bookdown::pdf_book:
-    base_format: rticles::elsevier_article
+    #base_format: rticles::elsevier_article
+    format: wiley-njd-pdf
     keep_tex: true
     latex_engine: xelatex
     number_sections: true
@@ -58,7 +59,7 @@ header-includes:
   - \newcommand{\problem}{AFS-SCD }
   
 bibliography: references.bib
-csl: elsevier-harvard.csl
+csl: apa.csl
 editor_options: 
   markdown: 
     wrap: 125
@@ -596,7 +597,7 @@ df_sens <- df_sens %>% mutate(opp_cost = opp_cost/500)
 
 # Introduction
 
-The industrial ecology of biobased economies depends on one central challenge: connecting primary biological production systems to multiple industrial sectors through networks that efficiently allocate biomass fractions of varying quality to their highest-value application — the principle of industrial symbiosis applied to renewable material flows [@Hildebrandt2019].
+The industrial ecology of biobased economies depends on connecting primary biological production systems to multiple industrial sectors through networks that efficiently allocate biomass fractions of varying quality to their highest-value application [@Hildebrandt2019]. 
 Agroforestry systems (AFS) that deliberately integrate fast-growing woody
 perennials into agricultural land represent a structurally novel
 realisation of this principle. By co-producing stem wood suitable for
@@ -839,63 +840,7 @@ where $C_{\mathrm{site}}$ encodes site quality, $N$ indiactes tree density (e.g.
 $\beta$ is the competition exponent. Equivalently, the per-tree
 asymptote $A_{\mathrm{tree}}(N) = A(N)/N = C_{\mathrm{site}}\cdot N^{-\beta}$
 decreases with density as individual trees have access to less growing
-space. Parameters $C_{\mathrm{site}}$ and $\beta$ are highly site- and specicies-specific. For Poplar clones under European conditions,  $\beta \in [0.3,0.5]$ and $C_{\mathrm{site}} \in [4,6.5]$ [@Niemczyk2021_Poplar_Rotation,@Shinozaki1961_CD_Effect]. \autoref{fig:growth-asymptote-functions} shows asymptote functions according to \eqref{eq:A-density} for advantageous and disadvantageous site conditions.
-
-```{r growth-asymptote-functions, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Tree-level and stand-level Gompertz asymptote functions $A_{tree}(N)$ and $A(N)$ for advanteguous ($N=4$, $\\beta=-0.3$) and disadvantageous ($N=6.5$, $\\beta=-0.5$) site conditions.",  fig.width=6.5, fig.height=4, out.width="\\textwidth", cache=FALSE}
-
-# ── Panel (a): A_stand vs N ─────────────────────────────────────────────────
-N_seq <- seq(20, 400, by = 1)
-df_a  <- bind_rows(
-  tibble(N = N_seq,
-         A = A_stand(N_seq, C_site = 4.000, beta=-.3),
-         scenario = "advanteguous"),
-  tibble(N = N_seq,
-         A = A_stand(N_seq, C_site = 6.500, beta = -.5),
-         scenario = "disadvantageous")
-)
-
-df_tree  <- bind_rows(
-  tibble(N = N_seq,
-         A = A_tree(N_seq, C_site = 4.000, beta=-.3),
-         scenario = "advanteguous"),
-  tibble(N = N_seq,
-         A = A_tree(N_seq, C_site = 6.500, beta = -.5),
-         scenario = "disadvantageous")
-)
-
-
-p_a <- ggplot(df_a, aes(x = N, y = A, linetype = scenario)) +
-  geom_line(colour = "grey20", linewidth = 0.7) +
-  scale_linetype_manual(
-    name   = "Scenario",
-    values = c("advanteguous" = "solid", "disadvantageous" = "dashed")) +
-  labs(x = expression("Density "*italic(N)*" (trees ha"^{-1}*")"),
-       y = expression(italic(A(N))*" (t DM ha"^{-1}*")")) +
-  theme_minimal(base_size = 8) +
-  theme(legend.position  = c(0.72, 0.82),
-        legend.key.size  = unit(0.4, "cm"),
-        legend.text      = element_text(size = 7),
-        legend.title     = element_text(size = 7, face = "bold"),
-        legend.background = element_rect(fill = "white", colour = NA),
-        panel.grid.minor = element_blank())
-
-p_b <- ggplot(df_tree, aes(x = N, y = A, linetype = scenario)) +
-  geom_line(colour = "grey20", linewidth = 0.7) +
-  scale_linetype_manual(
-    name   = "Scenario",
-    values = c("advanteguous" = "solid", "disadvantageous" = "dashed")) +
-  labs(x = expression("Density "*italic(N)*" (trees ha"^{-1}*")"),
-       y = expression(italic(A[tree](N))*" (t DM per tree)")) +
-  theme_minimal(base_size = 8) +
-  theme(legend.position  = c(0.72, 0.82),
-        legend.key.size  = unit(0.4, "cm"),
-        legend.text      = element_text(size = 7),
-        legend.title     = element_text(size = 7, face = "bold"),
-        legend.background = element_rect(fill = "white", colour = NA),
-        panel.grid.minor = element_blank())
-# ── Assemble with patchwork ─────────────────────────────────────────────────
-p_b / p_a
-```
+space. Parameters $C_{\mathrm{site}}$ and $\beta$ are highly site- and specicies-specific. For Poplar clones under European conditions,  $\beta \in [0.3,0.5]$ and $C_{\mathrm{site}} \in [4,6.5]$ [@Niemczyk2021_Poplar_Rotation,@Shinozaki1961_CD_Effect]. \autoref{fig:growth-asymptote-functions} in the appendix shows asymptote functions according to \eqref{eq:A-density} for advantageous and disadvantageous site conditions.
 
 When assessing potential downstream application of AFS biomass, biomass fraction are to be defined meeting the requirements of downstream consumers. E.g. for timber and biochemical applications, stem diameters of AFS trees need to exceed a minimum threshold in order to qualify as a suitable feedstock. In the following three biomass fractions are distinguished: stems, branch wood, and residue. The stem fraction consists of stems with a diameter of at least 15 cm, while branch wood requires a diameter of at least 7 cm. The residue fraction comprises are smaler parts of the tree. To subdivide the total AFS biomass modelled by \eqref{eq:gomp-stand} into the three fractions depending on tree age, a logistic growth model is used: 
 \begin{equation}
@@ -2950,6 +2895,65 @@ evaluation, consistent with the cleaner production framing of this work.
 # Appendix
 
 
+
+```{r growth-asymptote-functions, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Tree-level and stand-level Gompertz asymptote functions $A_{tree}(N)$ and $A(N)$ for advanteguous ($N=4$, $\\beta=-0.3$) and disadvantageous ($N=6.5$, $\\beta=-0.5$) site conditions.",  fig.width=6.5, fig.height=4, out.width="\\textwidth", cache=FALSE}
+
+# ── Panel (a): A_stand vs N ─────────────────────────────────────────────────
+N_seq <- seq(20, 400, by = 1)
+df_a  <- bind_rows(
+  tibble(N = N_seq,
+         A = A_stand(N_seq, C_site = 4.000, beta=-.3),
+         scenario = "advanteguous"),
+  tibble(N = N_seq,
+         A = A_stand(N_seq, C_site = 6.500, beta = -.5),
+         scenario = "disadvantageous")
+)
+
+df_tree  <- bind_rows(
+  tibble(N = N_seq,
+         A = A_tree(N_seq, C_site = 4.000, beta=-.3),
+         scenario = "advanteguous"),
+  tibble(N = N_seq,
+         A = A_tree(N_seq, C_site = 6.500, beta = -.5),
+         scenario = "disadvantageous")
+)
+
+
+p_a <- ggplot(df_a, aes(x = N, y = A, linetype = scenario)) +
+  geom_line(colour = "grey20", linewidth = 0.7) +
+  scale_linetype_manual(
+    name   = "Scenario",
+    values = c("advanteguous" = "solid", "disadvantageous" = "dashed")) +
+  labs(x = expression("Density "*italic(N)*" (trees ha"^{-1}*")"),
+       y = expression(italic(A(N))*" (t DM ha"^{-1}*")")) +
+  theme_minimal(base_size = 8) +
+  theme(legend.position  = c(0.72, 0.82),
+        legend.key.size  = unit(0.4, "cm"),
+        legend.text      = element_text(size = 7),
+        legend.title     = element_text(size = 7, face = "bold"),
+        legend.background = element_rect(fill = "white", colour = NA),
+        panel.grid.minor = element_blank())
+
+p_b <- ggplot(df_tree, aes(x = N, y = A, linetype = scenario)) +
+  geom_line(colour = "grey20", linewidth = 0.7) +
+  scale_linetype_manual(
+    name   = "Scenario",
+    values = c("advanteguous" = "solid", "disadvantageous" = "dashed")) +
+  labs(x = expression("Density "*italic(N)*" (trees ha"^{-1}*")"),
+       y = expression(italic(A[tree](N))*" (t DM per tree)")) +
+  theme_minimal(base_size = 8) +
+  theme(legend.position  = c(0.72, 0.82),
+        legend.key.size  = unit(0.4, "cm"),
+        legend.text      = element_text(size = 7),
+        legend.title     = element_text(size = 7, face = "bold"),
+        legend.background = element_rect(fill = "white", colour = NA),
+        panel.grid.minor = element_blank())
+# ── Assemble with patchwork ─────────────────────────────────────────────────
+p_b / p_a
+```
+
+
+
 ```{r tab-notation-growth, echo=FALSE, message=FALSE, warning=FALSE}
 library(knitr); library(kableExtra)
 options(kableExtra.latex.load_packages = FALSE)
@@ -3104,7 +3108,7 @@ ggplot(flow_df,
   ) +
 
   scale_y_continuous(
-    name   = "Volume (t dry matter)",
+    name   = "quantity (t fresh biomass)",
     labels = comma_format(big.mark = ".", decimal.mark = ",")
   ) +
 
