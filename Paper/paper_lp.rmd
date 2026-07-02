@@ -1,9 +1,10 @@
 ---
-title: "Agroforestry SmartAgroforest: Poplar biomass modelling"
+title: "Startegic Plannig of Agroforestry Supply Chains"
 author:
   - name: "Thomas Kirschstein"
     affiliation: 
-      - "Fraunhofer IKTS, Dresden, Germany"
+      - "Fraunhofer IKTS Center for Economics and Management of Materials, Leipziger Str. 70/71, 06108, Halle, Germany"
+      - "Hochschule RheinMain – University of Applied Sciences and Arts, Wiesbaden Business School, Bleichstr. 44, 65183 Wiesbaden, Germany"
     email: "thomas.kirschstein@ikts.fraunhofer.de"
     correspondingauthor: true
   
