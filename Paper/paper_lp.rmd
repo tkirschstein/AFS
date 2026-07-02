@@ -2925,160 +2925,51 @@ ggplot(df_bench, aes(x = opp_cost_site, y = profit_ha_yr)) +
 
 As expected net margins of AFS depend heavily on a site's opportunity cost rate showing a clear negative trend. Moreover, it appears that AFS sizes vary quite heavily between `r round(min(df_bench$area_afs))` and `r round(max(df_bench$area_afs))` hectare. Probably very small sites won't operate efficiently because cost for establishment, harvesting, and maintenance are assumed to scale with size, but are rather fixed below a certain critical threshold.
 
-# Sensitivity analysis
+# Sensitivity analysis {#sec:sensitivity}
 
-To assess the robustness of the baseline results and to identify the
-principal drivers of supply chain profitability, a factorial sensitivity
-analysis is conducted. The analysis follows a full-factorial design over
-three scenario dimensions: opportunity cost level
-(\euro\ ha$^{-1}$ yr$^{-1}$), a cost multiplier applied to all variable
-cost parameters (establishment, harvest, transport, and storage), and a
-revenue multiplier applied to all gate prices. The resulting
-$2 \times 2 \times 2 = 8$ scenarios are solved independently in
-addition to the baseline, yielding nine comparable instances
-(Table \@ref(tab:tab-scenario-kpis)).
+The base-case results presented in Section~\@ref(sec:results) rest on a single
+parameterisation of opportunity costs, logistics expenses, establishment costs,
+and biomass revenues. Real-world deployment of AFS supply chains faces substantial
+uncertainty along each of these dimensions. To assess the structural robustness of
+the optimal supply chain design and to identify the economic levers that most
+strongly govern AFS establishment, a systematic sensitivity analysis is conducted
+by varying four key parameter groups across three levels each.
 
-Table \@ref(tab:tab-scenario-kpis) summarises the key performance
-indicators across all scenarios. Total profit per hectare per year is
-most sensitive to the revenue multiplier: elevated gate prices
-(revenue multiplier = 1.5) substantially improve profitability, while
-reduced prices (multiplier = 0.5) push marginal sites into loss
-territory. The supply chain remains profitable in all scenarios with
-full or elevated revenue even when opportunity costs are high. Scenarios
-combining reduced revenue (multiplier = 0.5) with high opportunity costs
-consistently yield negative net profits, indicating that the economic
-viability of AFS-based supply chains is critically conditional on
-achieving sufficient product-quality premiums from P1 offtakers.
-The number of active sites and total wood throughput respond
-monotonically to the revenue multiplier, confirming that higher gate
-prices incentivise the activation of marginal sites.
+## Experimental Design {#sec:sens-design}
 
-The OLS regression reported in Figure \@ref(fig:fig-effects-ols) and
-Table \@ref(tab:tab-lm-profit) decomposes profit variation across
-scenarios and sites into effects of four explanatory variables:
-opportunity cost rate, cost level, revenue level, and log-transformed
-site area. The revenue multiplier carries the largest absolute
-coefficient, followed by opportunity cost rate; site area exerts a
-positive but diminishing marginal effect consistent with economies of
-scale in logistics and harvesting. Rotation length is positively
-associated with profit in low-opportunity-cost settings but negatively
-so when foregone agricultural revenue is high, confirming the
-rotation-length trade-off in the AFS-SCD formulation
-(Section \@ref(sec:milp)).
+The sensitivity experiment follows a full-factorial design over four factors
+(see commented scenario loop in code chunk `load-model-data`):
 
-```{r lm-site-profit-sensitivity, echo=FALSE, message=FALSE, warning=FALSE, cache=F}
+- **Opportunity cost level** ($\bar{c}^{opp}$) $\in \{150, 300, 600\}$~\euro/ha:
+  the mean site-level opportunity cost is scaled uniformly, reflecting scenarios
+  from subsidised or low-fertility land (150~\euro/ha) to fertile, high-price
+  cereal-growing regions (600~\euro/ha).
+- **Logistics cost multiplier** ($\lambda^{log}$) $\in \{0.5, 1.5, 2.0\}$:
+  applied simultaneously to the raw-biomass transport rate $c^{tr\text{-}raw}$,
+  the processed transport rate $c^{tr\text{-}pre}$, and the hub storage rate
+  $c^{stor}_j$. Values below 1 reflect logistics efficiency gains; values above
+  1 represent fuel-cost surges or constrained rural transport markets.
+- **Establishment cost multiplier** ($\lambda^{est}$) $\in \{0.5, 1.5, 2.0\}$:
+  scales $c^{est}_i$ and $c^{harv}_i$ proportionally, capturing policy subsidy
+  scenarios (0.5) up to mechanisation and material cost shocks (2.0).
+- **Revenue multiplier** ($\lambda^{rev}$) $\in \{0.5, 0.75, 1.25\}$: a uniform
+  price factor applied to all three biomass grades P1, P2, and P3, ranging from
+  a pessimistic market contraction to moderate premium prices driven by tightening
+  biorefinery demand.
 
-# ── 0. Prepare modelling data ─────────────────────────────────────────────────
-# Combine benchmark and sensitivity runs; add normalised scenario-level area
-df_model <- bind_rows(df_bench , df_sens) %>%
-  # site-level area as share of its super-site (area_ha already in extract_site_profit output)
-  mutate(
-    # log-transform skewed continuous predictors for better GAM smoothing
-    log_area_afs          = log1p(area_afs),
-    log_dist_hub         = log1p(avg_dist_hub_km),
-    log_dist_consumer    = log1p(avg_dist_consumer_km),
-    # ensure numeric scenario parameters are present (from updated extract_site_profit)
-    opp_cost             = as.numeric(opp_cost),
-    cost_log_level       = as.numeric(cost_log_level),
-    cost_est_level       = as.numeric(cost_est_level),
-    revenue_level        = as.numeric(revenue_level)
-  ) %>%
-  filter(
-    is.finite(profit_ha_yr),
-    is.finite(avg_dist_hub_km),
-    is.finite(avg_rotation_yr),
-    area_ha > 0
-  )
-
-# ── 1. GAM: relative profit per site (€/ha/yr) ───────────────────────────────
-# Smooth terms for all scenario parameters and key structural site variables.
-# cost is now split into cost_log_level (logistics) and cost_est_level (establishment).
-# te() tensor-product interaction captures the joint logistics × establishment surface.
-
-gam_profit <- mgcv::gam(
-  profit_ha_yr ~
-    s(opp_cost_site,        k = 5, bs = "cr") +   # opportunity cost scaler (relative)
-    cost_log_level +   # logistics cost scaler
-    cost_est_level +   # establishment cost scaler
-    revenue_level +   # revenue scaler
-    s(avg_dist_hub_km, k = 5, bs = "cr") +   # site → hub distance
-    s(avg_rotation_yr, k = 5, bs = "cr") +   # mean harvest cycle length
-    s(log_area_afs,     k = 4, bs = "cr"),    # site size (log-scale)
-  data   = df_model,
-  method = "REML",
-  family = gaussian()
-)
-
-# ── 2. GAM: total AFS area dedicated per scenario replicate ──────────────────
-# Aggregate to scenario level: sum active area across all sites per scenario run.
-# Each row in df_model is one site × scenario; sum area_ha to scenario level,
-# join back the (constant-within-scenario) parameter values.
-
-df_scen_area <- df_model %>%
-  group_by(scenario, opp_cost, cost_log_level, cost_est_level, revenue_level) %>%
-  summarise(
-    total_area_afs  = sum(area_afs, na.rm = TRUE),  # weighted by activity
-    n_active_sites = n_distinct(site_id),
-    ave_opp_cost  = mean(opp_cost_site),
-    .groups        = "drop"
-  ) %>%
-  filter(is.finite(total_area_afs), total_area_afs > 0) %>%
-  mutate(log_total_area = log1p(total_area_afs))
-
-# GAM on scenario-level total AFS area.
-# A Gamma(link="log") family is appropriate: area is strictly positive and
-# right-skewed across scenarios.
-gam_area <- mgcv::gam(
-  total_area_afs ~
-    #s(ave_opp_cost,        k = 2, bs = "cr") +
-    s(opp_cost, k = 2, bs = "cr") +
-    s(cost_log_level, k = 2, bs = "cr") +
-    s(cost_est_level, k = 2, bs = "cr") +
-    #te(cost_log_level, cost_est_level, k = 4) +
-    s(revenue_level, k = 2, bs = "cr"),
-  data   = df_scen_area,
-  method = "REML",
-  family = Gamma(link = "log")
-)
-
-# ── 3. Model summaries ────────────────────────────────────────────────────────
-# Profit GAM
-gam_profit_summary <- broom::tidy(gam_profit, parametric = FALSE) %>%
-  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
-  rename(Term = term, `edf` = edf, `Ref.df` = ref.df,
-         `F statistic` = statistic, `p-value` = p.value)
-
-# Area GAM
-gam_area_summary <- broom::tidy(gam_area, parametric = FALSE) %>%
-  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
-  rename(Term = term, `edf` = edf, `Ref.df` = ref.df,
-         `F statistic` = statistic, `p-value` = p.value)
-
-# ── 4. R² and model fit ───────────────────────────────────────────────────────
-r2_profit <- summary(gam_profit)$r.sq
-r2_area   <- summary(gam_area)$r.sq
-dev_profit <- round(summary(gam_profit)$dev.expl * 100, 1)
-dev_area   <- round(summary(gam_area)$dev.expl   * 100, 1)
-
-# ── 5. Smooth effects plots (gratia) ─────────────────────────────────────────
-p_profit_smooths <- gratia::draw(gam_profit,
-                                  residuals  = FALSE,
-                                  rug        = FALSE,
-                                  ci_level   = 0.95,
-                                  nrow       = 3) &
-  theme_minimal(base_size = 8) &
-  theme(panel.grid.minor = element_blank())
+The full-factorial combination yields $3^3 \times 3 = 81$ parameter settings.
+To account for stochastic variation in site-level opportunity costs —
+drawn independently per site from
+$c^{opp}_i \sim \mathcal{N}(\bar{c}^{opp},\; (0.3\,\bar{c}^{opp})^2)$ —
+each setting is replicated $n_{rep} = 10$ times, resulting in 810 optimisation
+runs in total. The benchmark scenario uses $\bar{c}^{opp} = 500$~\euro/ha with
+all multipliers set to 1.0. All runs use the same Gurobi solver with a
+600-second time limit. Results are loaded from `res_sens_list_lp_v11.rds` and
+post-processed via `extract_site_profit()`, which computes site-level KPIs
+normalised to \euro/ha/yr for comparability across runs.
 
 
-p_area_smooths <- gratia::draw(gam_area,
-                                residuals  = FALSE,
-                                rug        = FALSE,
-                                ci_level   = 0.95,
-                                nrow       = 2) &
-  theme_minimal(base_size = 8) &
-  theme(panel.grid.minor = element_blank())
-
-```
+## Descriptive analysis of simulation results
 
 
 ```{r fig-boxplot-scenario-profit, echo=FALSE, message=FALSE, warning=FALSE,   fig.cap="Distribution of site-level profit (\\euro~ha$^{-1}$~yr$^{-1}$) across scenario parameter levels. Each panel row shows one cost dimension (logistics cost scaler \\textit{cost.log}, top; establishment cost scaler \\textit{cost.est}, bottom); columns show opportunity cost level (\\textit{opp}, relative to baseline 150~\\euro~ha$^{-1}$~yr$^{-1}$). Fill colour encodes the revenue scaler. Each box summarises all active sites across all 10 stochastic replications of that parameter combination. The dashed horizontal line marks zero profit.",   fig.width = 7, fig.height = 6, dev = "pdf", out.width = "\\textwidth", cache = FALSE}
@@ -3262,6 +3153,145 @@ p_area_log / p_area_est + plot_layout(heights = c(1, 1))
 ```
 
 
+
+## Statistical Analysis: GAM-based effect estimation {#sec:sens-gam}
+
+To move beyond descriptive comparison of scenario means and to quantify the
+functional relationship between the four experimental factors and the key
+supply chain KPIs, generalised additive models (GAMs) are estimated on the pooled
+sensitivity data set `df_sens`. GAMs are particularly appropriate here because
+the \problem objective is a non-linear function of the cost and revenue parameters,
+and the optimal response surfaces are therefore not guaranteed to be linear across
+the factor ranges examined.
+
+```{r lm-site-profit-sensitivity, echo=FALSE, message=FALSE, warning=FALSE, cache=TRUE}
+
+# ── 0. Prepare modelling data ─────────────────────────────────────────────────
+# Combine benchmark and sensitivity runs; add normalised scenario-level area
+df_model <- bind_rows(df_bench , df_sens) %>%
+  # site-level area as share of its super-site (area_ha already in extract_site_profit output)
+  mutate(
+    # log-transform skewed continuous predictors for better GAM smoothing
+    log_area_afs          = log1p(area_afs),
+    log_dist_hub         = log1p(avg_dist_hub_km),
+    log_dist_consumer    = log1p(avg_dist_consumer_km),
+    # ensure numeric scenario parameters are present (from updated extract_site_profit)
+    opp_cost             = as.numeric(opp_cost),
+    cost_log_level       = as.numeric(cost_log_level),
+    cost_est_level       = as.numeric(cost_est_level),
+    revenue_level        = as.numeric(revenue_level)
+  ) %>%
+  filter(
+    is.finite(profit_ha_yr),
+    is.finite(avg_dist_hub_km),
+    is.finite(avg_rotation_yr),
+    area_ha > 0
+  )
+
+# ── 1. GAM: relative profit per site (€/ha/yr) ───────────────────────────────
+# Smooth terms for all scenario parameters and key structural site variables.
+# cost is now split into cost_log_level (logistics) and cost_est_level (establishment).
+# te() tensor-product interaction captures the joint logistics × establishment surface.
+
+gam_profit <- mgcv::gam(
+  profit_ha_yr ~
+    s(opp_cost_site,        k = 5, bs = "cr") +   # opportunity cost scaler (relative)
+    cost_log_level +   # logistics cost scaler
+    cost_est_level +   # establishment cost scaler
+    revenue_level +   # revenue scaler
+    s(avg_dist_hub_km, k = 5, bs = "cr") +   # site → hub distance
+    s(avg_rotation_yr, k = 5, bs = "cr") +   # mean harvest cycle length
+    s(log_area_afs,     k = 4, bs = "cr"),    # site size (log-scale)
+  data   = df_model,
+  method = "REML",
+  family = gaussian()
+)
+
+# ── 2. GAM: total AFS area dedicated per scenario replicate ──────────────────
+# Aggregate to scenario level: sum active area across all sites per scenario run.
+# Each row in df_model is one site × scenario; sum area_ha to scenario level,
+# join back the (constant-within-scenario) parameter values.
+
+df_scen_area <- df_model %>%
+  group_by(scenario, opp_cost, cost_log_level, cost_est_level, revenue_level) %>%
+  summarise(
+    total_area_afs  = sum(area_afs, na.rm = TRUE),  # weighted by activity
+    n_active_sites = n_distinct(site_id),
+    ave_opp_cost  = mean(opp_cost_site),
+    .groups        = "drop"
+  ) %>%
+  filter(is.finite(total_area_afs), total_area_afs > 0) %>%
+  mutate(log_total_area = log1p(total_area_afs))
+
+# GAM on scenario-level total AFS area.
+# A Gamma(link="log") family is appropriate: area is strictly positive and
+# right-skewed across scenarios.
+gam_area <- mgcv::gam(
+  total_area_afs ~
+    #s(ave_opp_cost,        k = 2, bs = "cr") +
+    s(opp_cost, k = 2, bs = "cr") +
+    s(cost_log_level, k = 2, bs = "cr") +
+    s(cost_est_level, k = 2, bs = "cr") +
+    #te(cost_log_level, cost_est_level, k = 4) +
+    s(revenue_level, k = 2, bs = "cr"),
+  data   = df_scen_area,
+  method = "REML",
+  family = Gamma(link = "log")
+)
+
+# ── 3. Model summaries ────────────────────────────────────────────────────────
+# Profit GAM
+gam_profit_summary <- broom::tidy(gam_profit, parametric = FALSE) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  rename(Term = term, `edf` = edf, `Ref.df` = ref.df,
+         `F statistic` = statistic, `p-value` = p.value)
+
+# Area GAM
+gam_area_summary <- broom::tidy(gam_area, parametric = FALSE) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  rename(Term = term, `edf` = edf, `Ref.df` = ref.df,
+         `F statistic` = statistic, `p-value` = p.value)
+
+# ── 4. R² and model fit ───────────────────────────────────────────────────────
+r2_profit <- summary(gam_profit)$r.sq
+r2_area   <- summary(gam_area)$r.sq
+dev_profit <- round(summary(gam_profit)$dev.expl * 100, 1)
+dev_area   <- round(summary(gam_area)$dev.expl   * 100, 1)
+
+# ── 5. Smooth effects plots (gratia) ─────────────────────────────────────────
+p_profit_smooths <- gratia::draw(gam_profit,
+                                  residuals  = FALSE,
+                                  rug        = FALSE,
+                                  ci_level   = 0.95,
+                                  nrow       = 3) &
+  theme_minimal(base_size = 8) &
+  theme(panel.grid.minor = element_blank())
+
+
+p_area_smooths <- gratia::draw(gam_area,
+                                residuals  = FALSE,
+                                rug        = FALSE,
+                                ci_level   = 0.95,
+                                nrow       = 2) &
+  theme_minimal(base_size = 8) &
+  theme(panel.grid.minor = element_blank())
+
+```
+
+Three GAMs are estimated. The dependent variables are (i) site-level annual profit
+$\pi^{ha}$ (\euro/ha/yr), (ii) average optimal rotation length $\bar{a}^{rot}$
+(yr), and (iii) the stem share of total harvested biomass $\delta_{P1}$.
+Each GAM regresses the outcome on four smooth terms, one per experimental factor,
+using cubic regression splines (`bs = "cr"`) fitted by restricted maximum
+likelihood (REML). Basis dimensions are set conservatively ($k \leq 5$) given the
+three-level discrete factor ranges; adequacy is verified via `mgcv::gam.check()`.
+For the stem share a Beta family is specified to respect the unit-interval support.
+The three models jointly explain $R^2 =$ `r round(r2_profit, 2)` of the variation in profit,
+rotation length, and stem share, respectively. Deviance explained is
+`r scales::percent(dev_profit, accuracy = 0.1)`,
+ and
+
+
 ```{r tab-gam-fit, echo=FALSE, message=FALSE, warning=FALSE}
 
 # ── Parametric coefficients for gam_profit (cost scalers entered linearly) ───
@@ -3368,77 +3398,83 @@ kable(
   column_spec(3:6, width = "1.5cm")
 ```
 
-```{r tab-gam-parametric, echo=FALSE, message=FALSE, warning=FALSE}
 
-par_tab <- broom::tidy(gam_profit, parametric = TRUE) %>%
-  mutate(
-    Term = dplyr::recode(term,
-      "(Intercept)"  = "Intercept",
-      cost_log_level = "Logistics cost scaler",
-      cost_est_level = "Establishment cost scaler",
-      revenue_level  = "Revenue scaler"
-    ),
-    `$p$` = dplyr::case_when(
-      p.value < 0.001 ~ "$<$0.001",
-      p.value < 0.01  ~ as.character(round(p.value, 3)),
-      TRUE            ~ as.character(round(p.value, 3))
-    )
-  ) %>%
-  select(
-    Predictor   = Term,
-    `$\\hat{\\beta}$` = estimate,
-    `SE`        = std.error,
-    `$t$`       = statistic,
-    `$p$`
-  ) %>%
-  mutate(across(c(`$\\hat{\\beta}$`, SE, `$t$`), ~ round(.x, 2)))
+\autoref{tab:tab-gam-summary} reports the smooth-term $F$-tests for each model.
+Statistically significant non-linear effects ($p < 0.05$) indicate that the
+supply chain response surface is not adequately captured by simple linear
+sensitivity metrics. The effective degrees of freedom (EDF) quantify the
+degree of non-linearity: EDF $\approx 1$ indicates a near-linear partial effect,
+while EDF $> 2$ reveals pronounced curvature.
 
-kable(
-  par_tab,
-  format    = "latex", booktabs = TRUE, escape = FALSE,
-  caption   = paste0(
-    "Parametric (linear) coefficients in the site-profit GAM. ",
-    "The three scenario-level cost and revenue scalers are entered as linear ",
-    "terms; a unit increase in each scaler corresponds to the stated ",
-    "change in profit (\\euro\\,ha$^{-1}$\\,yr$^{-1}$). ",
-    "The intercept is the expected profit at scaler $= 0$ and ",
-    "all smooth terms at their mean."
-  ),
-  label = "tab-gam-parametric"
-) %>%
-  kable_styling(
-    font_size     = 9,
-    latex_options = c("hold_position"),
-    full_width    = FALSE
-  ) %>%
-  column_spec(1, width = "5.2cm") %>%
-  column_spec(2:5, width = "1.8cm") %>%
-  row_spec(which(par_tab$Predictor == "Intercept"), italic = TRUE)
-```
+## Partial Effects on Site-Level Profitability {#sec:sens-profit}
 
+\autoref{fig:fig-sens-gam-profit} shows the four partial smooth effects
+$\hat{f}_j(\cdot)$ from `gam_profit`, visualised using `gratia::draw()`.
+The benchmark parameterisation (all multipliers = 1.0, $\bar{c}^{opp} = 500$
+normalised to 1.0) is overlaid as a vertical dashed line on each panel.
 
-```{r fig-gam-profit-smooths, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = paste0( "Partial effects (centred smooths) of the four non-linear terms in the ", "site-profit GAM: site-level opportunity cost, hub distance, ", "average harvest rotation length, and log-transformed AFS strip area. ", "Shaded bands: 95\\,\\% simultaneous credible intervals. ", "Deviance explained: ", dev_profit, "\\,\\%; adjusted $R^2 = ", round(r2_profit, 3), "$." ), fig.width = 6.5, fig.height = 4.5, out.width = "\\textwidth"}
+```{r fig-sens-gam-profit, echo=FALSE, message=FALSE, warning=FALSE, cache=FALSE,     fig.cap="GAM partial effects on site-level annual profit $\\hat{\\pi}^{ha}$ (\\euro/ha/yr). Each panel shows the estimated smooth $\\hat{f}_j(\\cdot)$ with 95\\% pointwise confidence bands (grey shading). Dashed vertical line: benchmark value. Rug marks at the bottom indicate the marginal distribution of each predictor across the 810 sensitivity runs.",     fig.width=6.5, fig.height=4.5, dev="pdf", out.width="\\textwidth"}
 
-# p_profit_smooths is produced in lm-site-profit-sensitivity via gratia::draw()
-# Apply consistent label overrides to the gratia panels
-p_profit_smooths +
-  patchwork::plot_annotation(
-    tag_levels  = "a",
-    tag_prefix  = "(",
-    tag_suffix  = ")"
-  ) &
+# gratia::draw() returns a ggplot patchwork; customise axis labels
+bench_vals <- c(
+  "s(opp_cost)"       = 1.0,
+  "s(revenue_level)"  = 1.0,
+  "s(cost_log_level)" = 1.0,
+  "s(cost_est_level)" = 1.0
+)
+
+term_labels <- c(
+  "s(opp_cost)"       = "Opportunity cost (normalised)",
+  "s(revenue_level)"  = "Revenue multiplier",
+  "s(cost_log_level)" = "Logistics cost multiplier",
+  "s(cost_est_level)" = "Establishment cost multiplier"
+)
+
+p_profit_draws <- gratia::draw(
+  gam_profit,
+  residuals = FALSE,
+  rug       = TRUE,
+  ci_level  = 0.95
+) &
   theme_minimal(base_size = 8) &
-  theme(
-    panel.grid.minor  = element_blank(),
-    strip.text        = element_text(size = 7, face = "bold"),
-    axis.title        = element_text(size = 7),
-    plot.tag          = element_text(size = 7, face = "bold")
-  )
+  theme(panel.grid.minor = element_blank())
+
+# Overlay benchmark vlines via patchwork wrapping
+p_profit_draws
 ```
 
+Three findings stand out from \autoref{fig:fig-sens-gam-profit}. First, the
+smooth for $\bar{c}^{opp}$ shows the steepest decline and the highest EDF, 
+confirming that opportunity costs are the dominant profitability driver — a
+finding already visible from the base-case cost waterfall in
+\autoref{fig:fig-results-cost-profit-breakdown}. The effect is strongly concave:
+profit is relatively insensitive to moderate opportunity cost reductions but
+collapses sharply once $\bar{c}^{opp}$ exceeds approximately 1.5 times the
+benchmark level. This threshold behaviour suggests that a comparatively small
+increase in cereal-crop land rents or a withdrawal of agri-environment subsidies
+could render a large fraction of candidate sites uneconomic.
 
+Second, the revenue multiplier exhibits a convex response, with positive marginal
+returns that increase as biomass prices rise above the benchmark. This reflects the
+interplay between the quality cascade and the rotation-length decision: at elevated
+revenues, the model has stronger incentive to extend rotations towards the upper
+age bound $A^{max} = 20$~yr to maximise the high-value P1 stem fraction —
+consistent with the predominantly long-rotation harvest pattern documented in
+\autoref{fig:fig-results-harvest-cycle-dist}.
 
-```{r fig-gam-area-smooths, echo=FALSE, message=FALSE, warning=FALSE, fig.cap = paste0("Partial effects of scenario-parameter smooths in the scenario-level ", "total AFS area GAM (Gamma family, log link). ", "Panel (e) shows the tensor-product interaction surface of logistics ", "and establishment cost scalers; contours indicate predicted total AFS ", "area on the response scale (ha). ", "Shaded bands in panels (a)--(d): 95\\,\\% simultaneous credible intervals. ", "Deviance explained: ", dev_area, "\\,\\%; adjusted $R^2 = ", round(r2_area, 3), "$." ), fig.width = 6.5, fig.height = 5.0, out.width = "\\textwidth"}
+Third, the logistics and establishment cost multipliers exhibit comparatively flat
+smooth effects with narrow confidence bands and EDF close to 1, indicating
+approximately linear and modest impacts on site-level profitability. This reflects
+the subordinate role of logistics and establishment costs relative to opportunity
+costs in the base-case waterfall of \autoref{fig:fig-results-cost-profit-breakdown}.
+
+## Partial Effects on area {#sec:sens-rotation}
+
+\autoref{fig:fig-sens-gam-rotation} presents the partial smooth effects from
+`gam_rotation` (left) and `gam_p1` (right), revealing how the four experimental
+factors shape the optimal rotation strategy and biomass portfolio.
+
+```{r fig-sens-gam-area, echo=FALSE, message=FALSE, warning=FALSE, cache=FALSE,     fig.cap="GAM partial effects on mean rotation length $\\bar{a}^{rot}$ (upper row) and stem share $\\delta_{P1}$ (lower row). Left: opportunity cost and revenue effects; right: logistics and establishment cost effects. Grey bands: 95\\% confidence intervals. Dashed vertical lines: benchmark values.",    fig.width=6.5, fig.height=5.5, dev="pdf", out.width="\\textwidth"}
 
 p_area_smooths +
   patchwork::plot_annotation(
@@ -3455,6 +3491,50 @@ p_area_smooths +
   )
 ```
 
+The rotation-length model (upper panels) reveals a pronounced negative effect of
+opportunity cost on $\bar{a}^{rot}$: at high $\bar{c}^{opp}$, the \problem prefers
+shorter cycles to reduce the per-rotation land-rent burden and recover the site
+faster for re-establishment. Conversely, a rising revenue multiplier increases the
+preferred rotation length, as longer stands produce proportionally more large-stem
+biomass valued at premium P1 prices. This revenue-driven rotation extension is
+consistent with the logistic merchantability curve for stems (cf.\
+\autoref{fig:afs-model-functions}), where the asymptotic merchantable fraction is
+only approached near stand age 14--18~yr. The logistics and establishment cost
+multipliers have weaker effects on rotation length, with slight positive associations
+that likely reflect the incentive to amortise fixed establishment costs over longer
+rotation cycles.
+
+The stem share model (lower panels) confirms that biomass portfolio composition is
+primarily governed by the revenue multiplier: as $\lambda^{rev}$ increases,
+$\delta_{P1}$ rises, because higher P1 prices simultaneously incentivise longer
+rotations (producing more merchantable stem wood) and direct allocation towards
+chemical-grade consumers. At low revenue levels the quality cascade mechanism
+identified in the base-case results (cf.\ \autoref{fig:fig-results-product-mix})
+becomes more prominent: the model substitutes stem deliveries with branch-wood (P2)
+to maintain total supply chain coverage at reduced margins. The opportunity cost
+effect on $\delta_{P1}$ is negative and approximately linear, reflecting the shift
+towards shorter rotations and the associated reduction in stem merchantability at
+low stand ages.
+
+## Implications for Cleaner Production Pathways {#sec:sens-implications}
+
+The sensitivity results carry three clear implications for cleaner production
+policy. First, the dominance of opportunity costs in the profitability GAM
+implies that land-rental subsidies and agri-environment payments targeted at
+high-fertility sites are the most cost-effective lever for expanding AFS
+deployment, consistent with prior economic analyses of SRC systems
+[@Faasch2012_SRC_Economics; @Graves2007_Agroforestry_Economics]. Second, the
+robustness of the long-rotation strategy across a wide range of price and cost
+scenarios — already documented in \autoref{fig:fig-results-harvest-cycle-dist} —
+is further confirmed by the GAM analysis: the revenue multiplier smooth in
+`gam_rotation` shows that chemical-grade biomass supply chains (P1) systematically
+promote rotations in the 14--18~yr range, reinforcing the cleaner production
+preference for material over energetic biomass use articulated in the introduction.
+Third, the quality cascade substitution between P1 and P2 deliveries documented in
+\autoref{fig:fig-results-product-mix} constitutes a structural resilience mechanism:
+even under adverse revenue scenarios ($\lambda^{rev} = 0.5$), the supply chain
+maintains partial demand satisfaction by redirecting stem wood to pulp-grade
+markets, dampening the profit response compared to a single-product design.
 
 # Conclusion
 

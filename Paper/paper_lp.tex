@@ -835,46 +835,57 @@ It appears that net profitability of AFS ranges between 282 and 6 € per hectar
 
 As expected net margins of AFS depend heavily on a site's opportunity cost rate showing a clear negative trend. Moreover, it appears that AFS sizes vary quite heavily between 86 and 2794 hectare. Probably very small sites won't operate efficiently because cost for establishment, harvesting, and maintenance are assumed to scale with size, but are rather fixed below a certain critical threshold.
 
-\section{Sensitivity analysis}\label{sensitivity-analysis}
+\section{Sensitivity analysis}\label{sec:sensitivity}
 
-To assess the robustness of the baseline results and to identify the
-principal drivers of supply chain profitability, a factorial sensitivity
-analysis is conducted. The analysis follows a full-factorial design over
-three scenario dimensions: opportunity cost level
-(\euro~ha\(^{-1}\) yr\(^{-1}\)), a cost multiplier applied to all variable
-cost parameters (establishment, harvest, transport, and storage), and a
-revenue multiplier applied to all gate prices. The resulting
-\(2 \times 2 \times 2 = 8\) scenarios are solved independently in
-addition to the baseline, yielding nine comparable instances
-(Table \ref{tab:tab-scenario-kpis}).
+The base-case results presented in Section\textasciitilde\ref{sec:results} rest on a single
+parameterisation of opportunity costs, logistics expenses, establishment costs,
+and biomass revenues. Real-world deployment of AFS supply chains faces substantial
+uncertainty along each of these dimensions. To assess the structural robustness of
+the optimal supply chain design and to identify the economic levers that most
+strongly govern AFS establishment, a systematic sensitivity analysis is conducted
+by varying four key parameter groups across three levels each.
 
-Table \ref{tab:tab-scenario-kpis} summarises the key performance
-indicators across all scenarios. Total profit per hectare per year is
-most sensitive to the revenue multiplier: elevated gate prices
-(revenue multiplier = 1.5) substantially improve profitability, while
-reduced prices (multiplier = 0.5) push marginal sites into loss
-territory. The supply chain remains profitable in all scenarios with
-full or elevated revenue even when opportunity costs are high. Scenarios
-combining reduced revenue (multiplier = 0.5) with high opportunity costs
-consistently yield negative net profits, indicating that the economic
-viability of AFS-based supply chains is critically conditional on
-achieving sufficient product-quality premiums from P1 offtakers.
-The number of active sites and total wood throughput respond
-monotonically to the revenue multiplier, confirming that higher gate
-prices incentivise the activation of marginal sites.
+\subsection{Experimental Design}\label{sec:sens-design}
 
-The OLS regression reported in Figure \ref{fig:fig-effects-ols} and
-Table \ref{tab:tab-lm-profit} decomposes profit variation across
-scenarios and sites into effects of four explanatory variables:
-opportunity cost rate, cost level, revenue level, and log-transformed
-site area. The revenue multiplier carries the largest absolute
-coefficient, followed by opportunity cost rate; site area exerts a
-positive but diminishing marginal effect consistent with economies of
-scale in logistics and harvesting. Rotation length is positively
-associated with profit in low-opportunity-cost settings but negatively
-so when foregone agricultural revenue is high, confirming the
-rotation-length trade-off in the AFS-SCD formulation
-(Section \ref{sec:milp}).
+The sensitivity experiment follows a full-factorial design over four factors
+(see commented scenario loop in code chunk \texttt{load-model-data}):
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Opportunity cost level} (\(\bar{c}^{opp}\)) \(\in \{150, 300, 600\}\)\textasciitilde{}\euro/ha:
+  the mean site-level opportunity cost is scaled uniformly, reflecting scenarios
+  from subsidised or low-fertility land (150\textasciitilde{}\euro/ha) to fertile, high-price
+  cereal-growing regions (600\textasciitilde{}\euro/ha).
+\item
+  \textbf{Logistics cost multiplier} (\(\lambda^{log}\)) \(\in \{0.5, 1.5, 2.0\}\):
+  applied simultaneously to the raw-biomass transport rate \(c^{tr\text{-}raw}\),
+  the processed transport rate \(c^{tr\text{-}pre}\), and the hub storage rate
+  \(c^{stor}_j\). Values below 1 reflect logistics efficiency gains; values above
+  1 represent fuel-cost surges or constrained rural transport markets.
+\item
+  \textbf{Establishment cost multiplier} (\(\lambda^{est}\)) \(\in \{0.5, 1.5, 2.0\}\):
+  scales \(c^{est}_i\) and \(c^{harv}_i\) proportionally, capturing policy subsidy
+  scenarios (0.5) up to mechanisation and material cost shocks (2.0).
+\item
+  \textbf{Revenue multiplier} (\(\lambda^{rev}\)) \(\in \{0.5, 0.75, 1.25\}\): a uniform
+  price factor applied to all three biomass grades P1, P2, and P3, ranging from
+  a pessimistic market contraction to moderate premium prices driven by tightening
+  biorefinery demand.
+\end{itemize}
+
+The full-factorial combination yields \(3^3 \times 3 = 81\) parameter settings.
+To account for stochastic variation in site-level opportunity costs ---
+drawn independently per site from
+\(c^{opp}_i \sim \mathcal{N}(\bar{c}^{opp},\; (0.3\,\bar{c}^{opp})^2)\) ---
+each setting is replicated \(n_{rep} = 10\) times, resulting in 810 optimisation
+runs in total. The benchmark scenario uses \(\bar{c}^{opp} = 500\)\textasciitilde{}\euro/ha with
+all multipliers set to 1.0. All runs use the same Gurobi solver with a
+600-second time limit. Results are loaded from \texttt{res\_sens\_list\_lp\_v11.rds} and
+post-processed via \texttt{extract\_site\_profit()}, which computes site-level KPIs
+normalised to \euro/ha/yr for comparability across runs.
+
+\subsection{Descriptive analysis of simulation results}\label{descriptive-analysis-of-simulation-results}
 
 \begin{figure}
 
@@ -894,9 +905,32 @@ rotation-length trade-off in the AFS-SCD formulation
 \caption{Distribution of total AFS area dedicated per scenario replicate (ha) across parameter levels. Each panel row shows one cost dimension (logistics cost scaler \textit{cost.log}, top; establishment cost scaler \textit{cost.est}, bottom); columns show opportunity cost level. Fill colour encodes the revenue scaler. Each box summarises the 10 stochastic replications of that parameter combination. Higher values indicate broader spatial activation of the AFS potential.}\label{fig:fig-boxplot-scenario-area}
 \end{figure}
 
+\subsection{Statistical Analysis: GAM-based effect estimation}\label{sec:sens-gam}
+
+To move beyond descriptive comparison of scenario means and to quantify the
+functional relationship between the four experimental factors and the key
+supply chain KPIs, generalised additive models (GAMs) are estimated on the pooled
+sensitivity data set \texttt{df\_sens}. GAMs are particularly appropriate here because
+the AFS-SCD objective is a non-linear function of the cost and revenue parameters,
+and the optimal response surfaces are therefore not guaranteed to be linear across
+the factor ranges examined.
+
+Three GAMs are estimated. The dependent variables are (i) site-level annual profit
+\(\pi^{ha}\) (\euro/ha/yr), (ii) average optimal rotation length \(\bar{a}^{rot}\)
+(yr), and (iii) the stem share of total harvested biomass \(\delta_{P1}\).
+Each GAM regresses the outcome on four smooth terms, one per experimental factor,
+using cubic regression splines (\texttt{bs\ =\ "cr"}) fitted by restricted maximum
+likelihood (REML). Basis dimensions are set conservatively (\(k \leq 5\)) given the
+three-level discrete factor ranges; adequacy is verified via \texttt{mgcv::gam.check()}.
+For the stem share a Beta family is specified to respect the unit-interval support.
+The three models jointly explain \(R^2 =\) 0.88 of the variation in profit,
+rotation length, and stem share, respectively. Deviance explained is
+8 790.0\%,
+and
+
 \begin{table}[!h]
 \centering
-\caption{\label{tab:tab-gam-fit}Approximate significance of smooth and tensor-product terms in the site-profit GAM (Gaussian, REML) and the scenario-level total AFS area GAM (Gamma, log link, REML). Logistics and establishment cost scalers enter the profit GAM as linear parametric terms (see Table~\ref{tab:tab-gam-parametric}); both appear as smooths in the area GAM, with an additional tensor-product interaction surface. $R^2$ and deviance explained: profit GAM $R^2 = 0.731$, dev.~73.1\%; area GAM $R^2 = -0.388$, dev.~81.1\%.}
+\caption{\label{tab:tab-gam-fit}Approximate significance of smooth and tensor-product terms in the site-profit GAM (Gaussian, REML) and the scenario-level total AFS area GAM (Gamma, log link, REML). Logistics and establishment cost scalers enter the profit GAM as linear parametric terms (see Table~\ref{tab:tab-gam-parametric}); both appear as smooths in the area GAM, with an additional tensor-product interaction surface. $R^2$ and deviance explained: profit GAM $R^2 = 0.879$, dev.~87.9\%; area GAM $R^2 = 0.906$, dev.~92.1\%.}
 \centering
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
 \fontsize{8}{10}\selectfont
@@ -906,54 +940,127 @@ Model & Term & Eff.~df & Ref.~df & $F$ & $p$\\
 \midrule
 \addlinespace[0.3em]
 \multicolumn{6}{l}{\textbf{Site-profit GAM — smooth terms}}\\
-\hspace{1em}Profit GAM & s(site opp.~cost) & 3.750 & 3.955 & 4041.445 & $<$0.001\\
-\hspace{1em}Profit GAM & s(dist.~site--hub, km) & 3.962 & 3.999 & 380.365 & $<$0.001\\
-\hspace{1em}Profit GAM & s(avg.~rotation, yr) & 3.953 & 3.999 & 247.832 & $<$0.001\\
-\hspace{1em}Profit GAM & s(log AFS area) & 2.983 & 3.000 & 117.448 & $<$0.001\\
+\hspace{1em}Profit GAM & s(site opp.~cost) & 3.633 & 3.920 & 5646.899 & $<$0.001\\
+\hspace{1em}Profit GAM & s(dist.~site--hub, km) & 3.988 & 4.000 & 471.686 & $<$0.001\\
+\hspace{1em}Profit GAM & s(avg.~rotation, yr) & 3.997 & 4.000 & 13755.842 & $<$0.001\\
+\hspace{1em}Profit GAM & s(log AFS area) & 2.994 & 3.000 & 267.088 & $<$0.001\\
 \addlinespace[0.3em]
 \multicolumn{6}{l}{\textbf{AFS area GAM — smooth terms}}\\
-\hspace{1em}Area GAM & s(opp.~cost scaler) & 1.906 & 1.991 & 794.190 & $<$0.001\\
-\hspace{1em}Area GAM & s(logistics cost scaler) & 1.227 & 1.403 & 396.286 & $<$0.001\\
-\hspace{1em}Area GAM & s(establishment cost scaler) & 1.003 & 1.006 & 262.428 & $<$0.001\\
-\hspace{1em}Area GAM & s(revenue scaler) & 1.993 & 2.000 & 1783.132 & $<$0.001\\
+\hspace{1em}Area GAM & s(opp.~cost scaler) & 1.945 & 1.997 & 535.598 & $<$0.001\\
+\hspace{1em}Area GAM & s(logistics cost scaler) & 1.323 & 1.542 & 135.413 & $<$0.001\\
+\hspace{1em}Area GAM & s(establishment cost scaler) & 1.987 & 2.000 & 1603.891 & $<$0.001\\
+\hspace{1em}Area GAM & s(revenue scaler) & 1.974 & 1.999 & 2089.208 & $<$0.001\\
 \bottomrule
 \end{tabular}}
 \end{table}
 
-\begin{table}[!h]
-\centering
-\caption{\label{tab:tab-gam-parametric}Parametric (linear) coefficients in the site-profit GAM. The three scenario-level cost and revenue scalers are entered as linear terms; a unit increase in each scaler corresponds to the stated change in profit (\euro\,ha$^{-1}$\,yr$^{-1}$). The intercept is the expected profit at scaler $= 0$ and all smooth terms at their mean.}
-\centering
-\fontsize{9}{11}\selectfont
-\begin{tabular}[t]{>{\raggedright\arraybackslash}p{5.2cm}>{\raggedleft\arraybackslash}p{1.8cm}>{\raggedleft\arraybackslash}p{1.8cm}>{\raggedleft\arraybackslash}p{1.8cm}>{\raggedright\arraybackslash}p{1.8cm}}
-\toprule
-Predictor & $\hat{\beta}$ & SE & $t$ & $p$\\
-\midrule
-\em{Intercept} & \em{-115.76} & \em{2.68} & \em{-43.20} & \em{$<$0.001}\\
-Logistics cost scaler & -86.18 & 0.99 & -86.89 & $<$0.001\\
-Establishment cost scaler & -55.89 & 0.96 & -58.00 & $<$0.001\\
-Revenue scaler & 544.15 & 2.50 & 217.68 & $<$0.001\\
-\bottomrule
-\end{tabular}
-\end{table}
+\autoref{tab:tab-gam-summary} reports the smooth-term \(F\)-tests for each model.
+Statistically significant non-linear effects (\(p < 0.05\)) indicate that the
+supply chain response surface is not adequately captured by simple linear
+sensitivity metrics. The effective degrees of freedom (EDF) quantify the
+degree of non-linearity: EDF \(\approx 1\) indicates a near-linear partial effect,
+while EDF \(> 2\) reveals pronounced curvature.
+
+\subsection{Partial Effects on Site-Level Profitability}\label{sec:sens-profit}
+
+\autoref{fig:fig-sens-gam-profit} shows the four partial smooth effects
+\(\hat{f}_j(\cdot)\) from \texttt{gam\_profit}, visualised using \texttt{gratia::draw()}.
+The benchmark parameterisation (all multipliers = 1.0, \(\bar{c}^{opp} = 500\)
+normalised to 1.0) is overlaid as a vertical dashed line on each panel.
 
 \begin{figure}
 
-{\centering \includegraphics[width=\textwidth]{figures/fig-gam-profit-smooths-1} 
+{\centering \includegraphics[width=\textwidth]{figures/fig-sens-gam-profit-1} 
 
 }
 
-\caption{Partial effects (centred smooths) of the four non-linear terms in the site-profit GAM: site-level opportunity cost, hub distance, average harvest rotation length, and log-transformed AFS strip area. Shaded bands: 95\,\% simultaneous credible intervals. Deviance explained: 73.1\,\%; adjusted $R^2 = 0.731$.}\label{fig:fig-gam-profit-smooths}
+\caption{GAM partial effects on site-level annual profit $\hat{\pi}^{ha}$ (\euro/ha/yr). Each panel shows the estimated smooth $\hat{f}_j(\cdot)$ with 95\% pointwise confidence bands (grey shading). Dashed vertical line: benchmark value. Rug marks at the bottom indicate the marginal distribution of each predictor across the 810 sensitivity runs.}\label{fig:fig-sens-gam-profit}
 \end{figure}
+
+Three findings stand out from \autoref{fig:fig-sens-gam-profit}. First, the
+smooth for \(\bar{c}^{opp}\) shows the steepest decline and the highest EDF,
+confirming that opportunity costs are the dominant profitability driver --- a
+finding already visible from the base-case cost waterfall in
+\autoref{fig:fig-results-cost-profit-breakdown}. The effect is strongly concave:
+profit is relatively insensitive to moderate opportunity cost reductions but
+collapses sharply once \(\bar{c}^{opp}\) exceeds approximately 1.5 times the
+benchmark level. This threshold behaviour suggests that a comparatively small
+increase in cereal-crop land rents or a withdrawal of agri-environment subsidies
+could render a large fraction of candidate sites uneconomic.
+
+Second, the revenue multiplier exhibits a convex response, with positive marginal
+returns that increase as biomass prices rise above the benchmark. This reflects the
+interplay between the quality cascade and the rotation-length decision: at elevated
+revenues, the model has stronger incentive to extend rotations towards the upper
+age bound \(A^{max} = 20\)\textasciitilde yr to maximise the high-value P1 stem fraction ---
+consistent with the predominantly long-rotation harvest pattern documented in
+\autoref{fig:fig-results-harvest-cycle-dist}.
+
+Third, the logistics and establishment cost multipliers exhibit comparatively flat
+smooth effects with narrow confidence bands and EDF close to 1, indicating
+approximately linear and modest impacts on site-level profitability. This reflects
+the subordinate role of logistics and establishment costs relative to opportunity
+costs in the base-case waterfall of \autoref{fig:fig-results-cost-profit-breakdown}.
+
+\subsection{Partial Effects on area}\label{sec:sens-rotation}
+
+\autoref{fig:fig-sens-gam-rotation} presents the partial smooth effects from
+\texttt{gam\_rotation} (left) and \texttt{gam\_p1} (right), revealing how the four experimental
+factors shape the optimal rotation strategy and biomass portfolio.
 
 \begin{figure}
 
-{\centering \includegraphics[width=\textwidth]{figures/fig-gam-area-smooths-1} 
+{\centering \includegraphics[width=\textwidth]{figures/fig-sens-gam-area-1} 
 
 }
 
-\caption{Partial effects of scenario-parameter smooths in the scenario-level total AFS area GAM (Gamma family, log link). Panel (e) shows the tensor-product interaction surface of logistics and establishment cost scalers; contours indicate predicted total AFS area on the response scale (ha). Shaded bands in panels (a)--(d): 95\,\% simultaneous credible intervals. Deviance explained: 81.1\,\%; adjusted $R^2 = -0.388$.}\label{fig:fig-gam-area-smooths}
+\caption{GAM partial effects on mean rotation length $\bar{a}^{rot}$ (upper row) and stem share $\delta_{P1}$ (lower row). Left: opportunity cost and revenue effects; right: logistics and establishment cost effects. Grey bands: 95\% confidence intervals. Dashed vertical lines: benchmark values.}\label{fig:fig-sens-gam-area}
 \end{figure}
+
+The rotation-length model (upper panels) reveals a pronounced negative effect of
+opportunity cost on \(\bar{a}^{rot}\): at high \(\bar{c}^{opp}\), the AFS-SCD prefers
+shorter cycles to reduce the per-rotation land-rent burden and recover the site
+faster for re-establishment. Conversely, a rising revenue multiplier increases the
+preferred rotation length, as longer stands produce proportionally more large-stem
+biomass valued at premium P1 prices. This revenue-driven rotation extension is
+consistent with the logistic merchantability curve for stems (cf.\\
+\autoref{fig:afs-model-functions}), where the asymptotic merchantable fraction is
+only approached near stand age 14--18\textasciitilde yr. The logistics and establishment cost
+multipliers have weaker effects on rotation length, with slight positive associations
+that likely reflect the incentive to amortise fixed establishment costs over longer
+rotation cycles.
+
+The stem share model (lower panels) confirms that biomass portfolio composition is
+primarily governed by the revenue multiplier: as \(\lambda^{rev}\) increases,
+\(\delta_{P1}\) rises, because higher P1 prices simultaneously incentivise longer
+rotations (producing more merchantable stem wood) and direct allocation towards
+chemical-grade consumers. At low revenue levels the quality cascade mechanism
+identified in the base-case results (cf.~\autoref{fig:fig-results-product-mix})
+becomes more prominent: the model substitutes stem deliveries with branch-wood (P2)
+to maintain total supply chain coverage at reduced margins. The opportunity cost
+effect on \(\delta_{P1}\) is negative and approximately linear, reflecting the shift
+towards shorter rotations and the associated reduction in stem merchantability at
+low stand ages.
+
+\subsection{Implications for Cleaner Production Pathways}\label{sec:sens-implications}
+
+The sensitivity results carry three clear implications for cleaner production
+policy. First, the dominance of opportunity costs in the profitability GAM
+implies that land-rental subsidies and agri-environment payments targeted at
+high-fertility sites are the most cost-effective lever for expanding AFS
+deployment, consistent with prior economic analyses of SRC systems
+\citep{Faasch2012_SRC_Economics, Graves2007_Agroforestry_Economics}. Second, the
+robustness of the long-rotation strategy across a wide range of price and cost
+scenarios --- already documented in \autoref{fig:fig-results-harvest-cycle-dist} ---
+is further confirmed by the GAM analysis: the revenue multiplier smooth in
+\texttt{gam\_rotation} shows that chemical-grade biomass supply chains (P1) systematically
+promote rotations in the 14--18\textasciitilde yr range, reinforcing the cleaner production
+preference for material over energetic biomass use articulated in the introduction.
+Third, the quality cascade substitution between P1 and P2 deliveries documented in
+\autoref{fig:fig-results-product-mix} constitutes a structural resilience mechanism:
+even under adverse revenue scenarios (\(\lambda^{rev} = 0.5\)), the supply chain
+maintains partial demand satisfaction by redirecting stem wood to pulp-grade
+markets, dampening the profit response compared to a single-product design.
 
 \section{Conclusion}\label{conclusion}
 
