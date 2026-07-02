@@ -8,7 +8,7 @@ author:
     email: "thomas.kirschstein@ikts.fraunhofer.de"
     correspondingauthor: true
   
-journal: "Journal Name"
+journal: "Journal of Industrial Ecology"
 # elsarticle options: preprint preview style, 1p or 3p for layout
 classoption: "preprint,review,1p,authoryear"
 date: "`r Sys.Date()`"
@@ -18,13 +18,15 @@ always_allow_html: true
 
 
 keywords: 
-  - Agroforestry 
-  - Short-rotation coppice 
-  - Biomass supply chain
-  - Product cascading
+  - Industrial symbiosis
+  - Agroforestry
+  - Biomass cascading
+  - Bioeconomy network
+  - Material flow optimisation
+  - Cleaner production
 
 abstract: |
-  Short-rotation agroforestry systems are increasingly promoted as a low-carbon feedstock option for bio-based value chains, but their economic viability depends on coordinated decisions on stand establishment, multi-cycle harvesting, and product cascading in spatially distributed supply chains. This paper develops a mixed-integer linear programming (MILP) model for the integrated design and operation of an agroforestry biomass supply chain with explicit age-lag constraints that link consecutive harvests at each site. The formulation couples allometric yield functions for different biomass types with a multi-product, multi-period network design model including storage, processing, and product quality cascades. The model is applied to a stylised case study of Central European poplar-based alley-cropping systems to explore trade-offs between harvest rotation length, product portfolios, and infrastructure configuration. We outline a computational experimentation plan to test the impact of allometric parameter uncertainty, price scenarios, and policy incentives on the optimal deployment of agroforestry systems in cleaner bioeconomy pathways.
+  Agroforestry systems that integrate fast-growing woody perennials into agricultural land form a structurally novel type of biological-industrial symbiosis: they simultaneously deliver multiple biomass fractions of differing quality to chemical, pulp-and-paper, and energy industries through a shared regional supply network, thereby substituting fossil feedstocks and storing biogenic carbon in long-lived products. Despite this environmental potential, the material flows through such networks are poorly understood because stand-level age dynamics, multi-fraction biomass composition, and product quality cascading across industrial sectors have never been jointly optimised. This paper presents the AFS-SCD model, a mixed-integer linear programming (MILP) formulation that endogenises agroforestry establishment timing and consecutive harvest scheduling through arc-based age-lag constraints, couples component-specific Gompertz yield functions for stem, branch, and residue fractions with a multi-echelon network design model, and implements a product quality cascade allocating biomass grades to chemical, pulp, and energy consumers within a unified framework. Applied to a real-world case study in the Saxony-Anhalt tri-state region of Germany — a cluster of chemical and paper industries seeking bio-based feedstock transition — the model identifies the profit-optimal spatial configuration, rotation lengths, and product allocation across a 40-year planning horizon. Sensitivity analyses across opportunity-cost, logistics-cost, and revenue scenarios reveal that product cascading is the dominant lever for AFS viability, that sites with opportunity costs above approximately 300 EUR per hectare per year are rarely activated, and that high-value stem allocation to chemical applications substantially outperforms energy-only offtake strategies. The findings demonstrate that integrated optimisation of biological production dynamics and industrial network design is essential for designing viable and cleaner agroforestry bioeconomy ecosystems.
 
 output:
   bookdown::pdf_book:
@@ -594,74 +596,79 @@ df_sens <- df_sens %>% mutate(opp_cost = opp_cost/500)
 
 # Introduction
 
-Agroforestry systems that integrate trees with agricultural crops
-(silvoarable systems) are increasingly recognised as a promising
-land-use option to reconcile climate mitigation, biodiversity
-conservation, and rural income generation on the same hectare of land
-[@Toensmeier2017_Carbon_Agroforestry]. Temperate agroforestry systems
-(AFS) based on fast-growing species such as poplar, willow, alder, and
-black locust can deliver substantial biomass yields while improving soil
-quality and providing multiple ecosystem services compared to
-conventional monocultures [@Huber2018_SRAFS_growth]. Biomass produced
-in AFS is considered as a sustainable feedstock and can be used either
-energetically, chemically or materially (e.g. in the building sector).
-The latter two options are generally preferred over the energetic usage
-from a cleaner production perspective as biogenic carbon is stored in
-products during their life span which contributes to climate change
-mitigation.
+The industrial ecology of biobased economies depends on one central challenge: connecting primary biological production systems to multiple industrial sectors through networks that efficiently allocate biomass fractions of varying quality to their highest-value application — the principle of industrial symbiosis applied to renewable material flows [@Hildebrandt2019].
+Agroforestry systems (AFS) that deliberately integrate fast-growing woody
+perennials into agricultural land represent a structurally novel
+realisation of this principle. By co-producing stem wood suitable for
+chemical and paper industry, branch wood suitable for pulping, and
+residue fractions suitable for energy generation, AFS create a
+multi-fraction feedstock that can simultaneously serve multiple
+industrial consumer sectors through a shared regional supply network
+[@Toensmeier2017_Carbon_Agroforestry]. This biological-industrial
+symbiosis substitutes fossil feedstocks with renewable bio-based
+alternatives and stores biogenic carbon in long-lived material products
+— a cascade strategy explicitly preferred over energetic use from a
+cleaner production perspective [@Huber2018_SRAFS_growth].
 
-Despite substantial research on ecological advantages and pioneering
-initiatives to establish AFS in practice, the share of AFS in
-agricultural production systems is still small. E.g., in Germany about
-1200 hectares of silvoarable AFS are established in 2025, which accounts
-for about 0.02% of total agricultural land use [@DEFAF]. One of the core
-challenges in establishing AFS systems at large scale in practice is a
-lack of opportunities to generate substantial revenues from woody
-biomasses of AFS. On the other hand, the rise of bioeconomy creates
-substantial demands for woody biomass and requires a reliable and
-cost-efficient feedstock supply. As woody biomasses are bulky feedstocks
-with low energy density, the design of cost-efficient supply chains is
-crucial to ensure the economic viability of AFS-based value chains. This
-requires coordinated decisions on stand establishment, multi-cycle
-harvesting, and product cascading in spatially distributed supply
-chains, which can be supported by integrated optimisation models that
-link stand-level growth dynamics to regional supply chain design.
+Despite their ecological and industrial symbiosis potential, temperate
+AFS occupy only a marginal share of agricultural land in practice. In
+Germany, approximately 1,200 hectares of silvoarable AFS were
+established in 2025, accounting for barely 0.02% of total agricultural
+land [@DEFAF]. This gap between potential and practice reflects an
+unresolved material flow planning problem: establishing AFS at regional
+scale requires coordinated decisions on stand establishment timing,
+multi-cycle harvest scheduling, and biomass fraction allocation across
+spatially distributed industrial consumers — decisions that interact
+through the age-dependent composition of harvested biomass. At short
+rotation ages, harvested biomass is dominated by residue and branch
+fractions of limited merchantability; at longer rotations, stem diameters
+surpass quality thresholds and the share of chemical- and paper-grade
+material rises markedly [@Huber2018_SRAFS_growth;
+@Niemczyk2021_Poplar_Rotation]. The material flow structure of an
+AFS-based bioeconomy network therefore depends endogenously on the
+rotation strategy, which cannot be set independently of the product
+cascade and the industrial demand structure. Current biomass supply chain
+models, reviewed in Section \@ref(sec:lit-sc), do not capture this
+coupling: they either treat biomass availability as an exogenous time
+series — decoupling it from age-class dynamics — or optimise a single
+downstream value chain rather than a multi-sector product cascade
+[@Zahraee2020_BSC_review; @DeMeyer2016_tOPTIMASS].
 
-In the last two decades, a large body of research has analysed biomass
-supply chains for bioenergy and biorefineries using mathematical
-programming models, often in the form of mixed-integer linear
-programming (MILP) [@Zahraee2020_BSC_review; @Sharma2013_BSC_review].
-These models typically optimise network configuration, feedstock
-sourcing, and logistics under cost or profit objectives. They often
-treat biomass availability as an exogenous input or rely on simplified
-agricultural production decisions. Moreover, downstream processing of
-biomasses is concentrated on one particular value chain e.g. bioenergy
-plants consuming all produced biomasses. Recent work has started to
-integrate operational details such as various biomass types, biomass
-growth models and regeneration processes in multi-period supply chain
-models.
+This paper closes that gap by developing the **AFS Supply Chain Design
+(AFS-SCD)** model, a mixed-integer linear programming (MILP) formulation
+for the integrated design and operation of an agroforestry biomass supply
+chain from an industrial ecology perspective. The model makes three
+contributions to the industrial ecology of biobased networks. First, it
+endogenises the material flow structure of an AFS network by coupling
+age-class stand dynamics — formalised through binary arc-based age-lag
+variables that enforce minimum and maximum rotation constraints at each
+site — directly to regional logistics decisions, so that rotation
+length, harvest timing, and network configuration are optimised jointly.
+Second, it embeds component-specific Gompertz yield functions for stem,
+branch, and residue fractions, translating stand age into
+merchantable dry-matter quantities per hectare for each biomass type,
+thereby making the multi-fraction material flow endogenous to the
+optimisation. Third, it implements a product quality cascade across three
+industrial sectors — chemical/biorefinery (P1), pulp and paper (P2), and
+energy/biogas (P3) — within a unified multi-period network design model
+including storage, processing, and inter-sector substitution. The model
+is applied to a real-world industrial symbiosis context in the
+Saxony-Anhalt tri-state region of Germany, where a dense cluster of
+chemical and paper industries is undergoing a bio-based feedstock
+transition and seeks reliable regional woody biomass supply.
 
-The present paper contributes to this literature in three ways. First, we
-propose a novel MILP formulation for AFS-based biomass supply chain
-design that explicitly links establishment decisions and consecutive
-harvest decisions, ensuring that harvesting decisions at each site are
-consistent with minimum and maximum rotation ages. Second, we embed
-allometric yield functions for different biomass types generating
-age-specific yields for different woody biomass types (like stems,
-branches, or leaves and twigs). Third, these different woody biomass
-types can be processed in specific downstream industries, like chemical
-or paper industry as well as energy sector. The model aims to provide
-strategic decision support for establishing regional AFS-based
-bioeconomy ecosystems connecting multiple industries and product
-markets.
+The remainder of the paper is structured as follows.
+Section \@ref(sec:litreview) reviews the relevant literature on
+agroforestry systems, biomass growth modelling, and biomass supply chain
+design, concluding with the identification of the modelling gap addressed
+here. Section \@ref(sec:milp) presents the AFS-SCD formulation.
+Section \@ref(sec-casestudy) describes the Saxony-Anhalt case study,
+presents the base-case optimisation results, and analyses the implications
+of alternative cost and revenue scenarios for regional cleaner
+production strategies. Section \@ref(sec:conclusion) concludes and
+discusses directions for integrating life cycle assessment into the
+framework.
 
-The remainder of the paper is structured as follows. Section
-\@ref(sec:litreview) reviews the relevant literature on agroforestry
-biomass systems, allometric biomass modelling, and biomass supply chain
-optimisation. Section \@ref(sec:milp) summarises the MILP formulation
-for the agroforestry supply chain with age-lag constraints. Section
-\@ref(sec-casestudy) presents the case study instantiation, the base-case optimisation results,
-and the sensitivity analysis, examining the implications for cleaner production strategies.
 
 # Literature review {#sec:litreview}
 
