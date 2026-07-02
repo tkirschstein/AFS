@@ -150,7 +150,31 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
   scen_cost_est <- if (!any(is.na(setting))) setting$cost.est else 1.0   
   scen_revenue  <- if (!any(is.na(setting))) setting$revenue  else 1.0
   
-  # Aktive Standorte
+  # no open sites
+  if(nrow(ext$z) == 0){
+    
+    result_df <- data.frame( 
+      scenario = scenario_name, 
+      opp_cost = scen_opp,
+      cost_log_level       = scen_cost_log,   
+      cost_est_level       = scen_cost_est,   
+      revenue_level        = scen_revenue,
+       profit_ha_yr = NA,
+      opp_cost = NA, 
+      opp_cost_site = NA, 
+      avg_dist_hub_km = NA, 
+      avg_dist_consumer_km = NA,
+      avg_rotation_yr = NA, 
+      n_harvests = NA, 
+      share_p1 = NA,
+      area_ha =NA, 
+      area_afs = NA, 
+      active_years = NA, 
+      n_sites = NA)
+    
+  }
+  else{
+    # Aktive Standorte
   active_site_ids <- ext$z %>%
     filter(arc_type == "harvest") %>%
     pull(site_id) %>% unique()
@@ -325,6 +349,10 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
            avg_dist_hub_km, avg_dist_consumer_km,
            avg_rotation_yr, n_harvests, share_p1,
            area_ha, area_afs, active_years, n_sites)
+    
+  }
+  
+  
   
   return(result_df)
 }
@@ -373,7 +401,7 @@ yields_by_age$yield_ha <- yields_by_age$yield_ha / (1-0.5)
 
 set.seed(123578)
 # generate random vector of opportunity cost for clustered sites in range [0,600]
-c.opp.vec <- rnorm(nrow(sites_clustered), 1, .75)
+c.opp.vec <- rnorm(nrow(sites_clustered), 1, .3)
 
 
 sites_clustered <- sites_clustered %>%
@@ -381,7 +409,7 @@ sites_clustered <- sites_clustered %>%
      C_est  = 2500,   # €/ha  establishment (Section 2.1 mid-range)
      C_harv =  150,    # €/ha  harvest cost  (Section 2.1 mid-range)
      C_main = 10 , #  €/ha  maintenance cost  (Section 2.1 mid-range)
-     C_opp = 150*c.opp.vec, #  €/ha  opportunity cost  (Section 2.1 mid-range)
+     C_opp = 500*c.opp.vec, #  €/ha  opportunity cost  (Section 2.1 mid-range)
    ) #%>%   # change column name area_ha to area if necessary  rename(area_ha = area)
 
 
@@ -420,11 +448,11 @@ milp_instance <- build_optimization_instance(
     params       = params_obj
   ) 
 
-# result <- build_and_solve_afs_lp_v11(milp_instance, 
+#result <- build_and_solve_afs_lp_v11(milp_instance, 
 #                            gurobi_params = list(TimeLimit = 300),
 #                            verbose = TRUE)
-# 
-# saveRDS(result, "result_lp_v11.rds")
+ 
+#saveRDS(result, "result_lp_v11.rds")
 
 result <- readRDS("result_lp_v11.rds")
 
@@ -445,8 +473,8 @@ ext$S <- ext$S %>%
   rename(hub_id = j, period = t)
 
 # sensitivity analysis ##########################################
-# # 
-# scen.mat <- expand.grid(opp = c(75, 150, 300), cost.log = c(.5, 1.5, 2), cost.est = c(.5, 1.5, 2), revenue = c(.5, .75, 1.25)  )
+#
+# scen.mat <- expand.grid(opp = c(150, 300, 600), cost.log = c(.5, 1.5, 2), cost.est = c(.5, 1.5, 2), revenue = c(.5, .75, 1.25)  )
 # nb.rep <- 10
 # 
 # res.sens.list <- vector("list", nrow(scen.mat)*nb.rep)
@@ -479,7 +507,7 @@ ext$S <- ext$S %>%
 #     #
 # 
 #   for(j in seq_len(nb.rep)){
-#     tmp.c.opp.vec <- rnorm(nrow(sites_clustered), 1, .75)
+#     tmp.c.opp.vec <- rnorm(nrow(sites_clustered), 1, .3)
 # 
 #     # opportunity cost
 #     tmp.c.opp.vec <- tmp.c.opp.vec * tmp.setting$opp
@@ -544,7 +572,7 @@ res.sens.list <- readRDS("res_sens_list_lp_v11.rds")
 
 # ── 2. Benchmark + alle Sensitivitätsszenarien zusammenführen ────────────────
 res_bench_full <- list(
-  setting       = list(opp = 150, cost.log = 1.0, cost.est = 1.0, revenue = 1.0),
+  setting       = list(opp = 500, cost.log = 1.0, cost.est = 1.0, revenue = 1.0),
   milp_instance = milp_instance,
   ext           = ext,
   result        = result
@@ -552,14 +580,14 @@ res_bench_full <- list(
 
 df_bench <- extract_site_profit(res_bench_full, "Bench.")
 
-df_bench <- df_bench %>% mutate(opp_cost = opp_cost/150)
+df_bench <- df_bench %>% mutate(opp_cost = opp_cost/500)
 
 df_sens <- purrr::imap_dfr(
   res.sens.list,
   ~ extract_site_profit(.x, scenario_name = paste0("S", .y))
 )
 
-df_sens <- df_sens %>% mutate(opp_cost = opp_cost/150)
+df_sens <- df_sens %>% mutate(opp_cost = opp_cost/500)
 
 ```
 
@@ -1364,7 +1392,7 @@ notation <- tribble(
   "$\\mathcal{S} = \\mathcal{S}^{\\text{est}} \\cup \\mathcal{S}^{\\text{harv}} \\cup\\; \\mathcal{S}^{\\text{term}}$",
     "Age-lag arc set (establishment $\\cup$ harvest $\\cup$ termination)",
   # --- DECISION VARIABLES ---
-  "$z_{ist}\\in\\{0,AREA_i\\}$",
+  "$z_{ist} \\geq 0$",
     "Area of site $i$ with AFS operation between $s$ and $t$",
   "$X_{ijpt}\\ge 0$",
     "Transport flow (t) of $p$ from site $i$ to facility $j$ in $t$",
@@ -1564,6 +1592,10 @@ stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326) %>%
 cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326) %>%
   st_transform(crs_map)
 
+# color range C_opp
+copp_range <- range(sites_sf_clust$C_opp, na.rm = TRUE)
+copp_lim   <- c(min(copp_range[1], -1), max(copp_range[2], 1))
+
 # ── Plot ───────────────────────────────────────────────────────────────────────
 ggplot() +
 
@@ -1587,6 +1619,8 @@ ggplot() +
   high     = "#d7191c",   # red    → high / positive C_opp
   midpoint = 0,           # centre the diverging scale on zero
   na.value = "grey",
+  limits   = copp_lim,        
+  oob      = scales::squish,  
   guide    = guide_colourbar(
     barwidth       = 0.5,
     barheight      = 4,
@@ -1737,8 +1771,7 @@ The AFS-SCD model is solved for the instance data described above with Gurobi. T
 
 Figure \@ref(fig:fig-results-sc-map) shows the spatial configuration of the profit-optimal supply chain. 
 
-
-```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Optimal agroforestry supply chain network. Green polygons: active super-sites with biomass harvest; grey polygons: non-selected sites. Pie charts at active sites show the product mix of harvested biomass (stem = P1, branches = P2, residues = P3), scaled by total harvested volume. Orange symbols: pre-treatment facilities (circle = sawmill, triangle = logistics hub). Coloured squares: consumer sites by dominant demand category.", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth", cache=F, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
+```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Site selection and biomass production in optimal supply chain configuration. Green polygons: active sites with biomass harvest; grey polygons: non-selected sites. Pie charts at active sites show the product mix of harvested biomass (stem = P1, branches = P2, residues = P3), scaled by total harvested volume.", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth", cache=T, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 
 
 crs_map <- 25833
@@ -1857,7 +1890,7 @@ consumers_plt <- consumers %>%
 storages_plt <- storages %>%
   mutate(
     subtype = if_else(type == "Hub", "Hub", "Hub"),
-    pt_size = pmin(3.5, pmax(1.2, 1.2 + log1p(CAP_proc) * 0.38))
+    pt_size = 1.5
   )
 
 stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326) %>%
@@ -1865,6 +1898,10 @@ stor_sf <- st_as_sf(storages_plt, coords = c("lng", "lat"), crs = 4326) %>%
 
 cons_sf <- st_as_sf(consumers_plt, coords = c("lng", "lat"), crs = 4326) %>%
   st_transform(crs_map)
+
+# Gemeinsamen Bereich aus ALLEN Sites berechnen (nicht nur sitesactive!)
+copp_range <- range(sites_sf_map$C_opp, na.rm = TRUE)
+copp_lim   <- c(min(copp_range[1], -1), max(copp_range[2], 1))
 
 # ── Plot ──────────────────────────────────────────────────────────────────────
 ggplot() +
@@ -1889,6 +1926,8 @@ ggplot() +
   mid      = "#ffffbf",   # pale yellow → midpoint
   high     = "#d7191c",   # red    → high / positive C_opp
   midpoint = 0,           # centre the diverging scale on zero
+  limits   = copp_lim,        # <-- NEU: expliziter, identischer Bereich
+  oob      = scales::squish,  # <-- NEU: Werte außerhalb → Endfarbe statt NA
   na.value = COL_SITE_NONE,
   guide    = guide_colourbar(
     barwidth       = 0.5,
@@ -1985,163 +2024,12 @@ ggplot() +
   )
 ```
 
+In total, on `r length(active_site_ids)` sites  AFS are established which corresponds to about `r round(length(active_site_ids)/milp_instance$n_sites*100,0)` % of all sites and `r round(sum(ext$z[ext$z$arc_type=="establishment","value"])/sum(milp_instance$sites$area_ha)*100,0)` % of the total farm area. Over the planning horizon, `r  round(sum(site_harvest$total_vol)/1000)` kt of AFS biomasses are produced on these sites which suffices to satisfy `r round(sum(site_harvest$total_vol)/sum(milp_instance$demand$D_max)*100,0)` % of total demand. \autoref{fig-results-product-mix} shows the harvested biomasses over time along with total demand of all consumer sites. 
 
-Active sites are concentrated in the Elbe and Saale floodplains, where high biomass yields and proximity to major processing facilities create the most favourable economics. 
-
-
-
-Sites
-in the Harz foothills and peripheral areas with high opportunity costs
-are not selected. The pie charts overlaid on each active site indicate
-the product-mix composition: sites closer to P1 consumers (chemical/pulp
-grade) allocate a larger stem fraction, while more remote sites rely
-more heavily on P3 (energy) grade biomass.
-
-Figures \@ref(fig:fig-results-alluvial)
-and \@ref(fig:fig-results-deliveries) report the biomass flows over the
-planning horizon. Total annual biomass throughput rises steeply in the
-first five periods as newly established sites reach minimum harvest age,
-stabilises during the middle of the horizon, and undergoes a partial
-decline towards the end as rotation cycles exhaust the planning window.
-The product cascade is clearly visible: stem biomass (P1) dominates the
-early harvest periods when young stands deliver the highest merchantable
-stem fraction, while branch and residue shares increase as stands mature
-and are harvested at longer rotation lengths.
-
-The distribution of harvesting cycle lengths at active sites is
-illustrated in Figure \@ref(fig:fig-results-harvest-cycles). The
-majority of harvest events occur at stand ages between the minimum age
-$a^{\min} = 4$ years and approximately 8--10 years, reflecting the
-trade-off between cumulative yield growth and the opportunity cost of
-delayed harvesting. A secondary peak at longer rotation lengths
-(12--15 years) corresponds to sites with lower opportunity costs and
-higher P1 demand in their vicinity.
-
-Figure \@ref(fig:fig-results-costs-profit) presents the aggregate
-cost--profit waterfall over the full horizon. Total revenue is dominated
-by P1 deliveries to the two large pulp mills. Opportunity costs and
-transport costs are the two largest cost drivers; establishment costs
-are one-time and comparatively modest. The site-level revenue--cost
-decomposition in Figure \@ref(fig:fig-results-site-profit) confirms that
-profitability is highly heterogeneous: a small number of large sites
-with low opportunity costs and short distances to P1 consumers account
-for the bulk of total net profit, while several marginal sites operate
-near break-even. Figure \@ref(fig:fig-results-opp-dist) reveals a clear
-negative relationship between opportunity cost rate and site
-profitability, with sites exceeding 300 \euro\ ha$^{-1}$ yr$^{-1}$ rarely
-selected in the optimal solution.
-
-```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total production quantity of biomass types and its industrial usage over planning horizon (in tons).", fig.width=7, fig.height=5.5, dev="pdf", out.width="\\textwidth", cache=F, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
-
-
-# ── Labels & colours ──────────────────────────────────────────────────────────
-# Source side (axis 1): biomass fractions delivered from sites → hubs (Xij)
-#   product index 1 = Stems, 2 = Branches, 3 = Residues  [§2.2, f_p(t)]
-SRC_LABEL <- c(
-  "1" = "Stems",
-  "2" = "Branches",
-  "3" = "Residues"
-)
-
-# Delivery side (axis 2): consumer categories receiving from hubs (Xjk)
-#   del_product 1 = Industrial (P1), 2 = Pulp & Paper (P2), 3 = Energy (P3)
-DEL_LABEL <- c(
-  "1" = "Industrial",
-  "2" = "Pulp & Paper",
-  "3" = "Energy"
-)
-
-# Fill colours for source strata — must match paper Fig. max3-growth
-P_COLS_SRC <- c(
-  "Stems"    = "#1b9e77",
-  "Branches" = "#d95f02",
-  "Residues" = "#7570b3"   
-)
-
-# ── Aggregate Xjk: src_product × del_product, summed over all periods/consumers
-
-flow_df <- ext$Xjk %>%
-  group_by(src_product, del_product) %>%
-  summarise(volume = sum(value, na.rm = TRUE), .groups = "drop") %>%
-  filter(volume > 0) %>%
-  mutate(
-    # axis1 = biomass fraction (source side)
-    src = factor(SRC_LABEL[as.character(src_product)], levels = SRC_LABEL),
-    # axis2 = consumer category (delivery/sink side)
-    del = factor(DEL_LABEL[as.character(del_product)], levels = DEL_LABEL)
-  )
-
-# ── Plot ──────────────────────────────────────────────────────────────────────
-ggplot(flow_df,
-       aes(axis1 = src, axis2 = del, y = volume, fill = src)) +
-
-  geom_alluvium(
-    alpha      = 0.72,
-    width      = 1 / 3,
-    knot.pos   = 0.45,
-    curve_type = "sigmoid"
-  ) +
-
-  geom_stratum(
-    width     = 1 / 3,
-    fill      = "grey94",
-    colour    = "grey50",
-    linewidth = 0.3
-  ) +
-
-  geom_text(
-    stat       = "stratum",
-    aes(label  = after_stat(stratum)),
-    size       = 2.8,
-    colour     = "grey15",
-    lineheight = 0.88
-  ) +
-
-  # Axis header annotations — placed below the stratum columns
-  # x = 1 (axis1 = Feedstock fraction), x = 2 (axis2 = End use)
-  annotate("text",
-    x        = c(1, 2),
-    y        = -Inf,
-    label    = c("Feedstock", "End use"),
-    vjust    = 1.6,
-    size     = 3.0,
-    fontface = "bold",
-    colour   = "grey30"
-  ) +
-
-  scale_fill_manual(
-    name   = "Biomass fraction",
-    values = P_COLS_SRC          # only 3 source entries; no ghost colours
-  ) +
-
-  # ggalluvial uses integer axis positions (1, 2, …); do NOT set
-  # limits = c("src", "del") — that breaks stratum positioning
-  scale_x_discrete(
-    expand = expansion(add = c(0.25, 0.25))  # widen margins for stratum labels
-  ) +
-
-  scale_y_continuous(
-    name   = "Volume (t dry matter)",
-    labels = comma_format(big.mark = ".", decimal.mark = ",")
-  ) +
-
-  coord_cartesian(clip = "off") +   # needed for below-axis annotations
-  theme_minimal(base_size = 9) +
-  theme(
-    axis.title.x       = element_blank(),
-    axis.text.x        = element_blank(),
-    axis.ticks.x       = element_blank(),
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor   = element_blank(),
-    legend.position    = "none",
-    legend.key.size    = unit(0.42, "cm"),
-    plot.margin        = margin(t = 6, r = 6, b = 28, l = 6)
-  )
-```
-
-```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Total biomass delivered to consumers by product type over the planning horizon. Stacked areas show period-level volumes of stem (P1), branches (P2), and residues (P3) flowing from storage hubs to all consumers. Dashed line: total harvested raw biomass shipped from sites to hubs.", fig.width=6.5, fig.height=4, dev="pdf", out.width="\\textwidth", cache=F, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
+```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Total biomass delivered to consumers by product type over the planning horizon. Stacked areas show period-level volumes of stem (P1), branches (P2), and residues (P3) flowing from storage hubs to all consumers. Dashed line: total harvested raw biomass shipped from sites to hubs.", fig.width=6.5, fig.height=3, dev="pdf", out.width="\\textwidth", cache=F, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 
 prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
+prod_colors <- c("1" = "#1b9e77", "2" = "#d95f02", "3" = "#7570b3")
 
 
 # Deliveries aggregated by period × del_product
@@ -2154,15 +2042,33 @@ shipped_ts <- ext$Xij %>%
   group_by(period) %>%
   summarise(shipped = sum(value), .groups = "drop")
 
+# Maximum total consumer demand per product type
+# Assumes milp_instance$demand is a data frame with columns: customer, product, period, volume
+# Adjust column names to match your actual milp_instance structure
+demand_max <- milp_instance$demand %>%
+  group_by(product = factor(product, levels = c("3", "2", "1"))) %>%
+  summarise(max_demand = sum(D_max)/milp_instance$n_periods, .groups = "drop") %>% 
+  mutate(max_demand = cumsum(max_demand))
+
 ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
   geom_area(position = "stack", alpha = 0.80, colour = "white", linewidth = 0.2) +
+  # Raw shipped biomass reference (dashed grey)
   geom_line(data = shipped_ts,
             aes(x = period, y = shipped),
             inherit.aes = FALSE,
             colour = "#636363", linetype = "dashed", linewidth = 0.7) +
+  # Max consumer demand per product (dotted, colour-matched to product)
+  geom_hline(data = demand_max,
+             aes(yintercept = max_demand, colour = product),
+             linetype = "dashed", linewidth = 1.0, inherit.aes = FALSE) +
   scale_fill_manual(
     name   = "Product",
-    values = c("1" = "#1b9e77", "2" = "#d95f02", "3" = "#7570b3"),
+    values = prod_colors,
+    labels = prod_labels
+  ) +
+  scale_colour_manual(
+    name   = "Max. demand",
+    values = prod_colors,
     labels = prod_labels
   ) +
   scale_x_continuous(name = "Planning period (year)",
@@ -2178,7 +2084,9 @@ ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
         panel.grid.minor = element_blank())
 ```
 
-```{r fig-results-harvest-cycle-dist, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Distribution of harvesting cycle lengths at active agroforestry sites. Each bar represents the number of individual harvest events (over all periods and active sites) whose cycle length (stand age at harvest, i.e. $t - s$) falls in that year bin. Vertical dashed line: mean cycle length. Active sites are defined as sites with at least one selected harvest arc in the optimal solution.", fig.width=5.5, fig.height=3.5, dev="pdf", out.width="\\textwidth", cache=F, cache.extra = c("ext", "milp_instance")}
+During the first 10 years no AFS biomasses are harvested as trees of established AFS in first years grow up to a certain size before first harvest. Thus, about 25\% of consumers' total biomass demand cannot be satisfied due to this grow-up period. Afterwards, a cyclical pattern appears with a harvesting peak around year 20 and a breakdown in year 28 before plateau is reached from year 35-40. Thereby, the harvesting quantities of stems and branches show a similar pattern while quantities of harvested energy grade biomass are rather stable and close to the demand limit over the planning horizon. Thus, rather long-rotation AFS are established as \autoref{fig:fig-results-harvest-cycles} confirms showing the histogram of harvesting ages across all sites.
+
+```{r fig-results-harvest-cycle-dist, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Distribution of harvesting cycle lengths at active agroforestry sites. Each bar represents the number of individual harvest events (over all periods and active sites) whose cycle length (stand age at harvest, i.e. $t - s$) falls in that year bin.", fig.width=5.5, fig.height=3, dev="pdf", out.width="\\textwidth", cache=T, cache.extra = c("ext", "milp_instance")}
 
 # --- Extract harvest-arc cycle lengths from binary z variables ---------------
 # ext$z contains one row per selected arc; columns: site_id, s, t, arc_type
@@ -2231,7 +2139,11 @@ ggplot(cycle_df, aes(x = cycle_length)) +
   )
 ```
 
-```{r fig-results-cost-profit-breakdown, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total cost–profit breakdown across all active sites over the planning horizon. The left panel (waterfall) decomposes the objective value into revenue and individual cost categories; the right panel shows the period-level trajectory of revenues and stacked costs. Cultivation costs are split into establishment, harvesting, maintenance, and opportunity costs; logistics costs cover raw biomass transport (site$\\to$hub) and pre-processed transport (hub$\\to$consumer); storage costs reflect hub inventory holding charges.", fig.width = 7, fig.height = 4.5, dev = "pdf", out.width = "\\textwidth", cache = F, cache.extra = c("ext", "milp_instance", "sites_clustered", "storages", "params_obj")}
+The histogram illustrates that majority of harvest events occur at stand ages between 14--18 years, indicating that long-rotation AFS seem to be more profitable in this setting. Short-rotation cycles (<10 years) occur only in marginal frequencies. This optimal rotation length might be caused either due to the limited demand of energy-grade biomass or the price gaps between biomass types or a combination of effects. The quantity of energy-grade biomass created in long-rotation AFS suffices to cover total energy-grade biomass demand almost completely. Rotation length is focused on production of chemical-grade biomass where highest prices are assumed. Focusing on chemical industry supply requires a production of trees with a comparatively large stems. This strategy maximizes revenue, but in the same time increases opportunity costs as wood harvests appear in larger time intervals. 
+
+\autoref{fig:fig-results-costs-profit} presents the aggregate cost--profit waterfall over all periods and actors. Total revenue is dominated by P1 deliveries to the two large pulp mills. Opportunity costs and transport costs are the two largest cost drivers; establishment costs are one-time and comparatively modest.
+
+```{r fig-results-cost-profit-breakdown, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total cost–profit breakdown across all actors and years. The left panel (waterfall) decomposes the objective value into revenue and individual cost categories; the right panel shows the period-level trajectory of revenues and stacked costs.", fig.width = 7, fig.height = 3, dev = "pdf", out.width = "\\textwidth", cache = T, cache.extra = c("ext", "milp_instance", "sites_clustered", "storages", "params_obj")}
 
 # ── 0. Colour palette (consistent with paper) ──────────────────────────────
 COL_REV   <- "#1b9e77"   # revenue: green
@@ -2502,6 +2414,18 @@ p_waterfall + p_cashflow +
     theme = theme(plot.caption = element_text(size = 7, colour = "grey40"))
   )
 ```
+
+
+ The site-level revenue--cost
+decomposition in Figure \@ref(fig:fig-results-site-profit) confirms that
+profitability is highly heterogeneous: a small number of large sites
+with low opportunity costs and short distances to P1 consumers account
+for the bulk of total net profit, while several marginal sites operate
+near break-even. Figure \@ref(fig:fig-results-opp-dist) reveals a clear
+negative relationship between opportunity cost rate and site
+profitability, with sites exceeding 300 \euro\ ha$^{-1}$ yr$^{-1}$ rarely
+selected in the optimal solution.
+
 
 ```{r fig-results-site-breakdown, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total revenue and cost breakdown per active agroforestry site over the full planning horizon. Each bar represents one active site; revenue (green, above zero axis) and cost components (stacked below) are expressed in thousand euros per hectare for comparability across sites of different size. Sites are ordered by descending net margin.", fig.width = 7, fig.height = 5, dev = "pdf", out.width = "\\textwidth", cache = F, cache.extra = c("ext", "milp_instance", "sites_clustered", "params_obj")}
 
@@ -3471,6 +3395,113 @@ consumers %>%
   add_header_above(c(" " = 1, "Annual demand" = 3, "Gate price" = 3))
 ```
 
+```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total production quantity of biomass types and its industrial usage over planning horizon (in tons).", fig.width=7, fig.height=5.5, dev="pdf", out.width="\\textwidth", cache=F, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
+
+
+# ── Labels & colours ──────────────────────────────────────────────────────────
+# Source side (axis 1): biomass fractions delivered from sites → hubs (Xij)
+#   product index 1 = Stems, 2 = Branches, 3 = Residues  [§2.2, f_p(t)]
+SRC_LABEL <- c(
+  "1" = "Stems",
+  "2" = "Branches",
+  "3" = "Residues"
+)
+
+# Delivery side (axis 2): consumer categories receiving from hubs (Xjk)
+#   del_product 1 = Industrial (P1), 2 = Pulp & Paper (P2), 3 = Energy (P3)
+DEL_LABEL <- c(
+  "1" = "Industrial",
+  "2" = "Pulp & Paper",
+  "3" = "Energy"
+)
+
+# Fill colours for source strata — must match paper Fig. max3-growth
+P_COLS_SRC <- c(
+  "Stems"    = "#1b9e77",
+  "Branches" = "#d95f02",
+  "Residues" = "#7570b3"   
+)
+
+# ── Aggregate Xjk: src_product × del_product, summed over all periods/consumers
+
+flow_df <- ext$Xjk %>%
+  group_by(src_product, del_product) %>%
+  summarise(volume = sum(value, na.rm = TRUE), .groups = "drop") %>%
+  filter(volume > 0) %>%
+  mutate(
+    # axis1 = biomass fraction (source side)
+    src = factor(SRC_LABEL[as.character(src_product)], levels = SRC_LABEL),
+    # axis2 = consumer category (delivery/sink side)
+    del = factor(DEL_LABEL[as.character(del_product)], levels = DEL_LABEL)
+  )
+
+# ── Plot ──────────────────────────────────────────────────────────────────────
+ggplot(flow_df,
+       aes(axis1 = src, axis2 = del, y = volume, fill = src)) +
+
+  geom_alluvium(
+    alpha      = 0.72,
+    width      = 1 / 3,
+    knot.pos   = 0.45,
+    curve_type = "sigmoid"
+  ) +
+
+  geom_stratum(
+    width     = 1 / 3,
+    fill      = "grey94",
+    colour    = "grey50",
+    linewidth = 0.3
+  ) +
+
+  geom_text(
+    stat       = "stratum",
+    aes(label  = after_stat(stratum)),
+    size       = 2.8,
+    colour     = "grey15",
+    lineheight = 0.88
+  ) +
+
+  # Axis header annotations — placed below the stratum columns
+  # x = 1 (axis1 = Feedstock fraction), x = 2 (axis2 = End use)
+  annotate("text",
+    x        = c(1, 2),
+    y        = -Inf,
+    label    = c("Feedstock", "End use"),
+    vjust    = 1.6,
+    size     = 3.0,
+    fontface = "bold",
+    colour   = "grey30"
+  ) +
+
+  scale_fill_manual(
+    name   = "Biomass fraction",
+    values = P_COLS_SRC          # only 3 source entries; no ghost colours
+  ) +
+
+  # ggalluvial uses integer axis positions (1, 2, …); do NOT set
+  # limits = c("src", "del") — that breaks stratum positioning
+  scale_x_discrete(
+    expand = expansion(add = c(0.25, 0.25))  # widen margins for stratum labels
+  ) +
+
+  scale_y_continuous(
+    name   = "Volume (t dry matter)",
+    labels = comma_format(big.mark = ".", decimal.mark = ",")
+  ) +
+
+  coord_cartesian(clip = "off") +   # needed for below-axis annotations
+  theme_minimal(base_size = 9) +
+  theme(
+    axis.title.x       = element_blank(),
+    axis.text.x        = element_blank(),
+    axis.ticks.x       = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor   = element_blank(),
+    legend.position    = "none",
+    legend.key.size    = unit(0.42, "cm"),
+    plot.margin        = margin(t = 6, r = 6, b = 28, l = 6)
+  )
+```
 
 
 <!-- ```{r fig-consumer-demand, cache=F, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total biomass demand by consumer type and grade (P1 chemical, P2 pulp \\& paper, P3 energy/biogas). Bars show aggregated annual demand in kt wood input per year across all individual plants within each consumer type.", fig.width = 5.5, fig.height = 2.8, out.width="\\textwidth"} -->
