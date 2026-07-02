@@ -832,7 +832,7 @@ kable(notation,
       caption   = "Notation for the biomass growth and harvest yield models.",
       label     = "tab-notation-growth") |>
   kable_styling(font_size = 8,
-                latex_options = c("hold_position", "scale_down"),
+                latex_options = c("hold_position", "scale_down", "striped"),
                 full_width = FALSE) |>
   column_spec(1, width = "3.2cm") |>
   column_spec(2, width = "10.8cm")
@@ -1215,13 +1215,13 @@ kable(lit_tab,
       label     = "lit-sc-features") |>
   kable_styling(
   font_size     = 7,
-  latex_options = c("hold_position", "scale_down"),
+  latex_options = c("hold_position", "scale_down", "striped"),
   full_width    = FALSE
 ) |>
   row_spec(nrow(lit_tab), bold = TRUE) |>
   column_spec(1, width = "3.2cm") |>
   column_spec(2, width = "1.6cm") |>
-  column_spec(3:7, width = "1.4cm")
+  column_spec(3:7, width = "1.45cm")
 ```
 
 # MILP Model for Agroforestry Supply Chain Design {#sec:milp}
@@ -1450,11 +1450,11 @@ tbl
 
 ## Objective Function
 
-As discussed in Section \@ref(sec:lit-afs), the economic attractiveness of AFS supply chains is modelled from a global perspective taking into account all processes, activities, and participants involved in finally serving customer markets with AFS-based feedstocks. Therefore, revenues for the different biomass fractions and are weighed against costs occurring at all value-adding stages of the supply chains. Revenues created by selling AFS-based feedstocks to different industrial consumers are counterweighted by establishment, opportunity, harvest, transport, and storage costs of landowners, agricultural firms as well as biomass logistics companies. The model therefore maximises total profit of all participants in the AFS supply chain over the planning horizon as follows: 
+As discussed in Section \@ref(sec:lit-afs), the economic attractiveness of AFS supply chains is modelled from a global perspective taking into account all processes, activities, and participants involved in finally serving customer markets with AFS-based feedstocks. Therefore, revenues for the different biomass fractions and are weighed against costs occurring at all value-adding stages of the supply chains. Revenues created by selling AFS-based feedstocks to different industrial consumers are counterweighted by establishment, opportunity, harvest, transport, and storage costs of landowners, agricultural firms as well as biomass logistics companies. The model therefore maximizes total profit of all participants in the AFS supply chain over the planning horizon as follows: 
 \begin{align}
 \max\; Z \;=\;&
   \sum_{k \in \Kc}\sum_{p \in \Pc} R_{kp} \cdot \sum_{j \in \Jc, }\sum_{(p',p) \in \Qc} \sum_{t \in \Tc}  X_{jkp'pt}  \label{eq:obj-revenue} \\
-&- \sum_{i \in \Ic} c^{{est}}_i \cdot  \cdot\sum_{(0,t) \in \Sc^{{est}}} z_{i0t} \notag \\
+&- \sum_{i \in \Ic} c^{{est}}_i \cdot \sum_{(0,t) \in \Sc^{{est}}} z_{i0t} \notag \\
 % &- \sum_{i \in \Ic} c^{{opp}}_i \cdot \left(\sum_{(s,T+1) \in \Sc^{term}} (s+1) \cdot z_{is(T+1)}  -  \sum_{(0,t) \in \Sc^{{est}}}  t \cdot z_{i0t} \right) \notag \\ 
 &- \sum_{i \in \Ic} (c^{main}_{i} + c^{{opp}}_i) \cdot (t-s) \cdot \sum_{(s,t) \in \Sc^{{harv}}} z_{ist} \notag \\
 &- \sum_{i \in \Ic} c^{{harv}}_i  \cdot \sum_{(s,t) \in \Sc^{{harv}}} z_{ist} \notag \\
@@ -1463,35 +1463,27 @@ As discussed in Section \@ref(sec:lit-afs), the economic attractiveness of AFS s
 &- \sum_{j \in \Jc}\sum_{p \in \Pc}\sum_{t \in \Tc}  c^{{stor}}_j \cdot S_{jpt}  \notag
 \end{align}
 
-Here, $R_{kp}$ are product- and consumer-specific revenues for each ton of biomass fraction (\euro{}/t). The opportunity cost term penalises the land use when AFS are established. Thereby, $c^{{opp}}_i$ can be negative or positive depending on the site-specific conditions. It comprises effect of lost field crop revenues due to AFS as well as higher yields of remaining field crop areas e.g. due to wind and water erosion protection by AFS. While the assessment of lost field crop revenues is usually well predictable, the economic evaluation of positive ecological effects of AFS (e.g. on neighboring crop yields) is more difficult. Thus, $c^{{opp}}_i$ can also contain regulatory subsidies to support establishing and maintaining AFS. Transport cost terms mirror the two-stage flow structure of the AFS supply chain with differentiated rates for raw and pre-treated biomass depending on the biomass type. Cost rates differ because as e.g. the density and water content of the shipped biomasses differ or because specialized equippment (e.g. for log transports) is used [REFERENCES]. Moreover, site-specific establishment cost for planting the AFS trees is considered, next to yearly maintenance and harvesting costs. All these costs scale with the size of a site ($AREA_i$) measured in hectar. Maintenance cost comprise e.g. costs for trimming, replanting, and pruning unnecessary shoots. Storage costs are considered if biomasses are stored for more than a year. Storage cost rate $c^{{stor}}_j$ measures the costs for storing a ton of biomass for one year and comprises direct storage cost (e.g. for storage site maintenance) as well as opportunity cost due to potential material losses and capital commitment. Biomasses harvested and consumed in the same year incur no storage cost, as usually AFS are harvested at the beginning of a year. Harvested biomass has to dry during spring and summer such that the biomasses can be used in autumn or winter the same year. As under-year drying is necessary for most industrial applications and beneficial for transport economics, drying storage in the year of harvest is not associated with additional cost.
+Here, $R_{kp}$ are product- and consumer-specific revenues for each ton of biomass fraction (\euro{}/t). The opportunity cost term penalises the land use when AFS are established. Thereby, $c^{{opp}}_i$ can be negative or positive depending on the site-specific conditions. It comprises effect of lost field crop revenues due to AFS as well as higher yields of remaining field crop areas e.g. due to wind and water erosion protection by AFS. While the assessment of lost field crop revenues is usually well predictable, the economic evaluation of positive ecological effects of AFS (e.g. on neighboring crop yields) is more difficult. Thus, $c^{{opp}}_i$ can also contain regulatory subsidies to support establishing and maintaining AFS. Transport cost terms mirror the two-stage flow structure of the AFS supply chain with differentiated rates for raw and pre-treated biomass depending on the biomass type. Cost rates differ because as e.g. the density and water content of the shipped biomass types differ or because specialized equipment (e.g. for log transports) is used [REFERENCES]. Moreover, site-specific establishment cost for planting the AFS trees is considered, next to yearly maintenance and harvesting costs. All these costs scale with the size of a site ($AREA_i$) measured in hectar. Maintenance cost comprise e.g. costs for trimming, replanting, and pruning unnecessary shoots. Storage costs are considered if biomass types are stored for more than a year. Storage cost rate $c^{{stor}}_j$ measures the costs for storing a ton of biomass for one year and comprises direct storage cost (e.g. for storage site maintenance) as well as opportunity cost due to potential material losses and capital commitment. Biomass types harvested and consumed in the same year incur no storage cost, as usually AFS are harvested at the beginning of a year. Harvested biomass has to dry during spring and summer such that the biomass can be used in autumn or winter the same year. As under-year drying is necessary for some industrial applications and beneficial for transport economics, drying storage in the year of harvest is not associated with additional cost in this study.
 
 ## Constraints
 
-Constraints \eqref{eq:C1} limits the area dedicated to AFS operations to the maximum size of site $i$. Constraints \eqref{eq:C2} enforce flow conservation in each period. If AFS systems of size $z_{ist}$ are established or harvested in period $t \in \Tc$, there needs to be a succeeding activity (harvest or termination) of this area. This way, \eqref{eq:C2} guarantee valid (possibly empty) AFS activity  over the complete time horizon for each site. Constraints \eqref{eq:C3} links the harvest-cycle variables $z_{ist}$ to physical yield quantities $\eta^{fw}_{p(t-s)}$ for age $t-s$, which are pre-computed using \eqref{eq:gomp-stand}--\eqref{eq:yield} scaled by moisture content $\omega$. Thus, we assume constant yields per hectar for each site $i$. Note that this simplification can be dropped and site-specific yields $\eta^{fw}_{ip(t-s)}$ could be introduced without increasing numerical complexity of the \problem. Constraints \eqref{eq:C5} link harvest quantities to transport flows and ensure inventory balance at each facility. Thereby, harvest quantities can be smaller than available AFS biomasses allowing partial harvesting. Constraints \eqref{eq:C6}--\eqref{eq:C7} enforce storage and processing capacity limits at each facility $j$. Constraints \eqref{eq:C8} implement product usage at multiple consumption sites $k$. Thereby, $(p',p) \in \Qc$ defines a product mapping allowing high-quality product $p'$ (e.g. stems) satisfying demand of a lower-quality products $p$ up to maximum demand $D^{\max}_{kpt}$.
+Constraints \eqref{eq:C1} limits the area dedicated to AFS operations to the maximum size of site $i$. Constraints \eqref{eq:C2} enforce flow conservation in each period. If AFS systems of size $z_{ist}$ are established or harvested in period $t \in \Tc$, there needs to be a succeeding activity (harvest or termination) of this area. This way, \eqref{eq:C2} guarantee valid (possibly empty) AFS activity  over the complete time horizon for each site. Constraints \eqref{eq:C3} links the harvest-cycle variables $z_{ist}$ to physical yield quantities $\eta^{fw}_{p(t-s)}$ for age $t-s$, which are pre-computed using \eqref{eq:gomp-stand}--\eqref{eq:yield} scaled by moisture content $\omega$. Thus, we assume constant yields per hectar for each site $i$. Note that this simplification can be dropped and site-specific yields $\eta^{fw}_{ip(t-s)}$ could be introduced without increasing numerical complexity of the \problem. Constraints \eqref{eq:C5} link harvest quantities to transport flows and ensure inventory balance at each facility. Thereby, harvest quantities can be smaller than available AFS biomass allowing partial harvesting. Constraints \eqref{eq:C6}--\eqref{eq:C7} enforce storage and processing capacity limits at each facility $j$. Constraints \eqref{eq:C8} implement product usage at multiple consumption sites $k$. Thereby, $(p',p) \in \Qc$ defines a product mapping allowing high-quality product $p'$ (e.g. stems) satisfying demand of a lower-quality products $p$ up to maximum demand $D^{\max}_{kpt}$.
 
 \begin{align}
-  % --- C1: Establishment (at most once per site) ---
-  \sum_{(0,t) \in \Sc^{{est}}} z_{i0t} &\leq AREA_i && \forall\; i \in \Ic \label{eq:C1} \\[2pt]
+  \sum_{(0,t) \in \Sc^{{est}}} z_{i0t} &\leq AREA_i && \forall\; i \in \Ic \label{eq:C1} \\[1pt]
   %
-  % --- C2: Path connectivity (flow conservation) ---
-  \sum_{(s,t) \in \Sc} z_{ist} &= \sum_{(t,u) \in \Sc} z_{itu} && \forall\; i \in \Ic,\; t \in \Tc \label{eq:C2} \\[2pt]
+  \sum_{(s,t) \in \Sc} z_{ist} &= \sum_{(t,u) \in \Sc} z_{itu} && \forall\; i \in \Ic,\; t \in \Tc \label{eq:C2} \\[1pt]
   %
-  % --- C3: Biomass yield from Gompertz coefficients ---
-  \sum_{j \in \Jc} X_{ijpt}    &\leq \sum_{(s,t) \in \Sc^{{harv}}} \eta^{fw}_{p(t-s)} \cdot z_{ist} && \forall\; i \in \Ic,\; p \in \Pc,\; t \in \Tc^{{harv}}     \label{eq:C3} \\[2pt]
+  \sum_{j \in \Jc} X_{ijpt}    &\leq \sum_{(s,t) \in \Sc^{{harv}}} \eta^{fw}_{p(t-s)} \cdot z_{ist} && \forall\; i \in \Ic,\; p \in \Pc,\; t \in \Tc^{{harv}}     \label{eq:C3} \\[1pt]
   %
-  % --- C5: Inventory balance ---
-  S_{jpt}    = S_{jp,t-1} + &\sum_{i \in \Ic} X_{ijpt} - \sum_{k \in \Kc,\,(p,p') \in \Qc}  X_{jkpp't}   && \forall\; j \in \Jc,\; p \in \Pc,\; t \in \Tc^{harv}  \label{eq:C5} \\[2pt]
+  S_{jpt}    = S_{jp,t-1} + &\sum_{i \in \Ic} X_{ijpt} - \sum_{k \in \Kc,\,(p,p') \in \Qc}  X_{jkpp't}   && \forall\; j \in \Jc,\; p \in \Pc,\; t \in \Tc^{harv}  \label{eq:C5} \\[1pt]
   %
-  % --- C6: Storage capacity ---
-  \sum_{p \in \Pc} S_{jpt}    &\leq \text{CAP}^{{stor}}_j    && \forall\; j \in \Jc,\; t \in \Tc     \label{eq:C6} \\[2pt]
+  \sum_{p \in \Pc} S_{jpt}    &\leq \text{CAP}^{{stor}}_j    && \forall\; j \in \Jc,\; t \in \Tc     \label{eq:C6} \\[1pt]
   %
-  % --- C7: Processing capacity ---
-  \sum_{i \in \Ic,\, p \in \Pc} X_{ijpt}  &\leq \text{CAP}^{{proc}}_j && \forall\; j \in \Jc,\; t \in \Tc^{harv} \label{eq:C7} \\[2pt]
+  \sum_{i \in \Ic,\, p \in \Pc} X_{ijpt}  &\leq \text{CAP}^{{proc}}_j && \forall\; j \in \Jc,\; t \in \Tc^{harv} \label{eq:C7} \\[1pt]
   %
-  % --- C8: Demand satisfaction with quality cascade ---
-  \sum_{j \in \Jc,\,(p',p) \in \Qc} X_{jkp'pt} &\leq D^{\max}_{kpt} && \forall\; k \in \Kc,\; p \in \Pc,\; t \in \Tc^{harv}     \label{eq:C8} \\[2pt]
+  \sum_{j \in \Jc,\,(p',p) \in \Qc} X_{jkp'pt} &\leq D^{\max}_{kpt} && \forall\; k \in \Kc,\; p \in \Pc,\; t \in \Tc^{harv}     \label{eq:C8} \\[1pt]
   %
-  % --- Domain: continuous non-negativity ---
   z_{ist},\;X_{ijpt},\; &X_{jkp'pt},\; S_{jpt} \geq 0 && \forall\; i,j,k,p,p',t     \label{eq:D2}
   %
 \end{align}
@@ -1769,9 +1761,9 @@ params_df %>%
 
 The AFS-SCD model is solved for the instance data described above with Gurobi. The model selects a subset of sites for AFS establishment and identifies the optimal harvest schedules, intermediate facility utilisation, and product allocation across the planning horizon.
 
-Figure \@ref(fig:fig-results-sc-map) shows the spatial configuration of the profit-optimal supply chain. 
+\autoref{fig:fig-results-sc-map} shows the spatial configuration of the profit-optimal supply chain. 
 
-```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Site selection and biomass production in optimal supply chain configuration. Green polygons: active sites with biomass harvest; grey polygons: non-selected sites. Pie charts at active sites show the product mix of harvested biomass (stem = P1, branches = P2, residues = P3), scaled by total harvested volume.", fig.width=8, fig.height=7, dev="pdf", out.width="\\textwidth", cache=T, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
+```{r fig-results-sc-map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Site selection and biomass production in optimal supply chain configuration. Green polygons: active sites with biomass harvest; grey polygons: non-selected sites. Pie charts at active sites show the product mix of harvested biomass, scaled by total harvested volume.", fig.width=8, fig.height=7, dev="pdf", out.width=".9\\textwidth", cache=T, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 
 
 crs_map <- 25833
@@ -2024,7 +2016,7 @@ ggplot() +
   )
 ```
 
-In total, on `r length(active_site_ids)` sites  AFS are established which corresponds to about `r round(length(active_site_ids)/milp_instance$n_sites*100,0)` % of all sites and `r round(sum(ext$z[ext$z$arc_type=="establishment","value"])/sum(milp_instance$sites$area_ha)*100,0)` % of the total farm area. Over the planning horizon, `r  round(sum(site_harvest$total_vol)/1000)` kt of AFS biomasses are produced on these sites which suffices to satisfy `r round(sum(site_harvest$total_vol)/sum(milp_instance$demand$D_max)*100,0)` % of total demand. \autoref{fig-results-product-mix} shows the harvested biomasses over time along with total demand of all consumer sites. 
+In total, on `r length(active_site_ids)` sites  AFS are established which corresponds to about `r round(length(active_site_ids)/milp_instance$n_sites*100,0)` % of all sites and `r round(sum(ext$z[ext$z$arc_type=="establishment","value"])/sum(milp_instance$sites$area_ha)*100,0)` % of the total farm area. Over the planning horizon, `r  round(sum(site_harvest$total_vol)/1000)` kt of AFS biomasses are produced on these sites which suffices to satisfy `r round(sum(site_harvest$total_vol)/sum(milp_instance$demand$D_max)*100,0)` % of total demand. \autoref{fig:fig-results-product-mix} shows the harvested biomasses over time along with total demand of all consumer sites. 
 
 ```{r fig-results-product-mix, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Total biomass delivered to consumers by product type over the planning horizon. Stacked areas show period-level volumes of stem (P1), branches (P2), and residues (P3) flowing from storage hubs to all consumers. Dashed line: total harvested raw biomass shipped from sites to hubs.", fig.width=6.5, fig.height=3, dev="pdf", out.width="\\textwidth", cache=F, cache.extra = c("ext","sites_clustered", "storages" , "customers", "milp_instance")}
 
@@ -2073,7 +2065,7 @@ ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
   ) +
   scale_x_continuous(name = "Planning period (year)",
                      breaks = seq(1, milp_instance$n_periods, by = 2)) +
-  scale_y_continuous(name = "Volume (t dry matter)",
+  scale_y_continuous(name = "Biomass quantity (t fresh biomass)",
                      labels = scales::comma) +
   annotate("text", x = max(shipped_ts$period) - 1,
            y = max(shipped_ts$shipped) * 0.95,
@@ -2084,9 +2076,9 @@ ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
         panel.grid.minor = element_blank())
 ```
 
-During the first 10 years no AFS biomasses are harvested as trees of established AFS in first years grow up to a certain size before first harvest. Thus, about 25\% of consumers' total biomass demand cannot be satisfied due to this grow-up period. Afterwards, a cyclical pattern appears with a harvesting peak around year 20 and a breakdown in year 28 before plateau is reached from year 35-40. Thereby, the harvesting quantities of stems and branches show a similar pattern while quantities of harvested energy grade biomass are rather stable and close to the demand limit over the planning horizon. Thus, rather long-rotation AFS are established as \autoref{fig:fig-results-harvest-cycles} confirms showing the histogram of harvesting ages across all sites.
+During the first 10 years no AFS biomasses are harvested as trees of established AFS in first years grow up to a certain size before first harvest. Thus, about 25\% of consumers' total biomass demand cannot be satisfied due to this grow-up period. Afterwards, a cyclical pattern appears with a harvesting peak around year 20 and a breakdown in year 28 before plateau is reached from year 35-40. Thereby, the harvesting quantities of stems and branches show a similar pattern while quantities of harvested energy grade biomass are rather stable and close to the demand limit over the planning horizon. Thus, rather long-rotation AFS are established as \autoref{fig:fig-results-harvest-cycle-dist} confirms showing the histogram of harvesting ages across all sites.
 
-```{r fig-results-harvest-cycle-dist, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Distribution of harvesting cycle lengths at active agroforestry sites. Each bar represents the number of individual harvest events (over all periods and active sites) whose cycle length (stand age at harvest, i.e. $t - s$) falls in that year bin.", fig.width=5.5, fig.height=3, dev="pdf", out.width="\\textwidth", cache=T, cache.extra = c("ext", "milp_instance")}
+```{r fig-results-harvest-cycle-dist, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Distribution of harvesting cycle lengths at active agroforestry sites. Each bar represents the number of individual harvest events (over all periods and active sites) whose cycle length (stand age at harvest, i.e. $t - s$) falls in that year bin.", fig.width=7, fig.height=3, dev="pdf", out.width="\\textwidth", cache=T, cache.extra = c("ext", "milp_instance")}
 
 # --- Extract harvest-arc cycle lengths from binary z variables ---------------
 # ext$z contains one row per selected arc; columns: site_id, s, t, arc_type
@@ -2139,9 +2131,9 @@ ggplot(cycle_df, aes(x = cycle_length)) +
   )
 ```
 
-The histogram illustrates that majority of harvest events occur at stand ages between 14--18 years, indicating that long-rotation AFS seem to be more profitable in this setting. Short-rotation cycles (<10 years) occur only in marginal frequencies. This optimal rotation length might be caused either due to the limited demand of energy-grade biomass or the price gaps between biomass types or a combination of effects. The quantity of energy-grade biomass created in long-rotation AFS suffices to cover total energy-grade biomass demand almost completely. Rotation length is focused on production of chemical-grade biomass where highest prices are assumed. Focusing on chemical industry supply requires a production of trees with a comparatively large stems. This strategy maximizes revenue, but in the same time increases opportunity costs as wood harvests appear in larger time intervals. \autoref{fig:fig-results-costs-profit} presents the aggregate cost--profit waterfall over all periods and actors. 
+The histogram illustrates that majority of harvest events occur at stand ages between 14--18 years, indicating that long-rotation AFS seem to be more profitable in this setting. Short-rotation cycles (<10 years) occur only in marginal frequencies. This optimal rotation length might be caused either due to the limited demand of energy-grade biomass or the price gaps between biomass types or a combination of effects. The quantity of energy-grade biomass created in long-rotation AFS suffices to cover total energy-grade biomass demand almost completely. Rotation length is focused on production of chemical-grade biomass where highest prices are assumed. Focusing on chemical industry supply requires a production of trees with a comparatively large stems. This strategy maximizes revenue, but in the same time increases opportunity costs as wood harvests appear in larger time intervals. \autoref{fig:fig-results-cost-profit-breakdown} presents the aggregate cost--profit waterfall over all periods and actors. 
 
-```{r fig-results-cost-profit-breakdown, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total cost–profit breakdown across all actors and years. The left panel (waterfall) decomposes the objective value into revenue and individual cost categories; the right panel shows the period-level trajectory of revenues and stacked costs.", fig.width = 7, fig.height = 3, dev = "pdf", out.width = "\\textwidth", cache = T, cache.extra = c("ext", "milp_instance", "sites_clustered", "storages", "params_obj")}
+```{r fig-results-cost-profit-breakdown, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Total cost–profit breakdown across all actors and years. The left panel (waterfall) decomposes the objective value into revenue and individual cost categories; the right panel shows the period-level trajectory of revenues and stacked costs.", fig.width = 6, fig.height = 3, dev = "pdf", out.width = "\\textwidth", cache = T, cache.extra = c("ext", "milp_instance", "sites_clustered", "storages", "params_obj")}
 
 # ── 0. Colour palette (consistent with paper) ──────────────────────────────
 COL_REV   <- "#1b9e77"   # revenue: green
@@ -2605,11 +2597,11 @@ p_cashflow <- ggplot() +
 
 ```
 
-It appears that revenue is dominated by selling chemical-grade biomass and dominating cost component are opportunity cost although active sites are those sites with a comparatively small opportunity cost rate. Next to opportunity cost, establishment and transport costs are the most relevant cost drivers. Analyzing total cashflow over time shows that break-even is reached after about 20 years, i.e. after the first large-scale harvest occurred. Afterwards, cashflow is continuously increasing indicating that establishing AFS is a strategic change in agricultural practice and pays only if this strategy is implemented and maintained over a comparatively long time spans. This underpins the importance of strategic buying contracts with industrial partners in order to reduce revenue risks of farmers when producing AFS biomasses. 
+It appears that revenue is dominated by selling chemical-grade biomass and dominating cost component are opportunity cost although active sites are those sites with a comparatively small opportunity cost rate. Next to opportunity cost, establishment and transport costs are the most relevant cost drivers. Analyzing total cashflow over time shows that break-even is reached after about 20 years, i.e. after the first large-scale harvest occurred. Afterwards, cashflow is continuously increasing indicating that establishing AFS is a strategic change in agricultural practice and pays only if this strategy is implemented and maintained over a comparatively long time spans. This underpins the importance of strategic buying contracts with industrial partners in order to reduce revenue risks of farmers when producing AFS biomass. 
 
-Although profitability of the total AFS suply chain is given for the case study data, profitability of AFS operations on site-level are more heterogenous. \autoref{fig:fig-results-site-profit} shows revenues and costs split by component and normalized to AFS size and active years of AFS.
+Although profitability of the total AFS suply chain is given for the case study data, profitability of AFS operations on site-level are more heterogeneous. \autoref{fig:fig-results-site-breakdown} shows revenues and costs split by component and normalized to AFS size and active years of AFS.
 
-```{r fig-results-site-breakdown, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Revenues, costs and net profit for sites with AFS operations split by type and expressed in \\euro per hectare per year of AFS operation.",   fig.width = 7, fig.height = 5, dev = "pdf", out.width = "\\textwidth",    cache = F, cache.extra = c("ext", "milp_instance", "sites_clustered", "params_obj")}
+```{r fig-results-site-breakdown, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Revenues, costs and net profit for sites with AFS operations split by type and expressed in € per hectare per year of AFS operation.",   fig.width = 6, fig.height = 3, dev = "pdf", out.width = "\\textwidth",    cache = T, cache.extra = c("ext", "milp_instance", "sites_clustered", "params_obj")}
 
 # ── 0. Colour palette — identical to fig-results-cost-profit-breakdown ───────
 prod_colors_rev <- c(
@@ -2801,6 +2793,11 @@ site_profit_df <- site_breakdown_df %>%
     label    = "Net profit"
   )
 
+site_profit_df_real <- site_breakdown_df  %>% 
+  group_by(site_id) %>% 
+  filter(component %in% c("Revenue P1 (Stem)","Revenue P2 (Branches)", "Revenue P3 (Residue)","Opportunity") ) %>% 
+  summarize(net = sum(value))
+
 # ── 8. Factor levels ─────────────────────────────────────────────────────────
 component_levels <- c(
   "Revenue P1 (Stem)", "Revenue P2 (Branches)", "Revenue P3 (Residue)",
@@ -2882,7 +2879,7 @@ ggplot() +
   ) +
 
   scale_y_continuous(
-    name   = expression(euro~ha^{-1}~yr^{-1}),
+    name   = "€ per hectare and year",
     labels = scales::label_number(big.mark = ",")
   ) +
   labs(x = "Site ID") +
@@ -2899,108 +2896,34 @@ ggplot() +
   )
 ```
 
-It appears that  profitability
+It appears that net profitability of AFS ranges between `r round(max(site_profit_df$net),0)` and `r round(min(site_profit_df$net),0)` € per hectare and active year. Note that this value constitutes additional profit after subtracting operational cost as well as imputed opportunity cost of lost profit from field crop. I.e., for calculating the realized net margin, opportunity can be added such that realized yearly net profit ranges between `r round(max(site_profit_df_real$net),0)` and `r round(min(site_profit_df_real$net),0)` € per hectare. Still, relative net profit is comparatively low compared to ordinary agricultural practices with profitable field crops (like winter wheat). The revenue splits of active sites indicates that at some sites medium-grade and low-grade biomass types contribute substantially or even solely to total revenue (see e.g. site 12, 135, 145, and 112). This indicates that site-specific AFS strategies might differ from the overall supply chain strategy. In other words, there seem to be strategic niches w.r.t. the consumer segments to be supplied. This might also be reflected in the rotation length and, although not discussed here, the selection of trees and clones for the AFS. Moreover, profitability of AFS sites seems to depend on various factors like local opportunity costs as well as closeness to consumers. \autoref{fig:fig-results-site-scatter} shows net margins and opportunity cost rates of sites with active AFS. 
+
+```{r fig-results-site-scatter, echo=FALSE, message=FALSE, warning=FALSE,     fig.cap="Scatterplot of opportunity cost rate and net margin (both in € per ha and year) for each site with active AFS. Size of AFS reflected in point size.", fig.width = 7, fig.height = 3, dev = "pdf", out.width = "\\textwidth", cache = T, cache.extra = c("ext", "milp_instance", "params_obj")}
 
 
-```{r fig-results-site-scatter, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Scatterplot of active agroforestry sites: opportunity cost rate (€ ha yr) on the x-axis versus demand-weighted average delivery distance (km) on the y-axis. Point size is proportional to the site's net margin (€ ha yr); sites with negative net margin are shown as open circles. A LOESS smoothing line indicates the joint trend.", fig.width = 5.5, fig.height = 4, dev = "pdf", out.width = "0.72\\textwidth", cache = F, cache.extra = c("ext", "milp_instance", "params_obj")}
-
-
-# ── 1. Opportunity cost rate per site (€ ha yr) ─────────────────────────
-# C_opp is already a per-ha-per-year rate stored in site_meta
-opp_rate <- site_meta %>%
-  select(site_id, opp_rate = C_opp, area_ha)   # unit: € ha yr
-
-# ── 2. Demand-weighted average distance to customers per site ─────────────────
-# Step 1: for each (site → hub) shipment, find the downstream (hub → consumer)
-#         volume routed onward in the same period — use hub_site_share to
-#         attribute the hub→consumer distance back to the originating site.
-dist_jk_m <- as.matrix(milp_instance$d_jk)
-
-# Demand-weighted mean distance over all periods:
-#   d̄_i = Σ_{j,k,t}  share_{i,j,t} * X_{jk,t} * d_{jk}
-#          ─────────────────────────────────────────────
-#          Σ_{j,k,t}  share_{i,j,t} * X_{jk,t}
-site_avg_dist <- ext$Xjk %>%
-  mutate(dist_km = mapply(function(j, k) dist_jk_m[j, k], hub_id, consumer_id)) %>%
-  left_join(hub_site_share, by = c("hub_id", "period"),
-            relationship = "many-to-many") %>%
-  filter(!is.na(site_id)) %>%
-  mutate(
-    weighted_dist = share * value * dist_km,
-    weight        = share * value
-  ) %>%
-  group_by(site_id) %>%
-  summarise(
-    avg_dist_km = sum(weighted_dist, na.rm = TRUE) /
-                  pmax(sum(weight,        na.rm = TRUE), 1e-9),
-    .groups = "drop"
-  )
-
-# ── 3. Net margin per site (€ ha yr) — reuse from previous chunk ─────────
-# (site_norm_denom, rev_site_norm, total_cost_site already computed above)
-net_margin_site <- rev_site_norm %>%
-  left_join(total_cost_site, by = "site_id") %>%
-  mutate(net_margin = rev_norm - total_cost_norm) %>%
-  select(site_id, net_margin)
-
-# ── 4. Assemble scatter data ──────────────────────────────────────────────────
-scatter_df <- opp_rate %>%
-  left_join(site_avg_dist,   by = "site_id") %>%
-  left_join(net_margin_site %>% mutate(site_id = as.integer(as.character(site_id))), by = "site_id") %>%
-  mutate(
-    profitable   = net_margin >= 0,
-    # size scale: use absolute net margin; negatives shown as open circles
-    abs_margin   = abs(net_margin)
-  )
-
-# ── 5. Plot ───────────────────────────────────────────────────────────────────
-ggplot(scatter_df,
-       aes(x = opp_rate, y = abs_margin)) +
-  # LOESS trend (all sites)
-  geom_smooth(method = "lm", formula = y ~ x,
-              colour = "grey60", fill = "grey88",
-              linewidth = 0.55, alpha = 0.35, se = TRUE) +
-  # Profitable sites: filled circles
-  geom_point(data = filter(scatter_df,  profitable),
-             aes(size = area_ha),
-             shape = 16, colour = "#1b9e77", alpha = 0.75) +
-  # Loss-making sites: open circles
-  geom_point(data = filter(scatter_df, !profitable),
-             aes(size = area_ha),
-             shape = 1, colour = "#d95f02", stroke = 0.6, alpha = 0.85) +
-  # Size legend — both shapes share the same scale
-   scale_size_area(
-     name     = "site size (ha)",
+ggplot(df_bench, aes(x = opp_cost_site, y = profit_ha_yr)) +
+  geom_point(aes(size = area_afs),
+             colour = "grey30", fill = "steelblue", alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, colour = "firebrick", linewidth = 0.7) +
+  scale_shape_manual(values = c(`TRUE` = 21, `FALSE` = 1),
+                     guide = "none") +
+  scale_size_area(
+     name     = "AFS size (ha)",
      max_size = 8,
-     breaks   = scales::breaks_extended(n = 4),
+     breaks   = scales::breaks_extended(n = 8),
      labels   = scales::label_number(big.mark = ",")
    ) +
-  scale_x_continuous(
-    name   = "Opportunity cost rate (€ ha yr)",
-    labels = scales::label_number(big.mark = ",")
-  ) +
-  scale_y_continuous(
-    name   = "|Net margin| (€ ha yr)",
-    labels = scales::label_number(accuracy = 1)
-  ) +
-  # Colour legend annotation (manual, avoids a redundant colour scale)
-  annotate("point", x = -Inf, y = Inf, size = 0, alpha = 0) +  # spacer
+  #scale_size_continuous(name = "AFS size (ha)", range = c(1, 8)) +
   labs(
-    caption = paste0(
-      length(active_site_ids), " active sites  |  ",
-      "point size ~ site size (ha)  |  ",
-      "green filled = profitable, orange open = loss-making"
-    )
+    x = "Opportunity cost (€ per hectare and year)",
+    y = "| Net margin |\n(€ per hectare and year)"
   ) +
-  theme_minimal(base_size = 8) +
-  theme(
-    panel.grid.minor  = element_blank(),
-    legend.position   = "right",
-    legend.text       = element_text(size = 6.5),
-    legend.title      = element_text(size = 7, face = "bold"),
-    plot.caption      = element_text(size = 7, colour = "grey40", hjust = 0)
-  )
+  theme_minimal(base_size = 9) +
+  theme(legend.position  = "right",
+        panel.grid.minor = element_blank())
 ```
+
+As expected net margins of AFS depend heavily on a site's opportunity cost rate showing a clear negative trend. Moreover, it appears that AFS sizes vary quite heavily between `r round(min(df_bench$area_afs))` and `r round(max(df_bench$area_afs))` hectare. Probably very small sites won't operate efficiently because cost for establishment, harvesting, and maintenance are assumed to scale with size, but are rather fixed below a certain critical threshold.
 
 # Sensitivity analysis
 
