@@ -134,7 +134,7 @@ Thomas Kirschstein
 \email{thomas.kirschstein@ikts.fraunhofer.de}}
 %\JELinfo{ejlje}
 
-\abstract[Abstract]{Agroforestry systems that integrate fast-growing woody perennials into agricultural land form a structurally novel type of biological-industrial symbiosis: they simultaneously deliver multiple biomass fractions of differing quality to chemical, pulp-and-paper, and energy industries through a shared regional supply network, thereby substituting fossil feedstocks and storing biogenic carbon in long-lived products. Despite this environmental potential, the material flows through such networks are poorly understood because stand-level age dynamics, multi-fraction biomass composition, and product quality cascading across industrial sectors have never been jointly optimised. This paper presents the AFS-SCD model, a mixed-integer linear programming (MILP) formulation that endogenises agroforestry establishment timing and consecutive harvest scheduling through arc-based age-lag constraints, couples component-specific Gompertz yield functions for stem, branch, and residue fractions with a multi-echelon network design model, and implements a product quality cascade allocating biomass grades to chemical, pulp, and energy consumers within a unified framework. Applied to a real-world case study in the Saxony-Anhalt tri-state region of Germany --- a cluster of chemical and paper industries seeking bio-based feedstock transition --- the model identifies the profit-optimal spatial configuration, rotation lengths, and product allocation across a 40-year planning horizon. Sensitivity analyses across opportunity-cost, logistics-cost, and revenue scenarios reveal that product cascading is the dominant lever for AFS viability, that sites with opportunity costs above approximately 300 EUR per hectare per year are rarely activated, and that high-value stem allocation to chemical applications substantially outperforms energy-only offtake strategies. The findings demonstrate that integrated optimisation of biological production dynamics and industrial network design is essential for designing viable and cleaner agroforestry bioeconomy ecosystems.}
+\abstract[Abstract]{Agroforestry systems integrate fast-growing woody perennials into agricultural land forming a biological-industrial symbiosis. They simultaneously deliver multiple biomass fractions of differing quality to food, chemical, pulp-and-paper, as well as energy industries through a shared regional supply network. The woody biomass feedstock produced in agroforestry systems can be used to substitute fossil feedstocks particularly in chemical and energy industry. Additionally, biogenic carbon can be stored in long-lived products and agroforestry increases climate resiliency and sustainability of agricultural production. In contrast to the traditional forestry-based supply of woody biomass, agroforestry-based woody biomass shows substantial feedstock potentials as most land is used agriculture in central Europe. Despite these environmental and economic potentials, agroforestry is only applied in marginal scale in central European agriculture. A core challenge in fostering agroforestry is to establish economically viable regional bioeconomy networks which connect partners from agriculture as well as downstream industries. Such a agroforestry-based supply chain needs to be structured and organized in a way that allows all partners to benefit economically in the long run. This paper presents a supply chain design model that helps to support design decisions for agroforestry-based supply chains. Therefore, it models agroforestry establishment and harvest scheduling on farm-level in a large-scaled linear multi-echelon network design model. It relies on biomass growth models which describe the production of multiple biomass types in agroforestry systems. These biomass fractions are pretreated and transported to consumers from chemical, paper-and-pulp, and energy industry depending on quality and demand restrictions. The model is applied in a case study focussing on central Germany where a heterogenuous industrial cluster is located within a fertile and large agricultural production area. The optimization results indicate that agroforestry-based supply chains can be configured in an economically viable way. Agroforestry systems can serve as feedstock suppliers for industrial consumers in the same region at a considerable scale. Profitability of agroforestry-based agricultural practice seem to be competitive with traditional agricultural production and at the same time allow producing woody biomass at a competitive cost, provided transports are not too long.}
 
 \keywords{Industrial symbiosis, Agroforestry, Biomass cascading, Bioeconomy network, Supply chain optimisation, Biobased production}
 
@@ -147,52 +147,12 @@ Thomas Kirschstein
 
 \section{Introduction}\label{introduction}
 
-The industrial ecology of biobased economies depends on connecting primary biological production systems to multiple industrial sectors through networks that efficiently allocate biomass fractions of varying quality to their highest-value application \cite{Hildebrandt2019}.
-Agroforestry systems (AFS) that deliberately integrate fast-growing woody
-perennials into agricultural land represent a structurally novel
-realisation of this principle. By co-producing stem wood suitable for
-chemical and paper industry, branch wood suitable for pulping, and
-residue fractions suitable for energy generation, AFS create a
-multi-fraction feedstock that can simultaneously serve multiple
-industrial consumer sectors through a shared regional supply network
-\cite{Toensmeier2017_Carbon_Agroforestry}. This biological-industrial
-symbiosis substitutes fossil feedstocks with renewable bio-based
-alternatives and stores biogenic carbon in long-lived material products
---- a cascade strategy explicitly preferred over energetic use from a
-cleaner production perspective \cite{Huber2018_SRAFS_growth}.
+The industrial ecology of biobased economies depends on connecting primary biological production systems to multiple industrial sectors through networks that efficiently allocate biomass fractions of varying quality to their highest-value application \cite{Hildebrandt2019}. Agroforestry systems (AFS) that deliberately integrate fast-growing woody perennials into agricultural land represent realisation of this principle. By co-producing heterogeneous biomass fractions like stems, branches, twigs, leaves etc. which are more or less suitable for chemical, paper-and-pulp industry, as well as energy generation, AFS create diverse feedstocks that can serve multiple industrial consumer sectors through a shared regional supply network \cite{Toensmeier2017_Carbon_Agroforestry}. This biological-industrial symbiosis substitutes fossil feedstocks with renewable bio-based alternatives and stores biogenic carbon in long-lived material products.
 
-Despite their ecological and industrial symbiosis potential, temperate
-AFS occupy only a marginal share of agricultural land in practice. In
-Germany, approximately 1,200 hectares of silvoarable AFS were
-established in 2025, accounting for barely 0.02\% of total agricultural
-land \cite{DEFAF}. This gap between potential and practice reflects an
-unresolved material flow planning problem: establishing AFS at regional
-scale requires coordinated decisions on stand establishment timing,
-multi-cycle harvest scheduling, and biomass fraction allocation across
-spatially distributed industrial consumers --- decisions that interact
-through the age-dependent composition of harvested biomass. At short
-rotation ages, harvested biomass is dominated by residue and branch
-fractions of limited merchantability; at longer rotations, stem diameters
-surpass quality thresholds and the share of chemical- and paper-grade
-material rises markedly \cite{Huber2018_SRAFS_growth,Niemczyk2021_Poplar_Rotation}. The material flow structure of an
-AFS-based bioeconomy network therefore depends endogenously on the
-rotation strategy, which cannot be set independently of the product
-cascade and the industrial demand structure. Current biomass supply chain
-models, reviewed in Section \autoref{sec:lit-sc}, do not capture this
-coupling: they either treat biomass availability as an exogenous time
-series --- decoupling it from age-class dynamics --- or optimise a single
-downstream value chain rather than a multi-sector product cascade
-\cite{Zahraee2020_BSC_review,DeMeyer2016_tOPTIMASS}.
+Despite their ecological and industrial potentials, temperate AFS occupy only a marginal share of agricultural land in practice. In Germany, approximately 1,200 hectares of silvoarable AFS were established in 2025, accounting for barely 0.02\% of total agricultural land \cite{DEFAF}. This gap between supposed potentials and observed practices indicates implementation challenges which often root in economic, organizational, and regulatory obstacles. Establishing AFS at regional scale requires coordinated decisions on stand establishment, harvest scheduling, and biomass allocation across spatially distributed industrial consumers {[}REF{]}. E.g. farmers will only invest in AFS when they are convinced to generate revenues from selling wood to industrial customers at the time of harvest which is, however, 5-15 years after establishing an AFS. This long time span imposes a severe investment risk as investment cost are clear and immediate but revenue is uncertain and far away. On the side, industrial consumers perticularly in process industries like chemical and paper-and-pulp industry prefer reliable and high-volume biomass supply contracts which imposes a challenge for farmers as AFS growth depends on weather as do harvest decisions. Next to those, a lot of business decisions need to be made. Early harvests promise earlier revenues, but harvested biomass is dominated by small-scaled branches, twigs and leaves with limited usability in downstream industries and lower value {[}REFS{]}. At longer rotations, biomass quantity is higher and mostly composed of stems whose diameters surpass quality thresholds such tha the share of chemical- and paper-grade material rises markedly \cite{Huber2018_SRAFS_growth,Niemczyk2021_Poplar_Rotation}. The biomass feedstock quantity and quality in an AFS-based supply chain therefore depend on the rotation strategies and the industrial demand structures of multiple farms and industrial consumers. Current biomass supply chain models, reviewed in \autoref{sec:lit-sc}, often do not consider this aspect as biomass availability is usually given at exogenous time series or optimise a single downstream supply chain rather \cite{Zahraee2020_BSC_review,DeMeyer2016_tOPTIMASS}.
 
-This paper closes that gap by developing the \textbf{AFS Supply Chain Design
-(AFS-SCD)} model, a mixed-integer linear programming (MILP) formulation
-for the integrated design and operation of an agroforestry biomass supply
-chain from an industrial ecology perspective. The model makes three
-contributions to the industrial ecology of biobased networks. First, it
-endogenises the material flow structure of an AFS network by coupling
-age-class stand dynamics --- formalised through binary arc-based age-lag
-variables that enforce minimum and maximum rotation constraints at each
-site --- directly to regional logistics decisions, so that rotation
+This paper closes this gap by developing the AFS Supply Chain Design (AFS-SCD) model, a linear programm for the integrated design and operation of an agroforestry biomass supply chain with multiple downstream industries. The model makes three contributions to industrial ecology literature. First, it
+endogenises the material flow structure of an AFS network by coupling age-class stand dynamics --- formalised through binary arc-based age-lag variables that enforce minimum and maximum rotation constraints at each site --- directly to regional logistics decisions, so that rotation
 length, harvest timing, and network configuration are optimised jointly.
 Second, it embeds component-specific Gompertz yield functions for stem,
 branch, and residue fractions, translating stand age into
@@ -208,14 +168,14 @@ chemical and paper industries is undergoing a bio-based feedstock
 transition and seeks reliable regional woody biomass supply.
 
 The remainder of the paper is structured as follows.
-Section \autoref{sec:litreview} reviews the relevant literature on
+\autoref{sec:litreview} reviews the relevant literature on
 agroforestry systems, biomass growth modelling, and biomass supply chain
 design, concluding with the identification of the modelling gap addressed
-here. Section \autoref{sec:milp} presents the AFS-SCD formulation.
-Section \autoref{sec-casestudy} describes the Saxony-Anhalt case study,
+here. \autoref{sec:milp} presents the AFS-SCD formulation.
+\autoref{sec-casestudy} describes the Saxony-Anhalt case study,
 presents the base-case optimisation results, and analyses the implications
 of alternative cost and revenue scenarios for regional cleaner
-production strategies. Section \autoref{sec:conclusion} concludes and
+production strategies. \autoref{sec:conclusion} concludes and
 discusses directions for integrating life cycle assessment into the
 framework.
 
@@ -245,9 +205,9 @@ which woody biomass is harvested.
 
 \textbf{Short-rotation coppice (SRC)} is defined as a monoculture plantation
 of fast-growing woody species covering the entire management unit, with
-planting densities of 8,000--20,000 cuttings\textasciitilde ha\(^{-1}\). After each
+planting densities of 8,000--20,000 cuttings per hectare. After each
 harvest the root system regenerates without replanting. Rotation cycles
-are typically 3--7\textasciitilde years and total stand lifetime is 20--25\textasciitilde years
+are typically 3--7 years and total stand lifetime is 20--25 years
 \cite{Trnka2008_Poplar_SRF,Faasch2012_SRC_Economics}. SRCs are no AFSs in
 the narrow sense, but it is helpful to benchmark biomass production.
 
@@ -265,7 +225,7 @@ with adjacent crop rows \cite{Huber2018_SRAFS_growth}.
 
 \textbf{Long-rotation agroforestry systems (LRAFS)} use the same
 alley-cropping spatial structure as SRAFS but with rotation cycles of
-12--15\textasciitilde years or longer \cite{Graves2007_Agroforestry_Economics,Nair1993_IntroAgroforestry}. At this rotation length, individual trees
+12--15 years or longer \cite{Graves2007_Agroforestry_Economics,Nair1993_IntroAgroforestry}. At this rotation length, individual trees
 develop substantial stem diameters and the proportion of high-value
 timber increases markedly, enabling premium material uses (veneer,
 sawlogs, engineered wood products) that are inaccessible in
@@ -883,17 +843,15 @@ evaluation, consistent with the cleaner production framing of this work.
 
 \bmsection*{Author contributions}
 
-The author is responsible to contents of this text.
+The author is responsible for all contents of this text.
 
 \bmsection*{Acknowledgments}
 
-This research was carried out within the project ``DiP: SMART-Agroforst -- Digitalisierung zur Förderung der Etablierung von Agroforstsystemen auf der Landschaftsebene als Beitrag zur Klimaresilienz Süd-Sachsen-Anhalts und Dekarbonisierung seiner chemischen Industrie -- Teilvorhaben J'' (funding code 031B1457J), funded by the German Federal Ministry of Education and Research (BMBF).
-
-The author thanks the partners in the aforementioned project for their help in compiling this manuscript. Special thanks are due to Nico Tachnitz, David Anthony, Jan Lukas Wenzel und Christopher Conrad.
+The author thanks all partners in the aforementioned project for their help in compiling and reviewing this manuscript in its early stages. Special thanks are due to Nico Tauchnitz, David Anthony, Jan Lukas Wenzel und Christopher Conrad.
 
 \bmsection*{Financial disclosure}
 
-None reported.
+This research was funded by the German Federal Ministry of Education and Research (BMBF) within the programme ``Modellregion der Bioökonomie (DiP)'' under the project ``DiP: SMART-Agroforst -- Digitalisierung zur Förderung der Etablierung von Agroforstsystemen auf der Landschaftsebene als Beitrag zur Klimaresilienz Süd-Sachsen-Anhalts und Dekarbonisierung seiner chemischen Industrie -- Teilvorhaben J'' (funding code 031B1457J). The funder had no role in the study design, data collection and analysis, decision to publish, or preparation of the manuscript.
 
 \bmsection*{Conflict of interest}
 
