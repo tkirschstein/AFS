@@ -11,6 +11,9 @@ library(networkD3)
 library(scales)
 library(ggalluvial)
 library(Rcpp)
+library(Matrix)
+library(slam) 
+library(ROI)
 
 # Define server logic required to draw a histogram
 function(input, output, session) {
@@ -46,7 +49,7 @@ function(input, output, session) {
       source("build_lp_rcpp_wrapper.R")
       
       # Falls C++-Solver dynamisch genutzt werden soll:
-      Rcpp::sourceCpp("build_and_solve_afs_lp_v11.cpp")
+      Rcpp::sourceCpp("build_and_solve_afs_lp_v12_highs.cpp")
       
       load("afs_workspace_red.RData")
       rv$afs_workspace <- afs_workspace
@@ -93,17 +96,23 @@ function(input, output, session) {
       label  = "Interactive scenario"
     )
     
-    # Vereinheitlichung wie in paper_lp.rmd
     tmp_long <- tmp %>%
-      rename(
-        stem   = "Merch. stem",
-        branch = "Merch. branch",
-        residue = Residue
+      pivot_longer(
+        cols      = c(`Merch. stem`, `Merch. branch`, Residue),
+        names_to  = "component",
+        values_to = "biomass_dm"
       ) %>%
-      pivot_longer(c(stem, branch, residue), names_to = "component", values_to = "biomass_dm") %>%
+      # Umbenennung NACH pivot_longer — jetzt sicher auf character-Werte
+      mutate(component = recode(component,
+                                "Merch. stem"   = "stem",
+                                "Merch. branch" = "branch",
+                                "Residue"       = "residue"
+      )) %>%
       group_by(age) %>%
-      mutate(total_dm = sum(biomass_dm, na.rm = TRUE),
-             share = ifelse(total_dm > 0, biomass_dm / total_dm, 0)) %>%
+      mutate(
+        total_dm = sum(biomass_dm, na.rm = TRUE),
+        share    = ifelse(total_dm > 0, biomass_dm / total_dm, 0)
+      ) %>%
       ungroup()
     
     tmp_long
@@ -227,9 +236,11 @@ function(input, output, session) {
     showNotification("Solving LP model ...", type = "warning", duration = NULL)
     rv$status <- "Solving optimization model"
     
-    rv$solve_result <- build_and_solve_afs_lp_v11(
+    #browser()
+    
+    rv$solve_result <- build_and_solve_afs_lp_v12(
        rv$milp_instance,
-       gurobi_params = list(TimeLimit = 600),
+       highs_params = list(time_limit = 600, log_to_console = TRUE, presolve = "off"),
        verbose = TRUE
      )
     
@@ -299,18 +310,16 @@ function(input, output, session) {
   
   output$plot_growth_stacked <- renderPlotly({
     df <- build_growth_df()
+
+    #browser()
     
-    browser()
-    #text = paste0("Age: ", round(age,1), "<br>Component: ", component, "<br>Biomass: ", round(biomass_dm,2), " t DM/ha"))
-    
-    p <- ggplot(df, aes(x = age, y = df, fill = component)) +
-      annotate("rect", xmin = input$min_age, xmax = input$max_age, ymin = 0, ymax = Inf, fill = "grey80", alpha = 0.25) +
+    p <- ggplot(df, aes(x = age, y = biomass_dm, fill = component)) +
       geom_area(color = "white", linewidth = 0.2, alpha = 0.75) +
       scale_fill_manual(values = c(stem = "#1b9e77", branch = "#d95f02", residue = "#7570b3")) +
       labs(x = "Stand age (years)", y = "Biomass (t DM/ha)", fill = "Fraction") +
       theme_minimal(base_size = 12)
     
-    ggplotly(p, tooltip = "text")
+    ggplotly(p)   # ← Fehler 3 behoben (text jetzt in aes)
   })
   
   output$plot_fraction_shares <- renderPlotly({
@@ -327,29 +336,139 @@ function(input, output, session) {
     ggplotly(p, tooltip = "text")
   })
   
-  output$plot_growth_sensitivity <- renderPlotly({
-    pars <- tidyr::crossing(k = c(input$k_gomp*0.8, input$k_gomp, input$k_gomp*1.2),
-                            t0 = c(input$t0_gomp-1, input$t0_gomp, input$t0_gomp+1))
+  output$plot_growth_asymptotes <- renderPlotly({
     
-    df <- purrr::pmap_dfr(pars, function(k, t0) {
-      build_scenario_ts(ages = seq(0, 20, 0.25), N = input$N_trees, C_site = input$C_site,
-                        k = k, t0 = t0, label = paste0("k=", round(k,3), ", t0=", round(t0,1))) %>%
-        mutate(total_dm = `Merch. stem` + `Merch. branch` + Residue,
-               scenario = label)
-    })
+    #browser()
     
-    p <- ggplot(df, aes(age, total_dm, color = scenario)) +
-      geom_line(linewidth = 0.9) +
-      labs(x = "Age", y = "Total biomass (t DM/ha)", color = "Scenario") +
-      theme_minimal(base_size = 11)
+    N_seq <- seq(20, 400, by = 1)
+    df_a  <- bind_rows(
+      tibble(N = N_seq,
+             A = A_stand(N_seq, C_site = 4.000, beta=-.3),
+             scenario = "advanteguous"),
+      tibble(N = N_seq,
+             A = A_stand(N_seq, C_site = 6.500, beta = -.5),
+             scenario = "disadvantageous")
+    )
     
-    ggplotly(p)
+    df_tree  <- bind_rows(
+      tibble(N = N_seq,
+             A = A_tree(N_seq, C_site = 4.000, beta=-.3),
+             scenario = "advanteguous"),
+      tibble(N = N_seq,
+             A = A_tree(N_seq, C_site = 6.500, beta = -.5),
+             scenario = "disadvantageous")
+    )
+    
+    
+    p_a <- ggplot(df_a, aes(x = N, y = A, linetype = scenario)) +
+      geom_line(colour = "grey20", linewidth = 0.7) +
+      scale_linetype_manual(
+        name   = "Scenario",
+        values = c("advanteguous" = "solid", "disadvantageous" = "dashed")) +
+      labs(x = "Density N (trees/ha)",
+           y = "A(N) (t DM/ha)") +
+      theme_minimal(base_size = 8) +
+      theme(legend.position  = c(0.72, 0.82),
+            legend.key.size  = unit(0.4, "cm"),
+            legend.text      = element_text(size = 7),
+            legend.title     = element_text(size = 7, face = "bold"),
+            legend.background = element_rect(fill = "white", colour = NA),
+            panel.grid.minor = element_blank())
+    
+    p_b <- ggplot(df_tree, aes(x = N, y = A, linetype = scenario)) +
+      geom_line(colour = "grey20", linewidth = 0.7) +
+      scale_linetype_manual(
+        name   = "Scenario",
+        values = c("advanteguous" = "solid", "disadvantageous" = "dashed")) +
+      labs(x = "Density N (trees/ha)",
+           y = "A_tree(N) (t DM per tree)") +
+       theme_minimal(base_size = 8) +
+      theme(legend.position  = c(0.72, 0.82),
+            legend.key.size  = unit(0.4, "cm"),
+            legend.text      = element_text(size = 7),
+            legend.title     = element_text(size = 7, face = "bold"),
+            legend.background = element_rect(fill = "white", colour = NA),
+            panel.grid.minor = element_blank())
+    # ── Assemble with patchwork ─────────────────────────────────────────────────
+    # Beide zu Plotly konvertieren, dann untereinander kombinieren
+    subplot(
+      ggplotly(p_a, tooltip = "none"),
+      ggplotly(p_b, tooltip = "none"),
+      nrows       = 2,          # ← untereinander
+      shareX      = TRUE,       # ← gemeinsame X-Achse (beide haben N)
+      titleY      = TRUE,       # ← Y-Achsentitel behalten
+      margin      = 0.08        # ← Abstand zwischen den Plots
+    )%>%
+      layout(
+        # Zweite Legende (von p_b) ausblenden — sie hat showlegend = TRUE doppelt
+        showlegend = TRUE,
+        legend = list(
+          orientation = "h",          # horizontal
+          x           = 0,            # linksbündig
+          y           = 1.08,         # über dem Plot
+          xanchor     = "left",
+          yanchor     = "bottom",
+          tracegroupgap = 0,
+          itemsizing  = "constant",
+          font        = list(size = 11)
+        )
+      ) %>%
+      # Doppelte Legendeneinträge entfernen: Traces von p_b auf showlegend=FALSE setzen
+      style(showlegend = FALSE, traces = 3:4)   # p_b hat Trace-Index 3 und 4
   })
   
-  output$table_yields <- DT::renderDataTable({
-    build_yields_input() %>%
-      tidyr::pivot_wider(names_from = age, values_from = yield_ha) %>%
-      arrange(product)
+  
+  output$plot_growth_fractions <- renderPlotly({
+    
+    # ── Panel (b): logistic merchantability q_p(t) ─────────────────────────────
+    ages_c <- seq(1, 20, by = 0.1)
+    df_c <- tibble(
+      age                    = ages_c,
+      `Stem (d > 15 cm)`    = f_stem_merch(ages_c),
+      `Branch (d > 7 cm)`   = f_branch_merch(ages_c)
+    ) |>
+      pivot_longer(-age, names_to = "compartment", values_to = "q") |>
+      mutate(compartment = factor(compartment,
+                                  levels = c("Stem (d > 15 cm)", "Branch (d > 7 cm)")))
+    
+    t50_vals <- tibble(
+      compartment = factor(c("Stem (d > 15 cm)", "Branch (d > 7 cm)"),
+                           levels = c("Stem (d > 15 cm)", "Branch (d > 7 cm)")),
+      t50 = c(8.19, 7.55)
+    )
+    
+    merch_cols <- c("Stem (d > 15 cm)"  = "#1b9e77",
+                    "Branch (d > 7 cm)" = "#d95f02")
+    
+    p_c <- ggplot(df_c, aes(x = age, y = q, colour = compartment)) +
+      geom_vline(data = t50_vals,
+                 aes(xintercept = t50, colour = compartment),
+                 linetype = "dashed", linewidth = 0.45, show.legend = FALSE) +
+      geom_hline(yintercept = 0.5,
+                 linetype = "dotted", colour = "grey60", linewidth = 0.4) +
+      geom_line(linewidth = 0.8) +
+      annotate("text", x = 8.19 + 0.3, y = 0.08,
+               label = "t[50,s] = 8.2 years",
+               size = 2.4, hjust = 0, colour = "#1b9e77") +
+      annotate("text", x = 7.55 - 0.3, y = 0.20,
+               label = "t[50,6] = 7.6 years",
+               size = 2.4, hjust = 1, colour = "#d95f02") +
+      scale_colour_manual(name = "Compartment", values = merch_cols) +
+      scale_x_continuous(breaks = seq(0, 20, 2)) +
+      scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                         limits = c(0, max(df_c$q)*1.1)) +
+      labs(x = "Stand age (yr)",
+           y = "q(p,t)  [merchantable fraction]") +
+      theme_minimal(base_size = 8) +
+      theme(legend.position  = c(0.15, 0.75),
+            legend.key.size  = unit(0.4, "cm"),
+            legend.text      = element_text(size = 7),
+            legend.title     = element_text(size = 7, face = "bold"),
+            legend.background = element_rect(fill = "white", colour = NA),
+            panel.grid.minor = element_blank())
+    
+    # ── Assemble with patchwork ─────────────────────────────────────────────────
+    ggplotly(p_c)
   })
   
 

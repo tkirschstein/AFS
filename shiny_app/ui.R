@@ -143,34 +143,25 @@ dashboardPage(
         
         fluidRow(
           box(
-            title = "Stand-level Biomass Components (Fig. 3 equivalent)",
-            status = "success", solidHeader = TRUE, width = 8,
-            helpText("Stacked biomass fractions: stem (P1), branch (P2), residue (P3) over stand age.
-                     Grey band = typical harvest window (min_age … max_age).
-                     Points are empirical references from Jha et al. (2018), Civitarese et al. (2019)."),
+            title = "Stand-level Biomass Components",
+            status = "success", solidHeader = TRUE, width = 12,
+            helpText("Stacked biomass fractions: stem (P1), branch (P2), residue (P3) over stand age."),
             plotlyOutput("plot_growth_stacked", height = 380)
-          ),
-          box(
-            title = "Biomass Fraction Shares",
-            status = "info", solidHeader = TRUE, width = 4,
-            helpText("Share of each fraction in total above-ground biomass as function of age."),
-            plotlyOutput("plot_fraction_shares", height = 380)
           )
         ),
         
         fluidRow(
           box(
-            title = "Gompertz Yield Parameters — Sensitivity",
+            title = "Tree and stand-level asymptotes",
             status = "warning", solidHeader = TRUE, width = 6,
             collapsible = TRUE, collapsed = TRUE,
-            helpText("Effect of changing k and t0 on total AGB curve."),
-            plotlyOutput("plot_growth_sensitivity", height = 300)
+            plotlyOutput("plot_growth_asymptotes", height = 300)
           ),
           box(
-            title = "Yield Table η_p(t) [t DM/ha]",
+            title = "Biomass fraction growth",
             status = "primary", solidHeader = TRUE, width = 6,
             collapsible = TRUE, collapsed = TRUE,
-            DT::dataTableOutput("table_yields")
+            plotlyOutput("plot_growth_fractions", height = 300)
           )
         )
       ),

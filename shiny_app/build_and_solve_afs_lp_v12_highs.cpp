@@ -59,10 +59,7 @@ List build_and_solve_afs_lp_v12_impl(List instance,
   const double c_tr_raw = as<double>(instance["c_tr_raw"]);
   const double c_tr_pre = as<double>(instance["c_tr_pre"]);
 
-  if (verbose) {
-    Rcpp::Rcout << "Building AFS-SCD LP (v12, HiGHS solver, shinyapps.io-compatible)...\n";
-  }
-
+  
   // ── 2. Site-Vektoren ───────────────────────────────────────────────────────
   DataFrame     sites_df = as<DataFrame>(instance["sites"]);
   NumericVector area_ha  = sites_df["area_ha"];
@@ -512,7 +509,7 @@ List build_and_solve_afs_lp_v12_impl(List instance,
     Named("presolve")    = "on",
     Named("solver")      = "ipm",        // Interior-Point: schnellster fuer grosse LP
     Named("time_limit")  = 300.0,
-    Named("output_flag") = (verbose ? true : false)
+    Named("output_flag") = LogicalVector::create(verbose)   
   );
   if (highs_params.size() > 0) {
     CharacterVector pnames = highs_params.names();
@@ -531,6 +528,8 @@ List build_and_solve_afs_lp_v12_impl(List instance,
   Environment highs_env = Environment::namespace_env("highs");
   Function    highs_fn  = highs_env["highs_solve"];
 
+  Rcpp::Rcout << "Optimization start \n"; 
+  
   List highs_result = highs_fn(
     Named("Q")       = R_NilValue,
     Named("L")       = wrap(c_vec),
@@ -540,10 +539,13 @@ List build_and_solve_afs_lp_v12_impl(List instance,
     Named("lhs")     = lhs_vec,
     Named("rhs")     = rhs_vec,
     Named("types")   = R_NilValue,   // NULL = LP
-    Named("maximum") = true,          // Maximierung
+    Named("maximum") = LogicalVector::create(true), 
     Named("control") = h_ctrl
   );
 
+  Rcpp::Rcout << "Optimization complete \n"; 
+              
+  
   // ==========================================================================
   // SCHRITT 6: ERGEBNIS EXTRAHIEREN (HiGHS-Notation)
   //
@@ -553,11 +555,26 @@ List build_and_solve_afs_lp_v12_impl(List instance,
   //   $status           — "Optimal", "Infeasible", "Time limit reached", ...
   //   $info             — Solver-Statistiken
   // ==========================================================================
+  Rcpp::Rcout << "Solver status \n"; 
+  
   std::string status = "Unknown";
   if (highs_result.containsElementNamed("status")) {
-    status = as<std::string>(highs_result["status"]);
+    SEXP s = highs_result["status"];
+    if (TYPEOF(s) == STRSXP) {
+      status = as<std::string>(s);
+    } else if (TYPEOF(s) == INTSXP || TYPEOF(s) == REALSXP) {
+      int code = as<int>(s);
+      // HiGHS status codes: 7 = Optimal, 8 = Infeasible, 9 = Unbounded, ...
+      if      (code == 7)  status = "Optimal";
+      else if (code == 8)  status = "Infeasible";
+      else if (code == 9)  status = "Unbounded";
+      else if (code == 13) status = "Time limit reached";
+      else                 status = "Status code: " + std::to_string(code);
+    }
   }
 
+  Rcpp::Rcout << "Obj. value \n"; 
+  
   double objval = 0.0;
   if (highs_result.containsElementNamed("objective_value")) {
     objval = as<double>(highs_result["objective_value"]);
@@ -568,6 +585,8 @@ List build_and_solve_afs_lp_v12_impl(List instance,
                 << "  ObjVal: " << objval << "\n";
   }
 
+  Rcpp::Rcout << "Lösungsvektor extrahieren \n"; 
+  
   // Lösungsvektor extrahieren ($primal_solution statt $x)
   NumericVector x_sol(n_vars, 0.0);
   if (highs_result.containsElementNamed("primal_solution")) {
