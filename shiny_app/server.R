@@ -35,8 +35,6 @@ function(input, output, session) {
   )
   
   
-  
-  
   observe({
     # Daten & Funktionen laden (beim Start)
     if (is.null(rv$afs_workspace)) {
@@ -302,12 +300,11 @@ function(input, output, session) {
   output$plot_growth_stacked <- renderPlotly({
     df <- build_growth_df()
     
-    p <- ggplot(df, aes(x = age, y = biomass_dm, fill = component,
-                        text = paste0("Age: ", round(age,1),
-                                      "<br>Component: ", component,
-                                      "<br>Biomass: ", round(biomass_dm,2), " t DM/ha"))) +
-      annotate("rect", xmin = input$min_age, xmax = input$max_age, ymin = 0, ymax = Inf,
-               fill = "grey80", alpha = 0.25) +
+    browser()
+    #text = paste0("Age: ", round(age,1), "<br>Component: ", component, "<br>Biomass: ", round(biomass_dm,2), " t DM/ha"))
+    
+    p <- ggplot(df, aes(x = age, y = df, fill = component)) +
+      annotate("rect", xmin = input$min_age, xmax = input$max_age, ymin = 0, ymax = Inf, fill = "grey80", alpha = 0.25) +
       geom_area(color = "white", linewidth = 0.2, alpha = 0.75) +
       scale_fill_manual(values = c(stem = "#1b9e77", branch = "#d95f02", residue = "#7570b3")) +
       labs(x = "Stand age (years)", y = "Biomass (t DM/ha)", fill = "Fraction") +
