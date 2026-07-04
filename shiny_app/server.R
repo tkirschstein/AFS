@@ -627,14 +627,22 @@ function(input, output, session) {
     # ── Consumers ─────────────────────────────────────────────────────────────
     consumers_plt <- rv$consumers %>%
       mutate(
-        total_demand = demand_P1 + demand_P2 + demand_P3,
+        # Generische Consumer-Nummer (Rang nach consumer_id)
+        consumer_nr   = paste0("Consumer ", row_number()),
+        total_demand  = demand_P1 + demand_P2 + demand_P3,
         kategorie = case_when(
           demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
           demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
           demand_P3 > 0 ~ "Energy / Biogas (P3)",
           TRUE          ~ "Other"
         ),
-        ptsize = pmin(14, pmax(5, 5 + log1p(total_demand) / 1.8))
+        # Icon-Farbe je Kategorie (für awesomeIcons)
+        marker_color = case_when(
+          kategorie == "Chemical / Pulp (P1)" ~ "purple",
+          kategorie == "Pulp / Paper (P2)"    ~ "blue",
+          kategorie == "Energy / Biogas (P3)" ~ "red",
+          TRUE                                ~ "gray"
+        )
       )
     
     cons_sf <- st_as_sf(
@@ -652,7 +660,7 @@ function(input, output, session) {
     )
     
     # ── Leaflet aufbauen ──────────────────────────────────────────────────────
-    leaflet(options = leafletOptions(zoomControl = TRUE), width = "100%") %>%
+    map <- leaflet(options = leafletOptions(zoomControl = TRUE), width = "100%") %>%
       
       #addProviderTiles(providers$CartoDB.Positron, group = "Basemap") %>%
       
@@ -681,17 +689,23 @@ function(input, output, session) {
         group       = "Hubs"
       ) %>%
       
-      addCircleMarkers(
-        data        = cons_sf,
-        radius      = ~ptsize,
-        color       = "white", weight = 1,
-        fillColor   = ~pal_cons(kategorie), fillOpacity = 0.9,
-        popup       = ~paste0(
-          "<strong>Consumer-Typ:</strong> ", kategorie,
+      # ── Consumer: AwesomeMarkers statt CircleMarkers ──────────────────────
+      addAwesomeMarkers(
+        data  = cons_sf,
+        icon  = ~awesomeIcons(
+          icon        = "industry",
+          library     = "fa",
+          markerColor = marker_color,
+          iconColor   = "white"
+        ),
+        popup = ~paste0(
+          "<strong>", consumer_nr, "</strong>",
+          "<br><strong>Consumer-Typ:</strong> ", kategorie,
           "<br><strong>Gesamtnachfrage:</strong> ",
           round(total_demand, 1), " kt"
         ),
-        group       = "Consumers"
+        label = ~consumer_nr,
+        group = "Consumers"
       ) %>%
       
       addLegend(
@@ -716,6 +730,8 @@ function(input, output, session) {
       ) %>%
       
       fitBounds(lng1 = 10.6, lat1 = 50.9, lng2 = 13.2, lat2 = 52.8)
+    
+    map
   })
   
   # --------------------------------------------------------------------------
