@@ -152,9 +152,11 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
               by = c("hub_id", "period"),
               relationship = "many-to-many") %>%
     mutate(site_rev = rev_jkt * share) %>%
-    group_by(site_id) %>%
+    group_by(site_id, del_product) %>%
     summarise(revenue = sum(site_rev, na.rm = TRUE), .groups = "drop") %>%
-    filter(!is.na(site_id))
+    filter(!is.na(site_id)) %>% 
+    pivot_wider(names_from = del_product, values_from = revenue, names_prefix = "rev_P") %>% 
+    mutate(revenue = rev_P1 + rev_P2 + rev_P3)
   
   # ── Normierung: €/ha/a ────────────────────────────────────────────────────
   active_p <- ext$z %>%
@@ -238,6 +240,35 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
     left_join(avg_dist_to_consumer, by = "site_id") %>%
     left_join(avg_rotation,         by = "site_id") %>%
     left_join(p1_share,             by = "site_id") %>%
+    left_join(sc_est %>% 
+                select(site_id, cost) %>% 
+                rename(cost_est = cost) ,
+              by = "site_id") %>%
+    left_join(sc_harv %>% 
+                select(site_id, cost) %>% 
+                rename(cost_harv = cost) ,
+              by = "site_id") %>% 
+    left_join(sc_main %>% 
+                select(site_id, cost) %>% 
+                rename(cost_main = cost) ,
+              by = "site_id") %>% 
+    left_join(sc_opp %>% 
+                select(site_id, cost) %>% 
+                rename(cost_opp = cost) ,
+              by = "site_id") %>%
+    left_join(sc_tr_raw %>% 
+                select(site_id, cost) %>% 
+                rename(cost_tr_raw = cost) ,
+              by = "site_id") %>%
+    left_join(sc_tr_pre %>% 
+                select(site_id, cost) %>% 
+                rename(cost_tr_pre = cost) ,
+              by = "site_id") %>%
+    left_join(sc_stor %>% 
+                select(site_id, cost) %>% 
+                rename(cost_stor = cost) ,
+              by = "site_id") %>%
+    
     mutate(
       profit_ha_yr     = (coalesce(revenue, 0) - coalesce(total_cost, 0)) / denom,
       scenario         = scenario_name,
@@ -252,7 +283,11 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
            opp_cost, opp_cost_site, cost_log_level, cost_est_level, revenue_level,
            avg_dist_hub_km, avg_dist_consumer_km,
            avg_rotation_yr, n_harvests, share_p1,
-           area_ha, area_afs, active_years, n_sites)
+           area_ha, area_afs, active_years, n_sites,
+           cost_est, cost_harv, cost_main, cost_opp,
+           cost_tr_raw, cost_tr_pre, cost_stor, revenue, 
+           rev_P1, rev_P2, rev_P3
+           )
   
   return(result_df)
 }

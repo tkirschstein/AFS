@@ -260,34 +260,33 @@ dashboardPage(
         fluidRow(
           box(
             title = "Profit per ha·yr by Opportunity Cost",
-            status = "primary", solidHeader = TRUE, width = 6,
+            status = "info", solidHeader = TRUE, width = 6,
             helpText("Each dot = one AFS site. X-axis = site-specific opportunity cost (€/ha/yr).
                      Dashed line = break-even."),
-            plotlyOutput("plot_profit_vs_opp", height = 380)
+            plotlyOutput("plot_rotation_dist", height = 380)
           ),
           box(
-            title = "Site Activation vs. Opportunity Cost",
-            status = "info", solidHeader = TRUE, width = 6,
-            helpText("Share of activated sites as function of opportunity cost threshold."),
-            plotlyOutput("plot_activation_rate", height = 380)
+            title = "Profit split per site",
+            status = "success", solidHeader = TRUE, width = 6,
+            helpText("Comparison of revenues and cost split by sub-types."),
+            plotlyOutput("plot_profit_split", height = 380)
           )
         ),
         
         fluidRow(
           box(
-            title = "Rotation Length Distribution",
-            status = "warning", solidHeader = TRUE, width = 4,
-            plotlyOutput("plot_rotation_dist", height = 300)
+            title = "Opportunity cost vs. Profit",
+            status = "success", solidHeader = TRUE, width = 4,
+            plotlyOutput("plot_profit_vs_opp", height = 300)
           ),
           box(
             title = "P1 (Stem) Share vs. Profit",
             status = "success", solidHeader = TRUE, width = 4,
-            helpText("Sites with higher stem share earn more per ha·yr."),
             plotlyOutput("plot_p1share_profit", height = 300)
           ),
           box(
-            title = "Distance to Hub vs. Profit",
-            status = "primary", solidHeader = TRUE, width = 4,
+            title = "Distance vs. Profit",
+            status = "success", solidHeader = TRUE, width = 4,
             plotlyOutput("plot_dist_profit", height = 300)
           )
         )

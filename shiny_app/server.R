@@ -290,19 +290,6 @@ function(input, output, session) {
     rv$site_profit <- build_site_profit()
     rv$status      <- "Optimization complete"
     
-    # ------------------------------------------------------------------
-    # Ergebnis als RDS speichern → wird beim nächsten Start automatisch
-    # als Precomputed-Lösung geladen
-    # ------------------------------------------------------------------
-    tryCatch({
-      saveRDS(rv$solve_result, "result_lp_v11.rds")
-      showNotification("Solution saved as result_lp_v11.rds.",
-                       type = "message")
-    }, error = function(e) {
-      showNotification(paste0("Could not save RDS: ", e$message),
-                       type = "warning")
-    })
-    
     showNotification("Optimization finished.", type = "message")
   })
   # --------------------------------------------------------------------------
@@ -1174,7 +1161,7 @@ function(input, output, session) {
       )
   })
   
-  # Cascade Gantt Chart
+  # Cascade Gantt Chart -----------------------------------------------------
   # --------------------------------------------------------------------------
   output$plot_product_cascade <- renderPlotly({
     req(rv$ext, rv$ext$Xjk)
@@ -1310,6 +1297,345 @@ function(input, output, session) {
             font = list(size = 11, color = "grey30")
           )
         )
+      )
+  })
+  
+  # --------------------------------------------------------------------------
+  # 9) Site KPIS 
+  # --------------------------------------------------------------------------
+  
+  # Profit - Opp -Scatter -----------------------------------------------------
+  
+  output$plot_profit_vs_opp <- renderPlotly({
+    req(rv$site_profit)
+    
+    browser()
+    
+    df <- rv$site_profit %>%
+      mutate(
+        site_label = paste0("Site ", row_number())
+      )
+  
+    if(!("C_opp" %in% colnames(df)) & ("opp_cost_site" %in% colnames(df)) ){
+      df <- df %>% 
+        rename(C_opp = opp_cost_site )
+    }
+      
+    p <- ggplot(
+      df,
+      aes(
+        x = C_opp,
+        y = profit_ha_yr,
+        text = paste0(
+          "<b>", site_label, "</b>",
+          "<br>Opportunity cost: ", round(C_opp, 1), " €/ha/yr",
+          "<br>Profit: ", round(profit_ha_yr, 1), " €/ha/yr",
+          "<br>AFS area: ", round(area_afs, 1), " ha"
+        )
+      )
+    ) +
+      geom_hline(yintercept = 0, linetype = "dashed", colour = "grey45") +
+      geom_point(
+        aes(size = area_afs),
+        colour = "#1b9e77",
+        alpha = 0.75
+      ) +
+      labs(
+        x = "Opportunity cost (€/ha/yr)",
+        y = "Profit (€/ha/yr)"
+      ) +
+      theme_minimal(base_size = 11) +
+      theme(panel.grid.minor = element_blank())
+    
+    ggplotly(p, tooltip = "text") %>%
+      layout(
+        showlegend = FALSE,
+        margin = list(t = 10, r = 10, b = 60, l = 60)
+      )
+  })
+  
+  # Cost breakdown -----------------------------------------------------
+  
+  output$plot_profit_split <- renderPlotly({
+    req(rv$site_profit)
+    
+    # ── 0. Colour palette — identical to fig-results-cost-profit-breakdown ───────
+    prod_colors_rev <- c(
+      "Revenue P1 (Stem)"     = "#1b9e77",
+      "Revenue P2 (Branches)" = "#d95f02",
+      "Revenue P3 (Residue)"  = "#7570b3"
+    )
+    cost_colors <- c(
+      "Establishment"         = "#b2182b",
+      "Harvesting"            = "#ef8a62",
+      "Maintenance"           = "#fddbc7",
+      "Opportunity"           = "#67001f",
+      "Transport (raw)"       = "#2166ac",
+      "Transport (pre-proc.)" = "#92c5de",
+      "Storage"               = "#4d4d4d"
+    )
+    
+    
+    needed_cols <- c("site_id", "cost_est", "cost_harv", "cost_main", "cost_opp","cost_tr_raw", "cost_tr_pre","cost_stor", "rev_P1", "rev_P2", "rev_P3")
+    validate(
+      need(all(needed_cols %in% names(rv$site_profit)),
+           "site_profit does not contain the expected cost/revenue breakdown columns.")
+    )
+    
+    df  <- rv$site_profit %>%
+      mutate(
+        across(
+          c(starts_with("cost_"), starts_with("rev_")),
+          ~ .x / area_afs /rv$milp_instance$n_periods
+        )
+      ) %>% 
+      mutate(site_label = paste0("Site ", site_id)) %>%
+      select(site_label, all_of(needed_cols)) %>% 
+      mutate(
+        cost_stor   = replace(cost_stor, is.na(cost_stor), 0),
+        net_profit  = rev_P1 + rev_P2 + rev_P3 -
+          cost_est - cost_harv - cost_main - cost_opp - cost_tr_raw - cost_tr_pre - cost_stor
+      ) %>%
+      arrange(desc(net_profit)) %>%
+      mutate(site_label = factor(site_label, levels = site_label))
+       
+    df_plot <- df %>%
+      mutate(
+        cost_stor  = replace_na(cost_stor, 0),
+        net_profit = rev_P1 + rev_P2 + rev_P3 -
+          cost_est - cost_harv - cost_main - cost_opp -
+          cost_tr_raw - cost_tr_pre - cost_stor
+      ) %>%
+      arrange(desc(net_profit)) %>%
+      mutate(site_label = factor(site_label, levels = site_label))
+    
+    # ── Hilfsfunktion: einen Trace hinzufügen ─────────────────────────────────
+    add_rev_bar <- function(fig, col, name) {
+      add_bars(
+        fig,
+        data            = df_plot,
+        x               = ~site_label,
+        y               = as.formula(paste0("~", col)),
+        name            = name,
+        legendgroup     = "revenue",
+        legendgrouptitle = list(text = "<b>Revenue by product</b>"),
+        marker          = list(color = prod_colors_rev[[name]]),
+        hovertemplate   = paste0("<b>%{x}</b><br>", name, ": %{y:,.1f} €/ha·yr<extra></extra>")
+      )
+    }
+    
+    add_cost_bar <- function(fig, col, name) {
+      add_bars(
+        fig,
+        data            = df_plot,
+        x               = ~site_label,
+        y               = as.formula(paste0("~(-", col, ")")),
+        name            = name,
+        legendgroup     = "costs",
+        legendgrouptitle = list(text = "<b>Costs</b>"),
+        marker          = list(color = cost_colors[[name]]),
+        customdata      = as.formula(paste0("~", col)),
+        hovertemplate   = paste0("<b>%{x}</b><br>", name, ": %{customdata:,.1f} €/ha·yr<extra></extra>")
+      )
+    }
+    
+    # ── 2. Traces zusammenbauen ────────────────────────────────────────────────
+    fig <- plot_ly() %>%
+      # Revenues
+      add_rev_bar("rev_P1",  "Revenue P1 (Stem)")     %>%
+      add_rev_bar("rev_P2",  "Revenue P2 (Branches)") %>%
+      add_rev_bar("rev_P3",  "Revenue P3 (Residue)")  %>%
+      # Costs
+      add_cost_bar("cost_est",     "Establishment")         %>%
+      add_cost_bar("cost_harv",    "Harvesting")            %>%
+      add_cost_bar("cost_main",    "Maintenance")           %>%
+      add_cost_bar("cost_opp",     "Opportunity")           %>%
+      add_cost_bar("cost_tr_raw",  "Transport (raw)")       %>%
+      add_cost_bar("cost_tr_pre",  "Transport (pre-proc.)") %>%
+      add_cost_bar("cost_stor",    "Storage")               %>%
+      # Net profit as diamond markers
+      add_markers(
+        data          = df_plot,
+        x             = ~site_label,
+        y             = ~net_profit,
+        name          = "Net profit",
+        legendgroup   = "profit",
+        marker        = list(symbol = "diamond", size = 8, color = "black"),
+        hovertemplate = "<b>%{x}</b><br>Net profit: %{y:,.1f} €/ha·yr<extra></extra>"
+      )
+    
+    # ── 3. Layout ──────────────────────────────────────────────────────────────
+    fig %>%
+      layout(
+        barmode      = "relative",
+        bargap       = 0.18,
+        plot_bgcolor = "rgba(235,235,235,0.6)",
+        paper_bgcolor = "white",
+        xaxis = list(
+          title      = "Site ID",
+          tickangle  = -60,
+          categoryorder = "array",
+          categoryarray = levels(df_plot$site_label)
+        ),
+        yaxis = list(
+          title       = "€ per hectare and year",
+          zeroline    = TRUE,
+          zerolinewidth = 1.2,
+          zerolinecolor = "gray40",
+          gridcolor   = "white"
+        ),
+        legend = list(
+          orientation  = "v",
+          x            = 1.02,
+          y            = 1,
+          xanchor      = "left",
+          yanchor      = "top",
+          tracegroupgap = 12
+        ),
+        margin = list(l = 70, r = 190, b = 100, t = 20)
+      )
+    
+  })
+ 
+  # harvest cycles -----------------------------------------------------
+  
+  output$plot_rotation_dist <- renderPlotly({
+    req(rv$ext, rv$ext$z)
+    
+    validate(
+      need(all(c("site_id", "t", "s", "value") %in% names(rv$ext$z)),
+           "z does not contain site_id, period, value.")
+    )
+    
+    rot_df <- rv$ext$z %>%
+      filter(value > 0, arc_type == "harvest") %>%
+      group_by(site_id) %>%
+      mutate( cycle_length = t - s )
+    
+    validate(
+      need(nrow(rot_df) > 0, "No activated harvest cycles available.")
+    )
+    
+    p <- ggplot(
+      rot_df, aes( x = cycle_length)
+      ) +
+      geom_histogram(
+        binwidth = 1,
+        boundary = 0.5,
+        fill = "#7570b3",
+        colour = "white",
+        alpha = 0.85
+      ) +
+      scale_x_continuous(breaks = scales::pretty_breaks()) +
+      labs(
+        x = "Rotation cycle length (years)",
+        y = "Number of observations"
+      ) +
+      theme_minimal(base_size = 11) +
+      theme(panel.grid.minor = element_blank())
+    
+    ggplotly(p, tooltip = c("x", "y")) %>%
+      layout(showlegend = FALSE)
+  })
+  
+  # P1 SHare plot -----------------------------------------------------
+  
+  output$plot_p1share_profit <- renderPlotly({
+    req(rv$ext, rv$ext$Xij, rv$site_profit)
+    
+    df <- rv$site_profit %>%
+      mutate(
+        site_label = paste0("Site ", row_number())
+      )
+    
+    if(!("C_opp" %in% colnames(df)) & ("opp_cost_site" %in% colnames(df)) ){
+      df <- df %>% 
+        rename(C_opp = opp_cost_site )
+    }
+    
+    p <- ggplot(
+      df,
+      aes(
+        x = share_p1,
+        y = profit_ha_yr,
+        text = paste0(
+          "<b>", site_label, "</b>",
+          "<br>Opportunity cost: ", round(C_opp, 1), " €/ha/yr",
+          "<br>Profit: ", round(profit_ha_yr, 1), " €/ha/yr",
+          "<br>AFS area: ", round(area_afs, 1), " ha"
+        )
+      )
+    ) +
+      geom_hline(yintercept = 0, linetype = "dashed", colour = "grey45") +
+      geom_point(
+        aes(size = area_afs),
+        colour = "#1b9e77",
+        alpha = 0.75
+      ) +
+      labs(
+        x = "Opportunity cost (€/ha/yr)",
+        y = "Profit (€/ha/yr)"
+      ) +
+      theme_minimal(base_size = 11) +
+      theme(panel.grid.minor = element_blank())
+    
+    ggplotly(p, tooltip = "text") %>%
+      layout(
+        showlegend = FALSE,
+        margin = list(t = 10, r = 10, b = 60, l = 60)
+      )
+  })
+  
+  # Sitze activation -----------------------------------------------------
+  
+  output$plot_dist_profit <- renderPlotly({
+    req(rv$site_profit)
+    
+    df <- rv$site_profit
+    
+    if(!("C_opp" %in% colnames(df)) & ("opp_cost_site" %in% colnames(df)) ){
+      df <- df %>% 
+        rename(C_opp = opp_cost_site )
+    }
+    
+    df <- df %>%
+      mutate(
+        site_label = paste0("Site ", row_number())
+      )
+    
+    df <- df %>% 
+      mutate(total_dist = avg_dist_hub_km + avg_dist_consumer_km)
+    
+    p <- ggplot(
+      df,
+      aes(
+        x = total_dist,
+        y = profit_ha_yr,
+        text = paste0(
+          "<b>", site_label, "</b>",
+          "<br>Opportunity cost: ", round(C_opp, 1), " €/ha/yr",
+          "<br>Profit: ", round(profit_ha_yr, 1), " €/ha/yr",
+          "<br>AFS area: ", round(area_afs, 1), " ha"
+        )
+      )
+    ) +
+      geom_hline(yintercept = 0, linetype = "dashed", colour = "grey45") +
+      geom_point(
+        aes(size = area_afs),
+        colour = "#1b9e77",
+        alpha = 0.75
+      ) +
+      labs(
+        x = "Opportunity cost (€/ha/yr)",
+        y = "Profit (€/ha/yr)"
+      ) +
+      theme_minimal(base_size = 11) +
+      theme(panel.grid.minor = element_blank())
+    
+    ggplotly(p, tooltip = "text") %>%
+      layout(
+        showlegend = FALSE,
+        margin = list(t = 10, r = 10, b = 60, l = 60)
       )
   })
   

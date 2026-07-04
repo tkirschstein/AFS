@@ -269,67 +269,6 @@ build_optimization_instance <- function(data, params) {
 }
 
 
-# ============================================================================
-# Solve function
-# ============================================================================
-
-solve_agroforestry_sparse <- function(instance,
-                                      time_limit = 600,
-                                      mip_gap = 0.05,
-                                      verbose = TRUE, 
-                                      solver = "highs") {
-  
-  
-  # Build LP
-  built <- build_AFS_milp(instance)
-  
-  # Solve with Gurobi via ROI
-  
-  if(solver == "gurobi"){
-    result <- ROI_solve(
-      built$model,
-      solver = "gurobi", 
-      control = list(
-        TimeLimit = time_limit,
-        MIPGap = mip_gap,
-        OutputFlag = ifelse(verbose, 1, 0)
-      )
-    )
-  }
-  if(solver == "highs"){
-    result <- ROI_solve(
-      built$model,
-      solver = "highs",
-      control = list(
-        time_limit  = as.numeric(time_limit),
-        mip_rel_gap  = as.numeric(mip_gap),
-        log_to_console  = ifelse(verbose, TRUE, FALSE)
-      )
-    )
-  }
-  
-  
-  
-  # convert results
-  solution <- lapply(built$var_maps, function(x) {
-    tmp <- data.frame(x, 
-                      value = result$solution[x$col])
-    tmp %>% select(-col)
-  })
-  
-  # Return complete result
-  list(
-    result = result,
-    objective = result$objval,
-    solution = solution,
-    status = result$status,
-    var_maps = built$var_maps
-    #instance_info = built$instance_info,
-    #yield_matrix = built$yield_matrix
-  )
-}
-
-
 #######################################################################
 # Extract solutions
 #######################################################################
