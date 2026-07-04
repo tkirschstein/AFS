@@ -1185,8 +1185,17 @@ function(input, output, session) {
       verbose = TRUE
     )
     
-    rv$ext         <- prepare_solution_objects(rv$solve_result)
-    rv$site_profit <- build_site_profit()
+    
+    
+    if(rv$solve_result$objective_value == 0){
+      rv$ext         <- NULL
+      rv$site_profit <- NULL
+    }
+    else{
+      rv$ext         <- prepare_solution_objects(rv$solve_result)
+      rv$site_profit <- build_site_profit()
+    }
+    
     rv$status      <- "Optimization complete"
     showNotification("Optimization finished.", type = "message")
   })
