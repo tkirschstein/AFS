@@ -620,6 +620,10 @@ function(input, output, session) {
       )
     
     # ── Hubs / Storages ───────────────────────────────────────────────────────
+    rv$storages <- rv$storages %>%
+      arrange(storage_id) %>%
+      mutate(hub_nr = paste0("Hub ", row_number()))
+    
     stor_sf <- st_as_sf(
       rv$storages %>% mutate(ptsize = 8),
       coords = c("lng", "lat"), crs = 4326
@@ -686,9 +690,12 @@ function(input, output, session) {
         radius      = ~ptsize,
         color       = COL_HUB, stroke = TRUE, weight = 2,
         fillColor   = COL_HUB, fillOpacity = 0.95,
-        popup       = ~"<strong>Hub / Storage</strong>",
+        popup       = ~paste0(
+          "<strong>", hub_nr, "</strong>",
+          "<br><strong>Typ:</strong> Hub / Storage"
+        ),
         group       = "Hubs"
-      ) %>%
+      ) %>% 
       
       # ── Consumer: AwesomeMarkers statt CircleMarkers ──────────────────────
       addAwesomeMarkers(
@@ -736,7 +743,7 @@ function(input, output, session) {
   })
   
   # --------------------------------------------------------------------------
-  # 7) Flow OUTPUT — Material flow Tab
+  # 8) Flow OUTPUT — Material flow Tab
   # --------------------------------------------------------------------------
   
   # Biomass produced over time ─────────────────────────────------------------
@@ -829,13 +836,9 @@ function(input, output, session) {
     hub_ids   <- sort(unique(rv$storages$storage_id))
     hub_lbls  <- paste0("Hub ", hub_ids)
     
-    # Consumers
+    # Consumers (generische Nummern)
     cons_ids  <- sort(unique(rv$consumers$consumer_id))
-    cons_lbls <- ifelse(
-      !is.na(rv$consumers$name[match(cons_ids, rv$consumers$consumer_id)]),
-      rv$consumers$name[match(cons_ids, rv$consumers$consumer_id)],
-      paste0("Consumer ", cons_ids)
-    )
+    cons_lbls <- paste0("Consumer ", seq_along(cons_ids))
     
     # ── Knoten-Index-Tabelle (0-basiert für Plotly) ───────────────────────────
     nodes <- data.frame(
