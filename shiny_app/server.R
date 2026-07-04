@@ -45,7 +45,7 @@ function(input, output, session) {
       
       source("!afs_biomass_setup.r")
       source("!helper_func.r")
-      source("!helper_instance_builder_v8a.R")
+      source("!helper_extract_site_profit.R")
       source("build_lp_rcpp_wrapper.R")
       
       # Falls C++-Solver dynamisch genutzt werden soll:
@@ -145,17 +145,17 @@ function(input, output, session) {
     
     sites_model <- rv$sites %>%
       mutate(
-        C_est  = input$C_est * input$est_mult,
-        C_harv = input$C_harv * input$log_mult,
+        C_est  = input$C_est ,
+        C_harv = input$C_harv ,
         C_main = input$C_main,
         C_opp  = input$opp_mean * c.opp.vec
       )
     
     consumers_model <- rv$consumers %>%
       mutate(
-        P1 = P1 * input$rev_mult,
-        P2 = P2 * input$rev_mult,
-        P3 = P3 * input$rev_mult
+        P1 = P1 * input$rev_mult_P1,
+        P2 = P2 * input$rev_mult_P2,
+        P3 = P3 * input$rev_mult_P3
       )
     
     data_obj <- list(
@@ -174,8 +174,8 @@ function(input, output, session) {
       n_periods = input$n_periods,
       max_age   = as.integer(input$max_age),
       min_age   = as.integer(input$min_age),
-      c_tr_raw  = input$c_tr_raw * input$log_mult,
-      c_tr_pre  = input$c_tr_pre * input$log_mult
+      c_tr_raw  = input$c_tr_raw ,
+      c_tr_pre  = input$c_tr_pre 
     )
     
     list(data_obj = data_obj, params_obj = params_obj)
@@ -206,9 +206,9 @@ function(input, output, session) {
     extract_site_profit(list(
       setting = list(
         opp      = input$opp_mean,
-        cost.log = input$log_mult,
-        cost.est = input$est_mult,
-        revenue  = input$rev_mult
+        cost.log = input$c_tr_raw,
+        cost.est = input$C_est,
+        revenue  = mean(input$rev_mult_P1,input$rev_mult_P2,input$rev_mult_P3)
       ),
       milp_instance = rv$milp_instance,
       ext = rv$ext
@@ -240,7 +240,7 @@ function(input, output, session) {
     
     rv$solve_result <- build_and_solve_afs_lp_v12(
        rv$milp_instance,
-       highs_params = list(time_limit = 600, log_to_console = TRUE, presolve = "off"),
+       highs_params = list(time_limit = 600, log_to_console = TRUE, presolve = "on"),
        verbose = TRUE
      )
     
@@ -311,8 +311,6 @@ function(input, output, session) {
   output$plot_growth_stacked <- renderPlotly({
     df <- build_growth_df()
 
-    #browser()
-    
     p <- ggplot(df, aes(x = age, y = biomass_dm, fill = component)) +
       geom_area(color = "white", linewidth = 0.2, alpha = 0.75) +
       scale_fill_manual(values = c(stem = "#1b9e77", branch = "#d95f02", residue = "#7570b3")) +
@@ -471,5 +469,256 @@ function(input, output, session) {
     ggplotly(p_c)
   })
   
+  # --------------------------------------------------------------------------
+  # 7) MAP OUTPUT — Network & Map Tab
+  # --------------------------------------------------------------------------
+  
+  output$map_network <- renderLeaflet({
+    
+    req(rv$afs_workspace, rv$sites_sf, rv$sites, rv$storages, rv$consumers)
+    
+    # ── Farb-Konstanten ──────────────────────────────────────────────────────
+    COL_HUB <- "#c05000"
+    COL_P1  <- "#6a0dad"
+    COL_P2  <- "#08519c"
+    COL_P3  <- "#a50026"
+    
+    # ── Bounding Box ─────────────────────────────────────────────────────────
+    bbox_wgs84 <- st_as_sfc(
+      st_bbox(c(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8),
+              crs = st_crs(4326))
+    )
 
+    # ── AFS-Sites: Cluster-Zuweisung + Opportunitätskosten ───────────────────
+    cluster_assig <- rv$afs_workspace$site_cluster_assig %>%
+      select(site_id, hac_cluster) %>%
+      mutate(hac_cluster = as.factor(hac_cluster))
+    
+    sites_sf_clust <- rv$sites_sf %>%
+      mutate(site_id = seq_len(nrow(rv$sites_sf))) %>%
+      left_join(cluster_assig, by = "site_id") %>%
+      st_transform(4326) %>%
+      st_intersection(bbox_wgs84)
+    
+    # Opportunitätskosten: aus milp_instance (falls vorhanden), sonst rv$sites
+    # NEU — robust gegen fehlende C_opp:
+    sites_for_opp <- if (!is.null(rv$milp_instance) &&
+                         "C_opp" %in% names(rv$milp_instance$sites)) {
+      # Nach Optimierung: aus milp_instance
+      rv$milp_instance$sites %>%
+        select(site_id, C_opp) %>%
+        rename(hac_cluster = site_id) %>%
+        mutate(hac_cluster = as.factor(hac_cluster))
+      
+    } else if ("C_opp" %in% names(rv$sites)) {
+      # rv$sites hat zufällig schon C_opp
+      rv$sites %>%
+        select(site_id, C_opp) %>%
+        rename(hac_cluster = site_id) %>%
+        mutate(hac_cluster = as.factor(hac_cluster))
+      
+    } else {
+      # Vor Optimierung: C_opp mit input$opp_mean synthetisch erzeugen
+      set.seed(123578)
+      c.opp.vec <- rnorm(nrow(rv$sites), 1, 0.3)
+      rv$sites %>%
+        mutate(C_opp = input$opp_mean * c.opp.vec) %>%
+        select(site_id, C_opp) %>%
+        rename(hac_cluster = site_id) %>%
+        mutate(hac_cluster = as.factor(hac_cluster))
+    }
+    
+    sites_sf_clust <- sites_sf_clust %>%
+      left_join(sites_for_opp, by = "hac_cluster")
+    
+    # ── Aktive Sites markieren (nur wenn Lösung vorhanden) ───────────────────
+    if (!is.null(rv$ext)) {
+      active_ids <- unique(rv$ext$Xij$site_id)
+      sites_sf_clust <- sites_sf_clust %>%
+        mutate(active = hac_cluster %in% as.factor(active_ids))
+    } else {
+      sites_sf_clust <- sites_sf_clust %>%
+        mutate(active = FALSE)
+    }
+    
+    # Farbpalette Opportunitätskosten
+    pal_opp <- colorNumeric(
+      palette  = c("#1a9641", "#ffffbf", "#d7191c"),
+      domain   = sites_sf_clust$C_opp,
+      na.color = "transparent"
+    )
+    
+    # Inaktive Sites nach Optimierung in Grau dimmen
+    sites_sf_clust <- sites_sf_clust %>%
+      mutate(
+        fill_color   = if_else(active | !any(active), pal_opp(C_opp), "#bdbdbd"),
+        fill_opacity = if_else(active | !any(active), 0.85, 0.35)
+      )
+    
+    # ── Hubs / Storages ───────────────────────────────────────────────────────
+    stor_sf <- st_as_sf(
+      rv$storages %>% mutate(ptsize = 8),
+      coords = c("lng", "lat"), crs = 4326
+    ) %>% st_intersection(bbox_wgs84)
+    
+    # ── Consumers ─────────────────────────────────────────────────────────────
+    consumers_plt <- rv$consumers %>%
+      mutate(
+        total_demand = demand_P1 + demand_P2 + demand_P3,
+        kategorie = case_when(
+          demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
+          demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
+          demand_P3 > 0 ~ "Energy / Biogas (P3)",
+          TRUE          ~ "Other"
+        ),
+        ptsize = pmin(14, pmax(5, 5 + log1p(total_demand) / 1.8))
+      )
+    
+    cons_sf <- st_as_sf(
+      consumers_plt, coords = c("lng", "lat"), crs = 4326
+    ) %>% st_intersection(bbox_wgs84)
+    
+    pal_cons <- colorFactor(
+      palette = c(
+        "Chemical / Pulp (P1)" = COL_P1,
+        "Pulp / Paper (P2)"    = COL_P2,
+        "Energy / Biogas (P3)" = COL_P3,
+        "Other"                = "grey60"
+      ),
+      domain = cons_sf$kategorie
+    )
+    
+    # ── Leaflet aufbauen ──────────────────────────────────────────────────────
+    leaflet(options = leafletOptions(zoomControl = TRUE), width = "100%") %>%
+      
+      #addProviderTiles(providers$CartoDB.Positron, group = "Basemap") %>%
+      
+      addProviderTiles(providers$Esri.WorldGrayCanvas) %>% 
+      
+      addPolygons(
+        data         = sites_sf_clust,
+        stroke       = TRUE, color = "grey30", weight = 0.5,
+        fillColor    = ~fill_color,
+        fillOpacity  = ~fill_opacity,
+        popup        = ~paste0(
+          "<strong>Cluster-ID:</strong> ", hac_cluster,
+          "<br><strong>Opp. Kosten:</strong> ", round(C_opp, 1), " €/ha",
+          "<br><strong>Status:</strong> ",
+          if_else(active, "&#10003; Aktiv", "&#8212; Inaktiv")
+        ),
+        group        = "AFS Sites"
+      ) %>%
+      
+      addCircleMarkers(
+        data        = stor_sf,
+        radius      = ~ptsize,
+        color       = COL_HUB, stroke = TRUE, weight = 2,
+        fillColor   = COL_HUB, fillOpacity = 0.95,
+        popup       = ~"<strong>Hub / Storage</strong>",
+        group       = "Hubs"
+      ) %>%
+      
+      addCircleMarkers(
+        data        = cons_sf,
+        radius      = ~ptsize,
+        color       = "white", weight = 1,
+        fillColor   = ~pal_cons(kategorie), fillOpacity = 0.9,
+        popup       = ~paste0(
+          "<strong>Consumer-Typ:</strong> ", kategorie,
+          "<br><strong>Gesamtnachfrage:</strong> ",
+          round(total_demand, 1), " kt"
+        ),
+        group       = "Consumers"
+      ) %>%
+      
+      addLegend(
+        position = "bottomright",
+        pal      = pal_opp,
+        values   = sites_sf_clust$C_opp,
+        title    = "Opp. Kosten (€/ha)",
+        opacity  = 0.8
+      ) %>%
+      
+      addLegend(
+        position = "topright",
+        pal      = pal_cons,
+        values   = cons_sf$kategorie,
+        title    = "Consumer-Typ",
+        opacity  = 0.95
+      ) %>%
+      
+      addLayersControl(
+        overlayGroups = c("AFS Sites", "Hubs", "Consumers"),
+        options       = layersControlOptions(collapsed = FALSE)
+      ) %>%
+      
+      fitBounds(lng1 = 10.6, lat1 = 50.9, lng2 = 13.2, lat2 = 52.8)
+  })
+  
+  # In server.R
+  output$plot_biomass_time <- renderPlotly({
+    
+    req(rv$ext)
+    #browser()
+    prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
+    prod_colors <- c("1" = "#1b9e77", "2" = "#d95f02", "3" = "#7570b3")
+    
+    # Deliveries aggregated by period × del_product
+    delivery_ts <- rv$ext$Xjk %>%
+      group_by(period, product = factor(del_product)) %>%
+      summarise(volume = sum(value), .groups = "drop")
+    
+    # Raw biomass shipped (Xij) aggregated by period — shown as dashed reference
+    shipped_ts <- rv$ext$Xij %>%
+      group_by(period) %>%
+      summarise(shipped = sum(value), .groups = "drop")
+    
+    
+    # ── Total demand per period ─────────────────────────────────────────────────
+    demand_max <- rv$milp_instance$demand %>%
+      group_by(product = factor(product, levels = c("3", "2", "1"))) %>%
+      summarise(max_demand = sum(D_max)/rv$milp_instance$n_periods, .groups = "drop") %>% 
+      mutate(max_demand = cumsum(max_demand))
+    
+    
+    p <- ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
+      geom_area(position = "stack", alpha = 0.80, colour = "white", linewidth = 0.2) +
+      # Raw shipped biomass reference (dashed grey)
+      geom_line(data = shipped_ts,
+                aes(x = period, y = shipped),
+                inherit.aes = FALSE,
+                colour = "#636363", linetype = "dashed", linewidth = 0.7) +
+      # Max consumer demand per product (dotted, colour-matched to product)
+      geom_hline(data = demand_max,
+                 aes(yintercept = max_demand, colour = product),
+                 linetype = "dashed", linewidth = 1.0, inherit.aes = FALSE) +
+      scale_fill_manual(
+        name   = "Product",
+        values = prod_colors,
+        labels = prod_labels
+      ) +
+      scale_colour_manual(
+        name   = "Max. demand",
+        values = prod_colors,
+        labels = prod_labels
+      ) +
+      scale_x_continuous(name = "Planning period (year)",
+                         breaks = seq(1, rv$milp_instance$n_periods, by = 2)) +
+      scale_y_continuous(name = "Biomass quantity (t fresh biomass)",
+                         labels = scales::comma) +
+      annotate("text", x = max(shipped_ts$period) - 1,
+               y = max(shipped_ts$shipped) * 0.95,
+               label = "Raw shipped\n(site-hub)", size = 2.5,
+               colour = "#636363", hjust = 1) +
+      theme_minimal(base_size = 9) +
+      theme(legend.position = "right",
+            panel.grid.minor = element_blank())
+    
+    # ── Konvertierung zu Plotly ─────────────────────────────────────────────────
+    ggplotly(p, tooltip = c("x", "y", "fill", "colour")) %>%
+      layout(
+        legend = list(orientation = "h", x = 0, y = -0.2),
+        hovermode = "x unified"
+      )
+  })
 }

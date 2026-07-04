@@ -6,15 +6,6 @@ library(plotly)
 library(leaflet)
 library(DT)
 
-# Define UI for application that draws a histogram
-
-library(shiny)
-library(shinydashboard)
-library(shinyjs)
-library(plotly)
-library(leaflet)
-library(DT)
-
 dashboardPage(
   skin = "green",
   
@@ -82,13 +73,13 @@ dashboardPage(
     hr(),
     
     # -- Sensitivitätsszenarien -----------------------------------------------
-    h4("Sensitivity Multipliers", style = "color:#a8d5a2; margin:12px 12px 4px;"),
-    sliderInput("rev_mult",  "Revenue multiplier",
-                min = 0.25, max = 2.0, value = 1.0, step = 0.25),
-    sliderInput("log_mult",  "Logistics cost multiplier",
-                min = 0.25, max = 3.0, value = 1.0, step = 0.25),
-    sliderInput("est_mult",  "Establishment cost multiplier",
-                min = 0.25, max = 3.0, value = 1.0, step = 0.25),
+    h4("Revenue Multipliers", style = "color:#a8d5a2; margin:12px 12px 4px;"),
+    sliderInput("rev_mult_P1",  "Revenue multiplier P1",
+                min = 0, max = 10.0, value = 1.0, step = 0.25),
+    sliderInput("rev_mult_P2",  "Revenue multiplier P2",
+                min = 0, max = 10.0, value = 1.0, step = 0.25),
+    sliderInput("rev_mult_P3",  "Revenue multiplier P3",
+                min = 0, max = 10.0, value = 1.0, step = 0.25),
     
     hr(),
     
@@ -96,10 +87,6 @@ dashboardPage(
     actionButton("run_opt", "Run Optimization",
                  icon = icon("play"),
                  style = "background:#2c7a2c; color:white; width:90%; margin:6px 5%;"),
-    br(),
-    actionButton("run_sens", "Run Sensitivity Analysis",
-                 icon = icon("chart-bar"),
-                 style = "background:#5a8a3c; color:white; width:90%; margin:6px 5%;"),
     br(),
     downloadButton("export_csv", "Export Results",
                    style = "width:90%; margin:6px 5%;"),
@@ -300,50 +287,6 @@ dashboardPage(
             title = "Distance to Hub vs. Profit",
             status = "primary", solidHeader = TRUE, width = 4,
             plotlyOutput("plot_dist_profit", height = 300)
-          )
-        )
-      ),
-      
-      # ======================================================================
-      # TAB 5: Sensitivitätsanalyse  (Fig. 8 / Fig. 9 equivalent)
-      # ======================================================================
-      tabPanel(
-        title = tagList(icon("sliders-h"), "Sensitivity"),
-        value = "tab_sens",
-        
-        fluidRow(
-          box(
-            title = "Mean Profit by Opportunity Cost Scenario",
-            status = "primary", solidHeader = TRUE, width = 6,
-            plotlyOutput("plot_sens_opp", height = 350)
-          ),
-          box(
-            title = "Mean Profit by Revenue Multiplier",
-            status = "success", solidHeader = TRUE, width = 6,
-            plotlyOutput("plot_sens_revenue", height = 350)
-          )
-        ),
-        
-        fluidRow(
-          box(
-            title = "Active Sites by Logistics Cost Multiplier",
-            status = "warning", solidHeader = TRUE, width = 6,
-            plotlyOutput("plot_sens_logcost", height = 350)
-          ),
-          box(
-            title = "Revenue Structure: Energy-only vs. Cascade",
-            status = "info", solidHeader = TRUE, width = 6,
-            helpText("Box plots of profit/ha/yr comparing energy-only offtake vs. full product cascade."),
-            plotlyOutput("plot_cascade_comparison", height = 350)
-          )
-        ),
-        
-        fluidRow(
-          box(
-            title = "Sensitivity Results Table",
-            status = "primary", solidHeader = TRUE, width = 12,
-            collapsible = TRUE, collapsed = TRUE,
-            DT::dataTableOutput("table_sensitivity")
           )
         )
       )
