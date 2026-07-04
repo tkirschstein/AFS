@@ -241,9 +241,9 @@ dashboardPage(
             plotlyOutput("plot_rev_consumer", height = 320)
           ),
           box(
-            title = "Storage Levels over Time",
-            status = "warning", solidHeader = TRUE, width = 6,
-            plotlyOutput("plot_storage_time", height = 320)
+            title = "Agregated product cascade",
+            status = "primary", solidHeader = TRUE, width = 6,
+            plotlyOutput("plot_product_cascade", height = 320)
           )
         ),
         
