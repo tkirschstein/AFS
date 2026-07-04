@@ -63,7 +63,8 @@ function(input, output, session) {
         ) %>%
         mutate(total_demand = demand_P1 + demand_P2 + demand_P3) %>%
         filter(total_demand >= 1.5) %>%
-        select(-total_demand)
+        select(-total_demand) %>% 
+        mutate(consumer_id = 1:nrow(.))
       
       rv$storages$CAP_stor <- rv$storages$CAP_stor * 100000
       rv$storages$CAP_proc <- rv$storages$CAP_proc * 100000
@@ -812,8 +813,6 @@ function(input, output, session) {
   output$plot_sankey <- renderPlotly({
     req(rv$ext, rv$milp_instance, rv$storages, rv$consumers)
     
-    
-    
     prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
     prod_colors <- c("1" = "#1b9e77",   "2" = "#d95f02",        "3" = "#7570b3")
     
@@ -851,7 +850,6 @@ function(input, output, session) {
     
     node_idx <- function(key) nodes$idx[match(key, nodes$id)]
     
-    #browser()
     
     # ── 2) Kanten: Sites → Produkt-Knoten (aggregiert über alle Perioden) ──
     xij_agg <- rv$ext$Xij %>%
