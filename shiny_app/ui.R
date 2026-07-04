@@ -141,13 +141,13 @@ dashboardPage(
           box(
             title = "Tree and stand-level asymptotes",
             status = "warning", solidHeader = TRUE, width = 6,
-            collapsible = TRUE, collapsed = TRUE,
+            collapsible = TRUE, collapsed = F,
             plotlyOutput("plot_growth_asymptotes", height = 300)
           ),
           box(
             title = "Biomass fraction growth",
             status = "primary", solidHeader = TRUE, width = 6,
-            collapsible = TRUE, collapsed = TRUE,
+            collapsible = TRUE, collapsed = F,
             plotlyOutput("plot_growth_fractions", height = 300)
           )
         )

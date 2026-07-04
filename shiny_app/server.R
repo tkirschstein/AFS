@@ -883,4 +883,165 @@ function(input, output, session) {
   
     })
   
+  # --------------------------------------------------------------------------
+  # Revenue per Consumer Plot
+  # --------------------------------------------------------------------------
+  
+  output$plot_rev_consumer <- renderPlotly({
+    req(rv$ext, rv$milp_instance, rv$consumers)
+    
+    prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
+    prod_colors <- c("1" = "#1b9e77",   "2" = "#d95f02",        "3" = "#7570b3")
+    
+    # ── Preistabelle ───────────────────────────────────────────────────────────
+    price_df <- as.data.frame(rv$milp_instance$consumer_prices) %>%
+      setNames(c("consumer_id", "del_product", "price")) %>%
+      mutate(
+        consumer_id = as.integer(consumer_id),
+        del_product = as.integer(del_product)
+      )
+    
+    # ── Generische Consumer-Labels (sortiert nach consumer_id) ────────────────
+    cons_labels <- rv$consumers %>%
+      arrange(consumer_id) %>%
+      mutate(
+        rank  = row_number(),
+        label = paste0("Consumer ", rank)
+      ) %>%
+      select(consumer_id, label)
+    
+    # ── Erlös = Menge × Preis, aggregiert über Perioden ───────────────────────
+    rev_df <- rv$ext$Xjk %>%
+      group_by(consumer_id, del_product) %>%
+      summarise(volume = sum(value, na.rm = TRUE), .groups = "drop") %>%
+      left_join(price_df, by = c("consumer_id", "del_product")) %>%
+      mutate(
+        revenue     = volume * coalesce(price, 0) / 1e6,   # → Mio. €
+        del_product = as.character(del_product),
+        prod_label  = prod_labels[del_product]
+      ) %>%
+      left_join(cons_labels, by = "consumer_id") %>%
+      filter(revenue > 0)
+    
+    # ── Gestapeltes Balkendiagramm ─────────────────────────────────────────────
+    p <- ggplot(rev_df,
+                aes(x = reorder(label, -revenue),
+                    y = revenue,
+                    fill = prod_label,
+                    text = paste0(
+                      "<b>", label, "</b><br>",
+                      "Product: ", prod_label, "<br>",
+                      "Volume: ", scales::comma(round(volume / 1000, 1)), " kt<br>",
+                      "Revenue: ", scales::comma(round(revenue, 2)), " Mio. €"
+                    ))) +
+      geom_col(position = "stack", width = 0.7, alpha = 0.88) +
+      scale_fill_manual(
+        name   = "Product",
+        values = setNames(prod_colors, prod_labels)
+      ) +
+      scale_y_continuous(
+        name   = "Revenue (Mio. €)",
+        labels = scales::comma
+      ) +
+      labs(x = NULL) +
+      theme_minimal(base_size = 10) +
+      theme(
+        axis.text.x      = element_text(angle = 35, hjust = 1, size = 8),
+        legend.position  = "right",
+        panel.grid.minor = element_blank()
+      )
+    
+    ggplotly(p, tooltip = "text") %>%
+      layout(
+        legend    = list(orientation = "v", x = 1.02, y = 0.5),
+        hovermode = "closest",
+        margin    = list(b = 90)
+      )
+  })
+  
+  # --------------------------------------------------------------------------
+  # Demand Fulfillment Plot
+  # --------------------------------------------------------------------------
+  output$plot_demand_fulfilment <- renderPlotly({
+    req(rv$ext, rv$milp_instance, rv$consumers)
+    
+    prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
+    
+    # ── Generische Consumer-Labels ────────────────────────────────────────────
+    cons_labels <- rv$consumers %>%
+      arrange(consumer_id) %>%
+      mutate(
+        rank  = row_number(),
+        label = paste0("Consumer ", rank)
+      ) %>%
+      select(consumer_id, label)
+    
+    # ── Gelieferte Mengen aggregiert ──────────────────────────────────────────
+    delivered <- rv$ext$Xjk %>%
+      group_by(consumer_id, del_product) %>%
+      summarise(delivered = sum(value, na.rm = TRUE), .groups = "drop") %>%
+      rename(product = del_product) %>%
+      mutate(product = as.integer(product))
+    
+    # ── Maximale Nachfrage aggregiert ─────────────────────────────────────────
+    demand_total <- rv$milp_instance$demand %>%
+      group_by(consumer_id = as.integer(consumer_id),
+               product     = as.integer(product)) %>%
+      summarise(demand = sum(D_max, na.rm = TRUE), .groups = "drop")
+    
+    # ── Fulfillment-Rate berechnen ────────────────────────────────────────────
+    fulfil_df <- demand_total %>%
+      left_join(delivered, by = c("consumer_id", "product")) %>%
+      mutate(
+        delivered  = coalesce(delivered, 0),
+        rate       = pmin(delivered / pmax(demand, 1), 1),
+        rate_pct   = round(rate * 100, 1),
+        prod_label = factor(prod_labels[as.character(product)],
+                            levels = rev(unname(prod_labels))),  # P1 oben
+        # Textfarbe als Variable in den Daten – sicher für aes()
+        txt_color  = if_else(rate_pct >= 60, "white", "grey20")
+      ) %>%
+      left_join(cons_labels, by = "consumer_id") %>%
+      filter(demand > 0)
+    
+    # ── Heatmap ───────────────────────────────────────────────────────────────
+    p <- ggplot(fulfil_df,
+                aes(x    = reorder(label, consumer_id),
+                    y    = prod_label,
+                    fill = rate_pct,
+                    text = paste0(
+                      "<b>", label, "</b><br>",
+                      "Product: ", prod_label, "<br>",
+                      "Delivered: ", scales::comma(round(delivered / 1000, 1)), " kt<br>",
+                      "Max demand: ", scales::comma(round(demand / 1000, 1)), " kt<br>",
+                      "<b>Fulfilment: ", rate_pct, " %</b>"
+                    ))) +
+      geom_tile(colour = "white", linewidth = 0.8) +
+      geom_text(aes(label = paste0(rate_pct, "%"),
+                    colour = txt_color),           # ← aus Daten, nicht außerhalb
+                size = 3, fontface = "bold") +
+      scale_colour_identity() +                    # txt_color direkt als Farbe verwenden
+      scale_fill_gradientn(
+        name    = "Fulfilment (%)",
+        colours = c("#d73027", "#fee08b", "#1a9850"),   # rot → gelb → grün
+        limits  = c(0, 100),
+        values  = scales::rescale(c(0, 50, 100)),       # ← Ankerpunkte explizit fixieren
+        breaks  = c(0, 50, 100),
+        labels  = c("0%", "50%", "100%")
+      ) +
+      labs(x = NULL, y = NULL) +
+      theme_minimal(base_size = 10) +
+      theme(
+        axis.text.x     = element_text(angle = 35, hjust = 1, size = 8),
+        axis.text.y     = element_text(face = "bold", size = 9),
+        legend.position = "right",
+        panel.grid      = element_blank()
+      )
+    
+    ggplotly(p, tooltip = "text") %>%
+      layout(
+        hovermode = "closest",
+        margin    = list(t = 20, r = 20, b = 90, l = 110)
+      )
+  })
 }
