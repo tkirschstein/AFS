@@ -156,6 +156,7 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
     summarise(revenue = sum(site_rev, na.rm = TRUE), .groups = "drop") %>%
     filter(!is.na(site_id)) %>% 
     pivot_wider(names_from = del_product, values_from = revenue, names_prefix = "rev_P") %>% 
+    mutate(rev_P1 = coalesce(rev_P1, 0), rev_P2 = coalesce(rev_P2, 0), rev_P3 = coalesce(rev_P3, 0)) %>% 
     mutate(revenue = rev_P1 + rev_P2 + rev_P3)
   
   # ── Normierung: €/ha/a ────────────────────────────────────────────────────
@@ -271,6 +272,9 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
     
     mutate(
       profit_ha_yr     = (coalesce(revenue, 0) - coalesce(total_cost, 0)) / denom,
+      profit           = (coalesce(revenue, 0) - coalesce(total_cost, 0)),
+      revenue          = coalesce(revenue, 0),
+      total_cost       = coalesce(total_cost, 0),
       scenario         = scenario_name,
       opp_cost         = scen_opp,
       cost_log_level   = scen_cost_log,
@@ -279,14 +283,14 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
       opp_cost_site    = C_opp,
       area_afs         = tot_value
     ) %>%
-    select(site_id, scenario, profit_ha_yr,
+    select(site_id, scenario, profit_ha_yr,  
            opp_cost, opp_cost_site, cost_log_level, cost_est_level, revenue_level,
            avg_dist_hub_km, avg_dist_consumer_km,
            avg_rotation_yr, n_harvests, share_p1,
            area_ha, area_afs, active_years, n_sites,
            cost_est, cost_harv, cost_main, cost_opp,
-           cost_tr_raw, cost_tr_pre, cost_stor, revenue, 
-           rev_P1, rev_P2, rev_P3
+           cost_tr_raw, cost_tr_pre, cost_stor,  
+           rev_P1, rev_P2, rev_P3, profit, revenue, total_cost, denom
            )
   
   return(result_df)

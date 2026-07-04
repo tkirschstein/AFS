@@ -115,6 +115,8 @@ function(input, output, session) {
       scenario_name = "Precomputed"
     )
     
+    #browser()
+    
     rv$status <- "Precomputed solution loaded"
     showNotification("Precomputed solution ready. All plots initialized.",
                      type = "message")
@@ -1308,8 +1310,6 @@ function(input, output, session) {
   
   output$plot_profit_vs_opp <- renderPlotly({
     req(rv$site_profit)
-    
-    browser()
     
     df <- rv$site_profit %>%
       mutate(
