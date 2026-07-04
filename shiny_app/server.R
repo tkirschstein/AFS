@@ -38,8 +38,8 @@ function(input, output, session) {
   )
   
   
+  # ── Haupt-Startup: Workspace laden ─────────────────────────────────────────
   observe({
-    # Daten & Funktionen laden (beim Start)
     if (is.null(rv$afs_workspace)) {
       showNotification("Loading workspace and source files ...", type = "message")
       
@@ -47,8 +47,6 @@ function(input, output, session) {
       source("!helper_func.r")
       source("!helper_extract_site_profit.R")
       source("build_lp_rcpp_wrapper.R")
-      
-      # Falls C++-Solver dynamisch genutzt werden soll:
       Rcpp::sourceCpp("build_and_solve_afs_lp_v12_highs.cpp")
       
       load("afs_workspace_red.RData")
@@ -58,13 +56,10 @@ function(input, output, session) {
       rv$storages      <- afs_workspace$storages
       rv$consumers     <- afs_workspace$consumers
       
-      # Vorverarbeitung analog paper_lp.rmd
       rv$consumers <- rv$consumers %>%
         mutate(
           demand_P1 = demand_P1 / 5,
-          P1 = P1 / 2,
-          P2 = P2 / 2,
-          P3 = P3 * 0.6
+          P1 = P1 / 2, P2 = P2 / 2, P3 = P3 * 0.6
         ) %>%
         mutate(total_demand = demand_P1 + demand_P2 + demand_P3) %>%
         filter(total_demand >= 1.5) %>%
@@ -75,6 +70,55 @@ function(input, output, session) {
       
       rv$status <- "Base data loaded"
     }
+  })
+  
+  # ── Precomputed RDS laden — erst wenn Workspace bereit ist ─────────────────
+  observe({
+    req(rv$afs_workspace)                   # wartet auf den ersten observe()
+    if (!is.null(rv$ext)) return()          # nur einmal ausführen
+    
+    rds_path <- "result_lp_v11.rds"
+    if (!file.exists(rds_path)) {
+      showNotification(
+        "result_lp_v11.rds not found — run optimization to generate results.",
+        type = "warning", duration = 8
+      )
+      return()
+    }
+    
+    showNotification("Loading precomputed solution ...", type = "message")
+    
+    precomp        <- readRDS(rds_path)
+    rv$ext         <- prepare_solution_objects(precomp)
+    rv$solve_result <- precomp
+    
+    # milp_instance über build_model_data() konstruieren —
+    # jetzt sind rv$sites, rv$consumers etc. garantiert gesetzt
+    obj              <- build_model_data()
+    rv$data_obj      <- obj$data_obj
+    rv$params_obj    <- obj$params_obj
+    rv$milp_instance <- build_optimization_instance(
+      data   = rv$data_obj,
+      params = rv$params_obj
+    )
+    
+    rv$site_profit <- extract_site_profit(
+      list(
+        setting = list(
+          opp      = input$opp_mean,
+          cost.log = input$c_tr_raw,
+          cost.est = input$C_est,
+          revenue  = mean(c(input$rev_mult_P1, input$rev_mult_P2, input$rev_mult_P3))
+        ),
+        milp_instance = rv$milp_instance,
+        ext           = rv$ext
+      ),
+      scenario_name = "Precomputed"
+    )
+    
+    rv$status <- "Precomputed solution loaded"
+    showNotification("Precomputed solution ready. All plots initialized.",
+                     type = "message")
   })
   
   
@@ -218,7 +262,6 @@ function(input, output, session) {
   # --------------------------------------------------------------------------
   # 3) OPTIMIERUNG AUSLÖSEN
   # --------------------------------------------------------------------------
-  
   observeEvent(input$run_opt, {
     req(build_model_data())
     rv$status <- "Building optimization instance"
@@ -236,20 +279,33 @@ function(input, output, session) {
     showNotification("Solving LP model ...", type = "warning", duration = NULL)
     rv$status <- "Solving optimization model"
     
-    #browser()
-    
     rv$solve_result <- build_and_solve_afs_lp_v12(
-       rv$milp_instance,
-       highs_params = list(time_limit = 600, log_to_console = TRUE, presolve = "on"),
-       verbose = TRUE
-     )
+      rv$milp_instance,
+      highs_params = list(time_limit = 600,
+                          log_to_console = TRUE,
+                          presolve = "on"),
+      verbose = TRUE
+    )
     
     rv$ext         <- prepare_solution_objects(rv$solve_result)
     rv$site_profit <- build_site_profit()
     rv$status      <- "Optimization complete"
+    
+    # ------------------------------------------------------------------
+    # Ergebnis als RDS speichern → wird beim nächsten Start automatisch
+    # als Precomputed-Lösung geladen
+    # ------------------------------------------------------------------
+    tryCatch({
+      saveRDS(rv$solve_result, "result_lp_v11.rds")
+      showNotification("Solution saved as result_lp_v11.rds.",
+                       type = "message")
+    }, error = function(e) {
+      showNotification(paste0("Could not save RDS: ", e$message),
+                       type = "warning")
+    })
+    
     showNotification("Optimization finished.", type = "message")
   })
-  
   # --------------------------------------------------------------------------
   # 5) KPI-OUTPUTS
   # --------------------------------------------------------------------------
@@ -308,6 +364,8 @@ function(input, output, session) {
   # 6) PLOTS — BIOMASS GROWTH
   # --------------------------------------------------------------------------
   
+  # stacked biomass qunatities ------------------------------------------------
+  
   output$plot_growth_stacked <- renderPlotly({
     df <- build_growth_df()
 
@@ -319,6 +377,8 @@ function(input, output, session) {
     
     ggplotly(p)   # ← Fehler 3 behoben (text jetzt in aes)
   })
+  
+  # fraction shares ---------------------------------------------------------
   
   output$plot_fraction_shares <- renderPlotly({
     df <- build_growth_df()
@@ -333,6 +393,8 @@ function(input, output, session) {
       theme_minimal(base_size = 12)
     ggplotly(p, tooltip = "text")
   })
+  
+  # asymptotes --------------------------------------------------------------
   
   output$plot_growth_asymptotes <- renderPlotly({
     
@@ -415,10 +477,11 @@ function(input, output, session) {
       style(showlegend = FALSE, traces = 3:4)   # p_b hat Trace-Index 3 und 4
   })
   
+  # ── logistic merchantability q_p(t) ─────────────────────────────
   
   output$plot_growth_fractions <- renderPlotly({
     
-    # ── Panel (b): logistic merchantability q_p(t) ─────────────────────────────
+  
     ages_c <- seq(1, 20, by = 0.1)
     df_c <- tibble(
       age                    = ages_c,
@@ -655,7 +718,12 @@ function(input, output, session) {
       fitBounds(lng1 = 10.6, lat1 = 50.9, lng2 = 13.2, lat2 = 52.8)
   })
   
-  # In server.R
+  # --------------------------------------------------------------------------
+  # 7) Flow OUTPUT — Material flow Tab
+  # --------------------------------------------------------------------------
+  
+  # Biomass produced over time ─────────────────────────────------------------
+  
   output$plot_biomass_time <- renderPlotly({
     
     req(rv$ext)
@@ -722,10 +790,7 @@ function(input, output, session) {
       )
   })
   
-  
-  # --------------------------------------------------------------------------
   # SANKEY: Biomassflüsse Sites → Hubs → Consumers nach Produktart
-  # In server.R, ergänzen nach dem plot_biomass_time-Block
   # --------------------------------------------------------------------------
   
   output$plot_sankey <- renderPlotly({
@@ -883,7 +948,6 @@ function(input, output, session) {
   
     })
   
-  # --------------------------------------------------------------------------
   # Revenue per Consumer Plot
   # --------------------------------------------------------------------------
   
@@ -959,22 +1023,24 @@ function(input, output, session) {
       )
   })
   
-  # --------------------------------------------------------------------------
   # Demand Fulfillment Plot
   # --------------------------------------------------------------------------
+  
   output$plot_demand_fulfilment <- renderPlotly({
     req(rv$ext, rv$milp_instance, rv$consumers)
+    
     
     prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
     
     # ── Generische Consumer-Labels ────────────────────────────────────────────
     cons_labels <- rv$consumers %>%
+      mutate(consumer_id = 1:nrow(rv$consumers)) %>% 
       arrange(consumer_id) %>%
       mutate(
         rank  = row_number(),
         label = paste0("Consumer ", rank)
       ) %>%
-      select(consumer_id, label)
+      select(consumer_id, label, rank)
     
     # ── Gelieferte Mengen aggregiert ──────────────────────────────────────────
     delivered <- rv$ext$Xjk %>%
@@ -992,56 +1058,104 @@ function(input, output, session) {
     # ── Fulfillment-Rate berechnen ────────────────────────────────────────────
     fulfil_df <- demand_total %>%
       left_join(delivered, by = c("consumer_id", "product")) %>%
+      filter(demand > 0) %>% 
       mutate(
         delivered  = coalesce(delivered, 0),
-        rate       = pmin(delivered / pmax(demand, 1), 1),
-        rate_pct   = round(rate * 100, 1),
-        prod_label = factor(prod_labels[as.character(product)],
-                            levels = rev(unname(prod_labels))),  # P1 oben
-        # Textfarbe als Variable in den Daten – sicher für aes()
-        txt_color  = if_else(rate_pct >= 60, "white", "grey20")
+        rate_pct   = round(pmin(delivered / pmax(demand, 1), 1) * 100, 1),
+        prod_label = prod_labels[as.character(product)]
       ) %>%
-      left_join(cons_labels, by = "consumer_id") %>%
-      filter(demand > 0)
+      left_join(cons_labels, by = "consumer_id") 
     
-    # ── Heatmap ───────────────────────────────────────────────────────────────
-    p <- ggplot(fulfil_df,
-                aes(x    = reorder(label, consumer_id),
-                    y    = prod_label,
-                    fill = rate_pct,
-                    text = paste0(
-                      "<b>", label, "</b><br>",
-                      "Product: ", prod_label, "<br>",
-                      "Delivered: ", scales::comma(round(delivered / 1000, 1)), " kt<br>",
-                      "Max demand: ", scales::comma(round(demand / 1000, 1)), " kt<br>",
-                      "<b>Fulfilment: ", rate_pct, " %</b>"
-                    ))) +
-      geom_tile(colour = "white", linewidth = 0.8) +
-      geom_text(aes(label = paste0(rate_pct, "%"),
-                    colour = txt_color),           # ← aus Daten, nicht außerhalb
-                size = 3, fontface = "bold") +
-      scale_colour_identity() +                    # txt_color direkt als Farbe verwenden
-      scale_fill_gradientn(
-        name    = "Fulfilment (%)",
-        colours = c("#d73027", "#fee08b", "#1a9850"),   # rot → gelb → grün
-        limits  = c(0, 100),
-        values  = scales::rescale(c(0, 50, 100)),       # ← Ankerpunkte explizit fixieren
-        breaks  = c(0, 50, 100),
-        labels  = c("0%", "50%", "100%")
-      ) +
-      labs(x = NULL, y = NULL) +
-      theme_minimal(base_size = 10) +
-      theme(
-        axis.text.x     = element_text(angle = 35, hjust = 1, size = 8),
-        axis.text.y     = element_text(face = "bold", size = 9),
-        legend.position = "right",
-        panel.grid      = element_blank()
-      )
     
-    ggplotly(p, tooltip = "text") %>%
+    # ── Pivot zu Matrix: Zeilen = Produkte, Spalten = Consumer ───────────────
+    prod_order <- c("Stem (P1)", "Branches (P2)", "Residues (P3)")
+    cons_order <- cons_labels %>% arrange(rank) %>% pull(label)
+    
+    mat_rate <- fulfil_df %>%
+      select(prod_label, label, rate_pct) %>%
+      tidyr::pivot_wider(names_from = label, values_from = rate_pct,
+                         values_fill = NA_real_) %>%
+      arrange(match(prod_label, prod_order))
+    
+    # Matrix-Werte und Hover-Text
+    z_mat   <- as.matrix(mat_rate[, cons_order])
+    rownames(z_mat) <- mat_rate$prod_label
+    
+    hover_mat <- fulfil_df %>%
+      select(prod_label, label, rate_pct, delivered, demand) %>%
+      mutate(hover = paste0(
+        "<b>", label, "</b><br>",
+        "Product: ", prod_label, "<br>",
+        "Delivered: ", scales::comma(round(delivered / 1000, 1)), " kt<br>",
+        "Max demand: ", scales::comma(round(demand   / 1000, 1)), " kt<br>",
+        "<b>Fulfilment: ", rate_pct, " %</b>"
+      )) %>%
+      select(prod_label, label, hover) %>%
+      tidyr::pivot_wider(names_from = label, values_from = hover,
+                         values_fill = "") %>%
+      arrange(match(prod_label, prod_order))
+    
+    text_mat <- as.matrix(hover_mat[, cons_order])
+    
+    # ── Annotierungen (Prozentwerte in den Kacheln) ───────────────────────────
+    annotations <- list()
+    for (r in seq_len(nrow(z_mat))) {
+      for (c in seq_len(ncol(z_mat))) {
+        val <- z_mat[r, c]
+        if (!is.na(val)) {
+          annotations <- c(annotations, list(list(
+            x         = cons_order[c],
+            y         = prod_order[r],
+            text      = paste0(val, "%"),
+            showarrow = FALSE,
+            font      = list(
+              size  = 11,
+              color = if (val >= 60) "white" else "grey20",
+              family = "Arial"
+            )
+          )))
+        }
+      }
+    }
+    
+    # ── Natives plot_ly heatmap — Farbskala direkt kontrolliert ───────────────
+    plot_ly(
+      x    = cons_order,
+      y    = prod_order,
+      z    = z_mat,
+      type = "heatmap",
+      text = text_mat,
+      hovertemplate = "%{text}<extra></extra>",
+      colorscale = list(
+        list(0,   "#d73027"),   # 0%   → rot
+        list(0.5, "#fee08b"),   # 50%  → gelb
+        list(1,   "#1a9850")    # 100% → grün
+      ),
+      zmin = 0,
+      zmax = 100,
+      colorbar = list(
+        title      = "Fulfilment (%)",
+        tickvals   = c(0, 50, 100),
+        ticktext   = c("0%", "50%", "100%"),
+        len        = 0.6
+      ),
+      xgap = 3,
+      ygap = 3
+    ) %>%
       layout(
-        hovermode = "closest",
-        margin    = list(t = 20, r = 20, b = 90, l = 110)
+        annotations = annotations,
+        xaxis = list(
+          title    = "",
+          tickangle = -35,
+          tickfont  = list(size = 9)
+        ),
+        yaxis = list(
+          title    = "",
+          tickfont = list(size = 10),
+          categoryorder = "array",
+          categoryarray = prod_order
+        ),
+        margin = list(t = 20, r = 20, b = 110, l = 110)
       )
   })
 }
