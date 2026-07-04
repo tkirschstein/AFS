@@ -721,4 +721,166 @@ function(input, output, session) {
         hovermode = "x unified"
       )
   })
+  
+  
+  # --------------------------------------------------------------------------
+  # SANKEY: Biomassflüsse Sites → Hubs → Consumers nach Produktart
+  # In server.R, ergänzen nach dem plot_biomass_time-Block
+  # --------------------------------------------------------------------------
+  
+  output$plot_sankey <- renderPlotly({
+    req(rv$ext, rv$milp_instance, rv$storages, rv$consumers)
+    
+    
+    
+    prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
+    prod_colors <- c("1" = "#1b9e77",   "2" = "#d95f02",        "3" = "#7570b3")
+    
+    # ── 1) Labels für Knoten vorbereiten ─────────────────────────────────────
+    # Sites (Cluster-IDs aus milp_instance)
+    site_ids  <- sort(unique(rv$ext$Xij$site_id))
+    site_lbls <- paste0("Site ", site_ids)
+    
+    # Produkt-Knoten (P1/P2/P3 als Zwischenstufe zwischen Site und Hub)
+    prod_ids  <- c("1", "2", "3")
+    prod_lbls <- prod_labels[prod_ids]
+    
+    # Hubs
+    hub_ids   <- sort(unique(rv$storages$storage_id))
+    hub_lbls  <- paste0("Hub ", hub_ids)
+    
+    # Consumers
+    cons_ids  <- sort(unique(rv$consumers$consumer_id))
+    cons_lbls <- ifelse(
+      !is.na(rv$consumers$name[match(cons_ids, rv$consumers$consumer_id)]),
+      rv$consumers$name[match(cons_ids, rv$consumers$consumer_id)],
+      paste0("Consumer ", cons_ids)
+    )
+    
+    # ── Knoten-Index-Tabelle (0-basiert für Plotly) ───────────────────────────
+    nodes <- data.frame(
+      id    = c(paste0("site_",  site_ids),
+                paste0("prod_",  prod_ids),
+                paste0("hub_",   hub_ids),
+                paste0("cons_",  cons_ids)),
+      label = c(site_lbls, prod_lbls, hub_lbls, cons_lbls),
+      stringsAsFactors = FALSE
+    )
+    nodes$idx <- seq_len(nrow(nodes)) - 1L   # 0-basiert
+    
+    node_idx <- function(key) nodes$idx[match(key, nodes$id)]
+    
+    #browser()
+    
+    # ── 2) Kanten: Sites → Produkt-Knoten (aggregiert über alle Perioden) ──
+    xij_agg <- rv$ext$Xij %>%
+      rename(product = p) %>% 
+      mutate(product = as.character(product)) %>%
+      group_by(site_id, product) %>%
+      summarise(value = sum(value, na.rm = TRUE), .groups = "drop") %>%
+      filter(value > 0) %>%
+      mutate(
+        source = node_idx(paste0("site_", site_id)),
+        target = node_idx(paste0("prod_", product)),
+        color  = prod_colors[product]
+      )
+    
+    # ── 3) Kanten: Produkt-Knoten → Hubs ─────────────────────────────────────
+    xij_hub_agg <- rv$ext$Xij %>%
+      rename(product = p) %>% 
+      mutate(product = as.character(product)) %>%
+      group_by(product, hub_id) %>%
+      summarise(value = sum(value, na.rm = TRUE), .groups = "drop") %>%
+      filter(value > 0) %>%
+      mutate(
+        source = node_idx(paste0("prod_", product)),
+        target = node_idx(paste0("hub_",  hub_id)),
+        color  = prod_colors[product]
+      )
+    
+    # ── 4) Kanten: Hubs → Consumers (nach del_product) ───────────────────────
+    xjk_agg <- rv$ext$Xjk %>%
+      mutate(del_product = as.character(del_product)) %>%
+      group_by(hub_id, consumer_id, del_product) %>%
+      summarise(value = sum(value, na.rm = TRUE), .groups = "drop") %>%
+      filter(value > 0) %>%
+      mutate(
+        source = node_idx(paste0("hub_",  hub_id)),
+        target = node_idx(paste0("cons_", consumer_id)),
+        color  = prod_colors[del_product]
+      )
+    
+    # ── 5) Alle Kanten zusammenführen ─────────────────────────────────────────
+    all_links <- bind_rows(
+      xij_agg     %>% select(source, target, value, color),
+      xij_hub_agg %>% select(source, target, value, color),
+      xjk_agg     %>% select(source, target, value, color)
+    ) %>%
+      mutate(
+        value     = round(value / 1000, 2),   # t → kt
+        link_color = paste0(
+          gsub("rgb", "rgba",
+               col2rgb(color) %>%
+                 apply(2, function(x) paste0("rgba(", paste(x, collapse=","), ",0.45)"))
+          )
+        )
+      )
+    
+    # Hilfsfunktion: hex → rgba-String (Plotly-kompatibel)
+    hex2rgba <- function(hex, alpha = 0.45) {
+      rgb_vals <- col2rgb(hex)
+      paste0("rgba(", rgb_vals[1], ",", rgb_vals[2], ",", rgb_vals[3], ",", alpha, ")")
+    }
+    
+    all_links <- all_links %>%
+      mutate(link_color = sapply(color, hex2rgba, alpha = 0.45))
+    
+    # ── 6) Knotenfarben ───────────────────────────────────────────────────────
+    node_color <- case_when(
+      startsWith(nodes$id, "site_") ~ "rgba(100,160,100,0.85)",
+      nodes$id == "prod_1"          ~ "rgba(27,158,119,0.9)",
+      nodes$id == "prod_2"          ~ "rgba(217,95,2,0.9)",
+      nodes$id == "prod_3"          ~ "rgba(117,112,179,0.9)",
+      startsWith(nodes$id, "hub_")  ~ "rgba(192,80,0,0.85)",
+      startsWith(nodes$id, "cons_") ~ "rgba(50,80,160,0.85)",
+      TRUE ~ "rgba(150,150,150,0.7)"
+    )
+    
+    # ── 7) Plotly Sankey ──────────────────────────────────────────────────────
+    plot_ly(
+      type = "sankey",
+      orientation = "h",
+      arrangement = "snap",
+      
+      node = list(
+        label = nodes$label,
+        color = node_color,
+        pad   = 15,
+        thickness = 20,
+        line  = list(color = "white", width = 0.5)
+      ),
+      
+      link = list(
+        source = all_links$source,
+        target = all_links$target,
+        value  = all_links$value,
+        color  = all_links$link_color,
+        label  = paste0(
+          round(all_links$value, 1), " kt",
+          " [", nodes$label[all_links$source + 1L],
+          " → ", nodes$label[all_links$target + 1L], "]"
+        )
+      )
+    ) %>%
+      layout(
+        title = list(
+          text = "Biomass Flows: Sites → Products → Hubs → Consumers (kt total)",
+          font = list(size = 13)
+        ),
+        font = list(size = 10),
+        margin = list(l = 5, r = 5, t = 40, b = 5)
+      )
+  
+    })
+  
 }

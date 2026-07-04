@@ -214,15 +214,23 @@ dashboardPage(
         
         fluidRow(
           box(
+            title = "Alluvial: Biomass Cascade (Site → Hub → Consumer)",
+            status = "info", solidHeader = TRUE, width = 12,
+            helpText("Sankey diagram of total flows aggregated over planning horizon."),
+            plotlyOutput("plot_sankey", height = 320)
+          )
+        ),
+        
+        fluidRow(
+          box(
             title = "Harvested Biomass by Product over Time",
             status = "primary", solidHeader = TRUE, width = 6,
             plotlyOutput("plot_biomass_time", height = 320)
           ),
           box(
-            title = "Alluvial: Biomass Cascade (Site → Hub → Consumer)",
-            status = "info", solidHeader = TRUE, width = 6,
-            helpText("Sankey diagram of total flows aggregated over planning horizon."),
-            plotlyOutput("plot_sankey", height = 320)
+            title = "Demand Fulfilment Rate by Consumer & Product",
+            status = "primary", solidHeader = TRUE, width = 6,
+            plotlyOutput("plot_demand_fulfilment", height = 300)
           )
         ),
         
@@ -239,13 +247,7 @@ dashboardPage(
           )
         ),
         
-        fluidRow(
-          box(
-            title = "Demand Fulfilment Rate by Consumer & Product",
-            status = "primary", solidHeader = TRUE, width = 12,
-            plotlyOutput("plot_demand_fulfilment", height = 300)
-          )
-        )
+        
       ),
       
       # ======================================================================
