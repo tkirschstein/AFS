@@ -1,3 +1,4 @@
+
 library(shiny)
 library(shinydashboard)
 library(shinyjs)
@@ -114,201 +115,9 @@ dip_css <- "
 .main-sidebar hr { border-color: rgba(255,255,255,0.12) !important; margin: 6px 12px; }
 "
 
-# ==============================================================================
-# MODUL-UI-FUNKTIONEN
-# Jede Funktion erzeugt einen ns()-Kontext, der zu den moduleServer()-IDs passt.
-# ==============================================================================
-
-# ------------------------------------------------------------------------------
-# Modul-UI: Biomass Growth  (id = "biomass")
-# ------------------------------------------------------------------------------
-biomassGrowthUI <- function(id) {
-  ns <- NS(id)
-  
-  tagList(
-    fluidRow(
-      # KPI InfoBoxen — direkte Outputs aus dem Hauptserver (kein Namespace)
-      infoBoxOutput("kpi_max_yield",     width = 3),
-      infoBoxOutput("kpi_stem_share_10", width = 3),
-      infoBoxOutput("kpi_optimal_age",   width = 3),
-      infoBoxOutput("kpi_fresh_weight",  width = 3)
-    ),
-    
-    fluidRow(
-      box(
-        title = "Stand-level Biomass Components",
-        status = "success", solidHeader = TRUE, width = 12,
-        helpText("Stacked biomass fractions: stem (P1), branch (P2), residue (P3) over stand age."),
-        plotlyOutput(ns("plot_growth_stacked"), height = 380)
-      )
-    ),
-    
-    fluidRow(
-      box(
-        title = "Tree and stand-level asymptotes",
-        status = "warning", solidHeader = TRUE, width = 6,
-        collapsible = TRUE, collapsed = FALSE,
-        plotlyOutput(ns("plot_growth_asymptotes"), height = 300)
-      ),
-      box(
-        title = "Biomass fraction growth",
-        status = "primary", solidHeader = TRUE, width = 6,
-        collapsible = TRUE, collapsed = FALSE,
-        # server.R registriert diesen Plot als plot_growth_fractions
-        plotlyOutput(ns("plot_growth_fractions"), height = 300)
-      )
-    )
-  )
-}
-
-# ------------------------------------------------------------------------------
-# Modul-UI: Network & Map  (id = "network")
-# ------------------------------------------------------------------------------
-networkMapUI <- function(id) {
-  ns <- NS(id)
-  
-  tagList(
-    fluidRow(
-      # KPI InfoBoxen — direkte Outputs aus dem Hauptserver (kein Namespace)
-      infoBoxOutput("kpi_n_sites",    width = 3),
-      infoBoxOutput("kpi_total_area", width = 3),
-      infoBoxOutput("kpi_obj_val",    width = 3),
-      infoBoxOutput("kpi_solver_gap", width = 3)
-    ),
-    
-    fluidRow(
-      box(
-        title = "Supply Chain Network \u2014 Active Sites & Flows",
-        status = "primary", solidHeader = TRUE, width = 8,
-        helpText("Green markers = active AFS sites; orange = hubs/storages;
-                 purple = industrial consumers. Line width ~ flow volume."),
-        leafletOutput(ns("map_network"), height = 560)
-      ),
-      box(
-        title = "Result Summary",
-        status = "success", solidHeader = TRUE, width = 4,
-        h5("Solver Status"),             textOutput("txt_solver_status"), br(),
-        h5("Objective Value (\u20ac)"),  textOutput("txt_obj"),           br(),
-        h5("Active Sites"),              textOutput("txt_active_sites"),   br(),
-        h5("Total AFS Area (ha)"),       textOutput("txt_total_area"),     br(),
-        h5("Mean Profit (\u20ac/ha/yr)"),textOutput("txt_mean_profit"),    br(),
-        hr(),
-        h5("Legend"),
-        tags$ul(
-          tags$li(HTML("<span style='color:#00B400;'>&#11044;</span> Active AFS site")),
-          tags$li(HTML("<span style='color:orange;'>&#9650;</span> Hub / Storage")),
-          tags$li(HTML("<span style='color:purple;'>&#9632;</span> Industrial consumer")),
-          tags$li(HTML("<span style='color:#0095C3;'>&#9135;</span> Raw biomass flow")),
-          tags$li(HTML("<span style='color:#005A46;'>&#9135;</span> Processed flow"))
-        )
-      )
-    ),
-    
-    fluidRow(
-      box(
-        title = "Site Details Table",
-        status = "primary", solidHeader = TRUE, width = 12,
-        collapsible = TRUE, collapsed = TRUE,
-        DT::dataTableOutput("table_sites")
-      )
-    )
-  )
-}
-
-# ------------------------------------------------------------------------------
-# Modul-UI: Material Flows  (id = "flows")
-# ------------------------------------------------------------------------------
-materialFlowsUI <- function(id) {
-  ns <- NS(id)
-  
-  tagList(
-    fluidRow(
-      box(
-        title = "Alluvial: Biomass Cascade (Site \u2192 Hub \u2192 Consumer)",
-        status = "info", solidHeader = TRUE, width = 12,
-        helpText("Sankey diagram of total flows aggregated over planning horizon."),
-        plotlyOutput(ns("plot_sankey"), height = 320)
-      )
-    ),
-    
-    fluidRow(
-      box(
-        title = "Harvested Biomass by Product over Time",
-        status = "primary", solidHeader = TRUE, width = 6,
-        plotlyOutput(ns("plot_biomass_time"), height = 320)
-      ),
-      box(
-        title = "Demand Fulfilment Rate by Consumer & Product",
-        status = "primary", solidHeader = TRUE, width = 6,
-        plotlyOutput(ns("plot_demand_fulfilment"), height = 300)
-      )
-    ),
-    
-    fluidRow(
-      box(
-        title = "Revenue by Product & Consumer",
-        status = "success", solidHeader = TRUE, width = 6,
-        plotlyOutput(ns("plot_rev_consumer"), height = 320)
-      ),
-      box(
-        title = "Aggregated product cascade",
-        status = "primary", solidHeader = TRUE, width = 6,
-        plotlyOutput(ns("plot_product_cascade"), height = 320)
-      )
-    )
-  )
-}
-
-# ------------------------------------------------------------------------------
-# Modul-UI: Site KPIs  (id = "site_kpis")
-# ------------------------------------------------------------------------------
-siteKPIsUI <- function(id) {
-  ns <- NS(id)
-  
-  tagList(
-    fluidRow(
-      box(
-        title = "Histogram of rotation cycle length",
-        status = "info", solidHeader = TRUE, width = 6,
-        helpText("Each dot = one AFS site. X-axis = site-specific opportunity cost (\u20ac/ha/yr).
-                 Dashed line = break-even."),
-        plotlyOutput(ns("plot_rotation_dist"), height = 380)
-      ),
-      box(
-        title = "Profit split per site",
-        status = "success", solidHeader = TRUE, width = 6,
-        helpText("Comparison of revenues and cost split by sub-types."),
-        plotlyOutput(ns("plot_profit_split"), height = 380)
-      )
-    ),
-    
-    fluidRow(
-      box(
-        title = "Opportunity cost vs. Profit",
-        status = "success", solidHeader = TRUE, width = 4,
-        plotlyOutput(ns("plot_profit_vs_opp"), height = 300)
-      ),
-      box(
-        title = "P1 (Stem) Share vs. Profit",
-        status = "success", solidHeader = TRUE, width = 4,
-        plotlyOutput(ns("plot_p1share_profit"), height = 300)
-      ),
-      box(
-        title = "Distance vs. Profit",
-        status = "success", solidHeader = TRUE, width = 4,
-        plotlyOutput(ns("plot_dist_profit"), height = 300)
-      )
-    )
-  )
-}
-
-# ==============================================================================
-# HAUPT-UI
-# ==============================================================================
-
 dashboardPage(
   skin = "green",
-  
+
   # --------------------------------------------------------------------------
   # HEADER — Logos per tags$li in die Navbar eingebettet
   # --------------------------------------------------------------------------
@@ -318,7 +127,7 @@ dashboardPage(
       tags$span(": Case Study Explorer", style = "font-size:13px; color:#d0ead0;")
     ),
     titleWidth = 300,
-    
+
     # Logos rechts in der Headerleiste
     tags$li(
       class = "dropdown",
@@ -345,14 +154,14 @@ dashboardPage(
       )
     )
   ),
-  
+
   # --------------------------------------------------------------------------
   # SIDEBAR
   # --------------------------------------------------------------------------
   dashboardSidebar(
     width = 300,
     useShinyjs(),
-    
+
     # -- Wachstumsparameter --------------------------------------------------
     h4("Biomass Growth",
        style = "color:#AAC800; margin:12px 12px 4px; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;"),
@@ -366,9 +175,9 @@ dashboardPage(
                 min = 6, max = 14, value = 9.7, step = 0.1),
     sliderInput("moisture",  "Moisture content at felling",
                 min = 0.30, max = 0.65, value = 0.50, step = 0.05),
-    
+
     hr(),
-    
+
     # -- Planungshorizont & Rotation -----------------------------------------
     h4("Planning & Rotation",
        style = "color:#AAC800; margin:12px 12px 4px; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;"),
@@ -378,9 +187,9 @@ dashboardPage(
                 min = 1, max = 7, value = 3, step = 1),
     sliderInput("max_age",   "Max rotation age (years)",
                 min = 8, max = 25, value = 20, step = 1),
-    
+
     hr(),
-    
+
     # -- Standortkosten -------------------------------------------------------
     h4("Site Economics",
        style = "color:#AAC800; margin:12px 12px 4px; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;"),
@@ -392,9 +201,9 @@ dashboardPage(
                  value = 10, min = 0, max = 200, step = 5),
     numericInput("opp_mean", "Mean opportunity cost (\u20ac/ha/yr)",
                  value = 500, min = 0, max = 1200, step = 25),
-    
+
     hr(),
-    
+
     # -- Logistikkosten -------------------------------------------------------
     h4("Logistics",
        style = "color:#AAC800; margin:12px 12px 4px; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;"),
@@ -402,9 +211,9 @@ dashboardPage(
                  value = 0.08, min = 0.01, max = 0.50, step = 0.01),
     numericInput("c_tr_pre", "Transport cost chips (\u20ac/t\u00b7km)",
                  value = 0.06, min = 0.01, max = 0.50, step = 0.01),
-    
+
     hr(),
-    
+
     # -- Revenue Multipliers -------------------------------------------------
     h4("Revenue Multipliers",
        style = "color:#AAC800; margin:12px 12px 4px; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;"),
@@ -414,9 +223,9 @@ dashboardPage(
                 min = 0, max = 10.0, value = 1.0, step = 0.25),
     sliderInput("rev_mult_P3",  "Revenue multiplier P3",
                 min = 0, max = 10.0, value = 1.0, step = 0.25),
-    
+
     hr(),
-    
+
     # -- Steuerung ------------------------------------------------------------
     actionButton("run_opt", "Run Optimization",
                  icon = icon("play"),
@@ -431,7 +240,7 @@ dashboardPage(
       style = "color:#88aa88; margin:8px 12px; display:block;",
       "Results load from precomputed RDS when available."
     ),
-    
+
     # -- Logos am Ende der Sidebar --------------------------------------------
     tags$div(
       id = "sidebar-logos",
@@ -453,7 +262,7 @@ dashboardPage(
       )
     )
   ),
-  
+
   # --------------------------------------------------------------------------
   # BODY
   # --------------------------------------------------------------------------
@@ -461,46 +270,186 @@ dashboardPage(
     tags$head(
       tags$style(HTML(dip_css))
     ),
-    
+
     tabsetPanel(
       id = "main_tabs",
-      
+
       # ====================================================================
-      # TAB 1: Wachstumsmodell  → Modul "biomass"
+      # TAB 1: Wachstumsmodell
       # ====================================================================
       tabPanel(
         title = tagList(icon("seedling"), "Biomass Growth"),
         value = "tab_growth",
-        biomassGrowthUI("biomass")
+
+        fluidRow(
+          infoBoxOutput("kpi_max_yield",     width = 3),
+          infoBoxOutput("kpi_stem_share_10", width = 3),
+          infoBoxOutput("kpi_optimal_age",   width = 3),
+          infoBoxOutput("kpi_fresh_weight",  width = 3)
+        ),
+
+        fluidRow(
+          box(
+            title = "Stand-level Biomass Components",
+            status = "success", solidHeader = TRUE, width = 12,
+            helpText("Stacked biomass fractions: stem (P1), branch (P2), residue (P3) over stand age."),
+            plotlyOutput("plot_growth_stacked", height = 380)
+          )
+        ),
+
+        fluidRow(
+          box(
+            title = "Tree and stand-level asymptotes",
+            status = "warning", solidHeader = TRUE, width = 6,
+            collapsible = TRUE, collapsed = FALSE,
+            plotlyOutput("plot_growth_asymptotes", height = 300)
+          ),
+          box(
+            title = "Biomass fraction growth",
+            status = "primary", solidHeader = TRUE, width = 6,
+            collapsible = TRUE, collapsed = FALSE,
+            plotlyOutput("plot_growth_fractions", height = 300)
+          )
+        )
       ),
-      
+
       # ====================================================================
-      # TAB 2: Netzwerk & Karte  → Modul "network"
+      # TAB 2: Netzwerk & Karte
       # ====================================================================
       tabPanel(
         title = tagList(icon("map-marked-alt"), "Network & Map"),
         value = "tab_network",
-        networkMapUI("network")
+
+        fluidRow(
+          infoBoxOutput("kpi_n_sites",    width = 3),
+          infoBoxOutput("kpi_total_area", width = 3),
+          infoBoxOutput("kpi_obj_val",    width = 3),
+          infoBoxOutput("kpi_solver_gap", width = 3)
+        ),
+
+        fluidRow(
+          box(
+            title = "Supply Chain Network \u2014 Active Sites & Flows",
+            status = "primary", solidHeader = TRUE, width = 8,
+            helpText("Green markers = active AFS sites; orange = hubs/storages;
+                     purple = industrial consumers. Line width ~ flow volume."),
+            leafletOutput("map_network", height = 560)
+          ),
+          box(
+            title = "Result Summary",
+            status = "success", solidHeader = TRUE, width = 4,
+            h5("Solver Status"),             textOutput("txt_solver_status"), br(),
+            h5("Objective Value (\u20ac)"),  textOutput("txt_obj"),           br(),
+            h5("Active Sites"),              textOutput("txt_active_sites"),   br(),
+            h5("Total AFS Area (ha)"),       textOutput("txt_total_area"),     br(),
+            h5("Mean Profit (\u20ac/ha/yr)"),textOutput("txt_mean_profit"),    br(),
+            hr(),
+            h5("Legend"),
+            tags$ul(
+              tags$li(HTML("<span style='color:#00B400;'>&#11044;</span> Active AFS site")),
+              tags$li(HTML("<span style='color:orange;'>&#9650;</span> Hub / Storage")),
+              tags$li(HTML("<span style='color:purple;'>&#9632;</span> Industrial consumer")),
+              tags$li(HTML("<span style='color:#0095C3;'>&#9135;</span> Raw biomass flow")),
+              tags$li(HTML("<span style='color:#005A46;'>&#9135;</span> Processed flow"))
+            )
+          )
+        ),
+
+        fluidRow(
+          box(
+            title = "Site Details Table",
+            status = "primary", solidHeader = TRUE, width = 12,
+            collapsible = TRUE, collapsed = TRUE,
+            DT::dataTableOutput("table_sites")
+          )
+        )
       ),
-      
+
       # ====================================================================
-      # TAB 3: Material Flows  → Modul "flows"
+      # TAB 3: Material Flows
       # ====================================================================
       tabPanel(
         title = tagList(icon("chart-area"), "Material Flows"),
         value = "tab_flows",
-        materialFlowsUI("flows")
+
+        fluidRow(
+          box(
+            title = "Alluvial: Biomass Cascade (Site \u2192 Hub \u2192 Consumer)",
+            status = "info", solidHeader = TRUE, width = 12,
+            helpText("Sankey diagram of total flows aggregated over planning horizon."),
+            plotlyOutput("plot_sankey", height = 320)
+          )
+        ),
+
+        fluidRow(
+          box(
+            title = "Harvested Biomass by Product over Time",
+            status = "primary", solidHeader = TRUE, width = 6,
+            plotlyOutput("plot_biomass_time", height = 320)
+          ),
+          box(
+            title = "Demand Fulfilment Rate by Consumer & Product",
+            status = "primary", solidHeader = TRUE, width = 6,
+            plotlyOutput("plot_demand_fulfilment", height = 300)
+          )
+        ),
+
+        fluidRow(
+          box(
+            title = "Revenue by Product & Consumer",
+            status = "success", solidHeader = TRUE, width = 6,
+            plotlyOutput("plot_rev_consumer", height = 320)
+          ),
+          box(
+            title = "Aggregated product cascade",
+            status = "primary", solidHeader = TRUE, width = 6,
+            plotlyOutput("plot_product_cascade", height = 320)
+          )
+        )
       ),
-      
+
       # ====================================================================
-      # TAB 4: Site KPIs  → Modul "site_kpis"
+      # TAB 4: Site KPIs
       # ====================================================================
       tabPanel(
         title = tagList(icon("map-pin"), "Site KPIs"),
         value = "tab_site_kpis",
-        siteKPIsUI("site_kpis")
+
+        fluidRow(
+          box(
+            title = "Profit per ha\u00b7yr by Opportunity Cost",
+            status = "info", solidHeader = TRUE, width = 6,
+            helpText("Each dot = one AFS site. X-axis = site-specific opportunity cost (\u20ac/ha/yr).
+                     Dashed line = break-even."),
+            plotlyOutput("plot_rotation_dist", height = 380)
+          ),
+          box(
+            title = "Profit split per site",
+            status = "success", solidHeader = TRUE, width = 6,
+            helpText("Comparison of revenues and cost split by sub-types."),
+            plotlyOutput("plot_profit_split", height = 380)
+          )
+        ),
+
+        fluidRow(
+          box(
+            title = "Opportunity cost vs. Profit",
+            status = "success", solidHeader = TRUE, width = 4,
+            plotlyOutput("plot_profit_vs_opp", height = 300)
+          ),
+          box(
+            title = "P1 (Stem) Share vs. Profit",
+            status = "success", solidHeader = TRUE, width = 4,
+            plotlyOutput("plot_p1share_profit", height = 300)
+          ),
+          box(
+            title = "Distance vs. Profit",
+            status = "success", solidHeader = TRUE, width = 4,
+            plotlyOutput("plot_dist_profit", height = 300)
+          )
+        )
       )
-      
+
     ) # end tabsetPanel
   )   # end dashboardBody
 )     # end dashboardPage
