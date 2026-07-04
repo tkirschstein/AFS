@@ -1176,8 +1176,7 @@ function(input, output, session) {
   
   # Cascade Gantt Chart
   # --------------------------------------------------------------------------
-  
-  output$plot_product_cascade <- renderPlot({
+  output$plot_product_cascade <- renderPlotly({
     req(rv$ext, rv$ext$Xjk)
     
     # ── Labels & colours ───────────────────────────────────────────────────────
@@ -1194,10 +1193,16 @@ function(input, output, session) {
     )
     
     P_COLS_SRC <- c(
-      "Stems"    = "#1b9e77",
-      "Branches" = "#d95f02",
-      "Residues" = "#7570b3"
+      "1" = "#1b9e77",
+      "2" = "#d95f02",
+      "3" = "#7570b3"
     )
+    
+    # Hilfsfunktion hex -> rgba
+    hex2rgba <- function(hex, alpha = 0.55) {
+      rgb_vals <- grDevices::col2rgb(hex)
+      paste0("rgba(", rgb_vals[1], ",", rgb_vals[2], ",", rgb_vals[3], ",", alpha, ")")
+    }
     
     # ── Aggregate Xjk: src_product × del_product ──────────────────────────────
     flow_df <- rv$ext$Xjk %>%
@@ -1205,73 +1210,107 @@ function(input, output, session) {
       summarise(volume = sum(value, na.rm = TRUE), .groups = "drop") %>%
       filter(volume > 0) %>%
       mutate(
-        src = factor(
-          SRC_LABEL[as.character(src_product)],
-          levels = unname(SRC_LABEL)
-        ),
-        del = factor(
-          DEL_LABEL[as.character(del_product)],
-          levels = unname(DEL_LABEL)
+        src_id    = as.character(src_product),
+        del_id    = as.character(del_product),
+        src_label = unname(SRC_LABEL[src_id]),
+        del_label = unname(DEL_LABEL[del_id])
+      )
+    
+    validate(
+      need(nrow(flow_df) > 0, "No product-cascade flows available.")
+    )
+    
+    # ── Nodes: linke Spalte = Feedstock, rechte Spalte = End use ──────────────
+    src_nodes <- tibble::tibble(
+      node_key   = paste0("src_", names(SRC_LABEL)),
+      node_label = unname(SRC_LABEL),
+      node_group = "src",
+      x          = 0.001,
+      y          = c(0.15, 0.45, 0.75)
+    )
+    
+    del_nodes <- tibble::tibble(
+      node_key   = paste0("del_", names(DEL_LABEL)),
+      node_label = unname(DEL_LABEL),
+      node_group = "del",
+      x          = 0.999,
+      y          = c(0.15, 0.45, 0.75)
+    )
+    
+    nodes <- dplyr::bind_rows(src_nodes, del_nodes) %>%
+      dplyr::mutate(idx = dplyr::row_number() - 1L)
+    
+    node_idx <- function(keys) {
+      nodes$idx[match(keys, nodes$node_key)]
+    }
+    
+    # ── Links erzeugen ─────────────────────────────────────────────────────────
+    links <- flow_df %>%
+      mutate(
+        source = node_idx(paste0("src_", src_id)),
+        target = node_idx(paste0("del_", del_id)),
+        color  = vapply(src_id, function(z) hex2rgba(P_COLS_SRC[z], 0.60), character(1)),
+        hover  = paste0(
+          "<b>", src_label, " → ", del_label, "</b>",
+          "<br>Quantity: ", scales::comma(round(volume, 0), big.mark = ".", decimal.mark = ","), " t fresh biomass"
         )
       )
     
-    ggplot(
-      flow_df,
-      aes(axis1 = src, axis2 = del, y = volume, fill = src)
-    ) +
-      geom_alluvium(
-        alpha      = 0.72,
-        width      = 1 / 3,
-        knot.pos   = 0.45,
-        curve_type = "sigmoid"
-      ) +
-      geom_stratum(
-        width     = 1 / 3,
-        fill      = "grey94",
-        colour    = "grey50",
-        linewidth = 0.3
-      ) +
-      geom_text(
-        stat       = "stratum",
-        aes(label  = after_stat(stratum)),
-        size       = 3.2,
-        colour     = "grey15",
-        lineheight = 0.88
-      ) +
-      annotate(
-        "text",
-        x        = c(1, 2),
-        y        = -Inf,
-        label    = c("Feedstock", "End use"),
-        vjust    = 1.6,
-        size     = 4.0,
-        fontface = "bold",
-        colour   = "grey30"
-      ) +
-      scale_fill_manual(
-        name   = "Biomass fraction",
-        values = P_COLS_SRC
-      ) +
-      scale_x_discrete(
-        expand = expansion(add = c(0.25, 0.25))
-      ) +
-      scale_y_continuous(
-        name   = "quantity (t fresh biomass)",
-        labels = scales::comma_format(big.mark = ".", decimal.mark = ",")
-      ) +
-      coord_cartesian(clip = "off") +
-      theme_minimal(base_size = 11) +
-      theme(
-        axis.title.x       = element_blank(),
-        axis.text.x        = element_blank(),
-        axis.ticks.x       = element_blank(),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor   = element_blank(),
-        legend.position    = "none",
-        legend.key.size    = unit(0.42, "cm"),
-        plot.margin        = margin(t = 6, r = 6, b = 28, l = 6)
+    node_colors <- c(
+      vapply(names(SRC_LABEL), function(z) hex2rgba(P_COLS_SRC[z], 0.95), character(1)),
+      rep("rgba(220,220,220,0.95)", length(DEL_LABEL))
+    )
+    
+    # ── Plotly Sankey ──────────────────────────────────────────────────────────
+    plot_ly(
+      type = "sankey",
+      arrangement = "perpendicular",
+      orientation = "h",
+      node = list(
+        label = nodes$node_label,
+        color = node_colors,
+        x     = nodes$x,
+        y     = nodes$y,
+        pad   = 18,
+        thickness = 22,
+        line  = list(color = "rgba(120,120,120,0.8)", width = 0.6),
+        hovertemplate = "%{label}<extra></extra>"
+      ),
+      link = list(
+        source = links$source,
+        target = links$target,
+        value  = links$volume,
+        color  = links$color,
+        customdata = links$hover,
+        hovertemplate = "%{customdata}<extra></extra>"
       )
-  }, res = 110)
-  
+    ) %>%
+      layout(
+        title = list(
+          text = "Total production quantity of biomass types and industrial usage",
+          font = list(size = 13)
+        ),
+        font = list(size = 11),
+        margin = list(t = 50, r = 20, b = 40, l = 20),
+        annotations = list(
+          list(
+            x = 0.02, y = -0.08,
+            text = "<b>Feedstock</b>",
+            showarrow = FALSE,
+            xref = "paper", yref = "paper",
+            xanchor = "left",
+            font = list(size = 11, color = "grey30")
+          ),
+          list(
+            x = 0.98, y = -0.08,
+            text = "<b>End use</b>",
+            showarrow = FALSE,
+            xref = "paper", yref = "paper",
+            xanchor = "right",
+            font = list(size = 11, color = "grey30")
+          )
+        )
+      )
+  })
   
 }
