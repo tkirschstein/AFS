@@ -93,8 +93,6 @@ function(input, output, session) {
     rv$ext         <- prepare_solution_objects(precomp)
     rv$solve_result <- precomp
     
-    # milp_instance über build_model_data() konstruieren —
-    # jetzt sind rv$sites, rv$consumers etc. garantiert gesetzt
     obj              <- build_model_data()
     rv$data_obj      <- obj$data_obj
     rv$params_obj    <- obj$params_obj
@@ -1175,4 +1173,105 @@ function(input, output, session) {
         margin = list(t = 20, r = 20, b = 110, l = 110)
       )
   })
+  
+  # Cascade Gantt Chart
+  # --------------------------------------------------------------------------
+  
+  output$plot_product_cascade <- renderPlot({
+    req(rv$ext, rv$ext$Xjk)
+    
+    # ── Labels & colours ───────────────────────────────────────────────────────
+    SRC_LABEL <- c(
+      "1" = "Stems",
+      "2" = "Branches",
+      "3" = "Residues"
+    )
+    
+    DEL_LABEL <- c(
+      "1" = "Industrial",
+      "2" = "Pulp & Paper",
+      "3" = "Energy"
+    )
+    
+    P_COLS_SRC <- c(
+      "Stems"    = "#1b9e77",
+      "Branches" = "#d95f02",
+      "Residues" = "#7570b3"
+    )
+    
+    # ── Aggregate Xjk: src_product × del_product ──────────────────────────────
+    flow_df <- rv$ext$Xjk %>%
+      group_by(src_product, del_product) %>%
+      summarise(volume = sum(value, na.rm = TRUE), .groups = "drop") %>%
+      filter(volume > 0) %>%
+      mutate(
+        src = factor(
+          SRC_LABEL[as.character(src_product)],
+          levels = unname(SRC_LABEL)
+        ),
+        del = factor(
+          DEL_LABEL[as.character(del_product)],
+          levels = unname(DEL_LABEL)
+        )
+      )
+    
+    ggplot(
+      flow_df,
+      aes(axis1 = src, axis2 = del, y = volume, fill = src)
+    ) +
+      geom_alluvium(
+        alpha      = 0.72,
+        width      = 1 / 3,
+        knot.pos   = 0.45,
+        curve_type = "sigmoid"
+      ) +
+      geom_stratum(
+        width     = 1 / 3,
+        fill      = "grey94",
+        colour    = "grey50",
+        linewidth = 0.3
+      ) +
+      geom_text(
+        stat       = "stratum",
+        aes(label  = after_stat(stratum)),
+        size       = 3.2,
+        colour     = "grey15",
+        lineheight = 0.88
+      ) +
+      annotate(
+        "text",
+        x        = c(1, 2),
+        y        = -Inf,
+        label    = c("Feedstock", "End use"),
+        vjust    = 1.6,
+        size     = 4.0,
+        fontface = "bold",
+        colour   = "grey30"
+      ) +
+      scale_fill_manual(
+        name   = "Biomass fraction",
+        values = P_COLS_SRC
+      ) +
+      scale_x_discrete(
+        expand = expansion(add = c(0.25, 0.25))
+      ) +
+      scale_y_continuous(
+        name   = "quantity (t fresh biomass)",
+        labels = scales::comma_format(big.mark = ".", decimal.mark = ",")
+      ) +
+      coord_cartesian(clip = "off") +
+      theme_minimal(base_size = 11) +
+      theme(
+        axis.title.x       = element_blank(),
+        axis.text.x        = element_blank(),
+        axis.ticks.x       = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor   = element_blank(),
+        legend.position    = "none",
+        legend.key.size    = unit(0.42, "cm"),
+        plot.margin        = margin(t = 6, r = 6, b = 28, l = 6)
+      )
+  }, res = 110)
+  
+  
 }
