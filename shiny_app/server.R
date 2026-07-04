@@ -46,7 +46,7 @@ function(input, output, session) {
       source("!afs_biomass_setup.r")
       source("!helper_func.r")
       source("!helper_extract_site_profit.R")
-      source("build_lp_rcpp_wrapper.R")
+      #source("build_lp_rcpp_wrapper.R")
       Rcpp::sourceCpp("build_and_solve_afs_lp_v12_highs.cpp")
       
       load("afs_workspace_red.RData")
@@ -329,13 +329,13 @@ function(input, output, session) {
   
   output$kpi_total_area <- renderInfoBox({
     req(rv$site_profit)
-    infoBox("AFS area", paste0(round(sum(rv$site_profit$area_afs, na.rm = TRUE), 0), " ha"), icon = icon("draw-polygon"), color = "olive")
+    infoBox("AFS area", paste0(comma(round(sum(rv$site_profit$area_afs, na.rm = TRUE), 0)), " ha"), icon = icon("draw-polygon"), color = "olive")
   })
   
   output$kpi_obj_val <- renderInfoBox({
     req(rv$solve_result)
     obj <- rv$solve_result$objective_value %||% rv$solve_result$objval %||% NA
-    infoBox("Objective", comma(round(obj, 0)), icon = icon("euro-sign"), color = "light-blue")
+    infoBox("Total profit", paste0(comma(round(obj/1000000, 0)), " Mill. €"), icon = icon("euro-sign"), color = "light-blue")
   })
   
   output$kpi_solver_gap <- renderInfoBox({
