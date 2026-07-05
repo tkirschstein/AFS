@@ -50,12 +50,26 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
     filter(site_id %in% active_site_ids)
   
   # ── Preistabelle ──────────────────────────────────────────────────────────
-  price_df <- as.data.frame(milp_instance$consumer_prices) %>%
-    setNames(c("consumer_id", "del_product", "price")) %>%
+  price_df <- as.data.frame(milp_instance$consumer_prices, stringsAsFactors = FALSE)
+  
+  if (ncol(price_df) < 3) {
+    stop("milp_instance$consumer_prices hat weniger als 3 Spalten.")
+  }
+  
+  price_df <- price_df[, 1:3, drop = FALSE]
+  names(price_df) <- c("consumer_id", "del_product", "price")
+  
+  if (any(is.na(names(price_df))) || any(names(price_df) == "")) {
+    stop("consumer_prices enthält fehlende Spaltennamen.")
+  }
+  
+  price_df <- price_df %>%
     mutate(
       consumer_id = as.integer(consumer_id),
-      del_product = as.integer(del_product)
+      del_product = as.integer(del_product),
+      price = as.numeric(price)
     )
+  
   
   # ── Distanzmatrizen ───────────────────────────────────────────────────────
   dist_ij_m <- as.matrix(milp_instance$d_ij)

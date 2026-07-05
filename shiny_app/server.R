@@ -18,7 +18,7 @@ library(purrr)
 library(ggplot2)
 library(plotly)
 library(leaflet)
-library(sf)
+#library(sf)
 library(DT)
 library(networkD3)
 library(scales)
@@ -253,49 +253,28 @@ networkMapServer <- function(id, rv, input) {
   moduleServer(id, function(input_m, output_m, session_m) {
     
     output_m$map_network <- renderLeaflet({
-      req(rv$afs_workspace, rv$sites_sf, rv$sites, rv$storages, rv$consumers)
+      req(rv$afs_workspace, rv$sites_leaflet, rv$sites, rv$storages, rv$consumers)
+      
       
       COL_HUB <- "#c05000"
       COL_P1  <- "#6a0dad"
       COL_P2  <- "#08519c"
       COL_P3  <- "#a50026"
       
-      bbox_wgs84 <- st_as_sfc(
-        st_bbox(c(xmin = 10.6, xmax = 13.2, ymin = 50.9, ymax = 52.8),
-                crs = st_crs(4326))
-      )
       
       cluster_assig <- rv$afs_workspace$site_cluster_assig %>%
         select(site_id, hac_cluster) %>%
         mutate(hac_cluster = as.factor(hac_cluster))
       
-      sites_sf_clust <- rv$sites_sf %>%
-        mutate(site_id = seq_len(nrow(rv$sites_sf))) %>%
-        left_join(cluster_assig, by = "site_id") %>%
-        st_transform(4326) %>%
-        st_intersection(bbox_wgs84)
+      sites_sf_clust <- rv$sites_leaflet %>%
+        left_join(cluster_assig, by = "site_id")
+      
       
       # Opportunitätskosten: robust gegen fehlende C_opp
-      sites_for_opp <- if (!is.null(rv$milp_instance) &&
-                           "C_opp" %in% names(rv$milp_instance$sites)) {
-        rv$milp_instance$sites %>%
+      sites_for_opp <- rv$milp_instance$sites %>%
           select(site_id, C_opp) %>%
           rename(hac_cluster = site_id) %>%
           mutate(hac_cluster = as.factor(hac_cluster))
-      } else if ("C_opp" %in% names(rv$sites)) {
-        rv$sites %>%
-          select(site_id, C_opp) %>%
-          rename(hac_cluster = site_id) %>%
-          mutate(hac_cluster = as.factor(hac_cluster))
-      } else {
-        set.seed(OPP_SEED)
-        c.opp.vec <- rnorm(nrow(rv$sites), 1, 0.3)
-        rv$sites %>%
-          mutate(C_opp = input$opp_mean * c.opp.vec) %>%
-          select(site_id, C_opp) %>%
-          rename(hac_cluster = site_id) %>%
-          mutate(hac_cluster = as.factor(hac_cluster))
-      }
       
       sites_sf_clust <- sites_sf_clust %>%
         left_join(sites_for_opp, by = "hac_cluster")
@@ -308,97 +287,145 @@ networkMapServer <- function(id, rv, input) {
         sites_sf_clust <- sites_sf_clust %>% mutate(active = FALSE)
       }
       
-      pal_opp <- colorNumeric(
-        palette  = c("#1a9641", "#ffffbf", "#d7191c"),
-        domain   = sites_sf_clust$C_opp, na.color = "transparent"
+      # sites_sf_clust <- sites_sf_clust %>%
+      #   dplyr::mutate(active = hac_cluster %in% active_clusters)
+      # 
+      any_active <- any(sites_sf_clust$active, na.rm = TRUE)
+      
+      pal_opp <- leaflet::colorNumeric(
+        palette = c("#1a9641", "#ffffbf", "#d7191c"),
+        domain = sites_sf_clust$C_opp,
+        na.color = "transparent"
       )
       
       sites_sf_clust <- sites_sf_clust %>%
-        mutate(
-          fill_color   = if_else(active | !any(active), pal_opp(C_opp), "#bdbdbd"),
-          fill_opacity = if_else(active | !any(active), 0.85, 0.35)
+        dplyr::mutate(
+          fill_color = dplyr::if_else(
+            active | !any_active,
+            pal_opp(C_opp),
+            "#bdbdbd"
+          ),
+          fill_opacity = dplyr::if_else(
+            active | !any_active,
+            0.85,
+            0.35
+          ),
+          popup_txt = paste0(
+            "<strong>Cluster-ID:</strong> ", hac_cluster,
+            "<br><strong>Opp. Kosten:</strong> ",
+            ifelse(is.na(C_opp), "n/a", paste0(round(C_opp, 1), " €/ha")),
+            "<br><strong>Status:</strong> ",
+            ifelse(active, "&#10003; Aktiv", "&#8212; Inaktiv")
+          )
         )
       
-      stor_sf <- st_as_sf(
-        rv$storages %>% arrange(storage_id) %>%
-          mutate(hub_nr = paste0("Hub ", row_number()), ptsize = 8),
-        coords = c("lng", "lat"), crs = 4326
-      ) %>% st_intersection(bbox_wgs84)
+      stor_sf <- rv$storages %>%
+        dplyr::arrange(storage_id) %>%
+        dplyr::mutate(
+          hub_nr = paste0("Hub ", dplyr::row_number()),
+          ptsize = 8,
+          popup_txt = paste0(
+            "<strong>", hub_nr, "</strong>",
+            "<br><strong>Typ:</strong> Hub / Storage"
+          )
+        )
       
-      consumers_plt <- rv$consumers %>%
-        mutate(
-          consumer_nr  = paste0("Consumer ", row_number()),
+      cons_sf <- rv$consumers %>%
+        dplyr::mutate(
+          consumer_nr = paste0("Consumer ", dplyr::row_number()),
           total_demand = demand_P1 + demand_P2 + demand_P3,
-          kategorie = case_when(
-            demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~
-              "Chemical / Pulp (P1)",
-            demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~
-              "Pulp / Paper (P2)",
+          kategorie = dplyr::case_when(
+            demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
+            demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
             demand_P3 > 0 ~ "Energy / Biogas (P3)",
-            TRUE          ~ "Other"
+            TRUE ~ "Other"
           ),
-          marker_color = case_when(
+          marker_color = dplyr::case_when(
             kategorie == "Chemical / Pulp (P1)" ~ "purple",
             kategorie == "Pulp / Paper (P2)"    ~ "blue",
             kategorie == "Energy / Biogas (P3)" ~ "red",
             TRUE                                ~ "gray"
+          ),
+          popup_txt = paste0(
+            "<strong>", consumer_nr, "</strong>",
+            "<br><strong>Name:</strong> ", name,
+            "<br><strong>Consumer-Typ:</strong> ", kategorie,
+            "<br><strong>Gesamtnachfrage:</strong> ", round(total_demand, 1), " kt"
           )
         )
       
-      cons_sf <- st_as_sf(
-        consumers_plt, coords = c("lng", "lat"), crs = 4326
-      ) %>% st_intersection(bbox_wgs84)
-      
-      pal_cons <- colorFactor(
-        palette = c("Chemical / Pulp (P1)" = COL_P1,
-                    "Pulp / Paper (P2)"    = COL_P2,
-                    "Energy / Biogas (P3)" = COL_P3,
-                    "Other"                = "grey60"),
-        domain  = cons_sf$kategorie
+      pal_cons <- leaflet::colorFactor(
+        palette = c(
+          "Chemical / Pulp (P1)" = COL_P1,
+          "Pulp / Paper (P2)"    = COL_P2,
+          "Energy / Biogas (P3)" = COL_P3,
+          "Other"                = "grey60"
+        ),
+        domain = cons_sf$kategorie
       )
       
-      leaflet(options = leafletOptions(zoomControl = TRUE), width = "100%") %>%
-        addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
-        addPolygons(
-          data = sites_sf_clust, stroke = TRUE, color = "grey30", weight = 0.5,
-          fillColor = ~fill_color, fillOpacity = ~fill_opacity,
-          popup = ~paste0(
-            "<strong>Cluster-ID:</strong> ", hac_cluster,
-            "<br><strong>Opp. Kosten:</strong> ", round(C_opp, 1), " €/ha",
-            "<br><strong>Status:</strong> ",
-            if_else(active, "&#10003; Aktiv", "&#8212; Inaktiv")),
+      leaflet::leaflet(
+        options = leaflet::leafletOptions(zoomControl = TRUE),
+        width = "100%"
+      ) %>%
+        leaflet::addProviderTiles(leaflet::providers$Esri.WorldGrayCanvas) %>%
+        leaflet::addPolygons(
+          data = sites_sf_clust,
+          stroke = TRUE,
+          color = "grey30",
+          weight = 0.5,
+          fillColor = ~fill_color,
+          fillOpacity = ~fill_opacity,
+          popup = ~popup_txt,
           group = "AFS Sites"
         ) %>%
-        addCircleMarkers(
-          data = stor_sf, radius = ~ptsize, color = COL_HUB,
-          stroke = TRUE, weight = 2, fillColor = COL_HUB, fillOpacity = 0.95,
-          popup = ~paste0("<strong>", hub_nr, "</strong>",
-                          "<br><strong>Typ:</strong> Hub / Storage"),
+        leaflet::addCircleMarkers(
+          data = stor_sf,
+          radius = ~ptsize,
+          color = COL_HUB,
+          stroke = TRUE,
+          weight = 2,
+          fillColor = COL_HUB,
+          fillOpacity = 0.95,
+          popup = ~popup_txt,
           group = "Hubs"
         ) %>%
-        addAwesomeMarkers(
+        leaflet::addAwesomeMarkers(
           data = cons_sf,
-          icon = ~awesomeIcons(icon = "industry", library = "fa",
-                               markerColor = marker_color, iconColor = "white"),
-          popup = ~paste0(
-            "<strong>", consumer_nr, "</strong>",
-            "<br><strong>Consumer-Typ:</strong> ", kategorie,
-            "<br><strong>Gesamtnachfrage:</strong> ",
-            round(total_demand, 1), " kt"),
-          label = ~consumer_nr,
+          icon = ~leaflet::awesomeIcons(
+            icon = "industry",
+            library = "fa",
+            markerColor = marker_color,
+            iconColor = "white"
+          ),
+          popup = ~popup_txt,
+          label = ~name,
           group = "Consumers"
+        ) %>% 
+        leaflet::addLegend(
+          position = "bottomright",
+          pal = pal_opp,
+          values = sites_sf_clust$C_opp,
+          title = "Opp. Kosten (€/ha)",
+          opacity = 0.8
         ) %>%
-        addLegend(position = "bottomright", pal = pal_opp,
-                  values = sites_sf_clust$C_opp,
-                  title = "Opp. Kosten (€/ha)", opacity = 0.8) %>%
-        addLegend(position = "topright", pal = pal_cons,
-                  values = cons_sf$kategorie,
-                  title = "Consumer-Typ", opacity = 0.95) %>%
-        addLayersControl(
+        leaflet::addLegend(
+          position = "topright",
+          pal = pal_cons,
+          values = cons_sf$kategorie,
+          title = "Consumer-Typ",
+          opacity = 0.95
+        ) %>%
+        leaflet::addLayersControl(
           overlayGroups = c("AFS Sites", "Hubs", "Consumers"),
-          options       = layersControlOptions(collapsed = FALSE)
+          options = leaflet::layersControlOptions(collapsed = FALSE)
         ) %>%
-        fitBounds(lng1 = 10.6, lat1 = 50.9, lng2 = 13.2, lat2 = 52.8)
+        leaflet::fitBounds(
+          lng1 = 10.6, lat1 = 50.9,
+          lng2 = 13.2, lat2 = 52.8
+        )
+      
+      
     })
   })
 }
@@ -556,6 +583,7 @@ materialFlowsServer <- function(id, rv) {
       req(rv$ext, rv$milp_instance, rv$consumers)
       
       price_df <- as.data.frame(rv$milp_instance$consumer_prices) %>%
+        select(1:3) %>% 
         setNames(c("consumer_id", "del_product", "price")) %>%
         mutate(consumer_id = as.integer(consumer_id),
                del_product = as.integer(del_product))
@@ -993,7 +1021,7 @@ function(input, output, session) {
   # --------------------------------------------------------------------------
   rv <- reactiveValues(
     afs_workspace = NULL,
-    sites_sf      = NULL,
+    sites_leaflet = NULL,
     sites         = NULL,
     storages      = NULL,
     consumers     = NULL,
@@ -1014,16 +1042,20 @@ function(input, output, session) {
     
     # Explizite source()-Aufrufe — kein !-Präfix-Konvention
     source("!afs_biomass_setup.r",          local = FALSE)
+    source("!helper_instance_builder_v8a.R",local = FALSE)
     source("!helper_func.r",                local = FALSE)
     source("!helper_extract_site_profit.R", local = FALSE)
     Rcpp::sourceCpp("build_and_solve_afs_lp_v12_highs.cpp")
     
-    load("afs_workspace_red.RData")
+    load("afs_workspace_runtime.RData")
     rv$afs_workspace <- afs_workspace
-    rv$sites_sf      <- afs_workspace$sites_sf
+    #rv$sites_sf      <- afs_workspace$sites_sf
+    rv$sites_leaflet <- afs_workspace$sites_leaflet 
     rv$sites         <- afs_workspace$sites_clustered
-    rv$storages      <- afs_workspace$storages
-    rv$consumers     <- afs_workspace$consumers
+    rv$storages      <- afs_workspace$storages_leaflet
+    rv$consumers     <- afs_workspace$consumers_leaflet
+    
+    #consumers_df <- as.data.frame(rv$consumers, stringsAsFactors = FALSE)
     
     rv$consumers <- rv$consumers %>%
       mutate(demand_P1 = demand_P1 / 5,
@@ -1082,7 +1114,7 @@ function(input, output, session) {
     
     rv$status <- "Precomputed solution loaded"
     showNotification("Precomputed solution ready. All plots initialized.",
-                     type = "message")
+                     type = "message", duration = 5)
   })
   
   # --------------------------------------------------------------------------
@@ -1175,7 +1207,7 @@ function(input, output, session) {
       params = rv$params_obj
     )
     
-    showNotification("Solving LP model ...", type = "warning", duration = NULL)
+    showNotification("Solving LP model (lasts about 2-3 minutes) ...", type = "warning", duration = NULL)
     rv$status <- "Solving optimization model"
     
     rv$solve_result <- build_and_solve_afs_lp_v12(
@@ -1189,7 +1221,7 @@ function(input, output, session) {
       showNotification(
         paste0("Solver status: ", rv$solve_result$status,
                " — Falling back to precomputed solution."),
-        type = "warning")
+        type = "warning", duration = 5)
       
       rv$ext         <- NULL
       rv$site_profit <- NULL
@@ -1200,7 +1232,7 @@ function(input, output, session) {
     }
     
     rv$status      <- "Optimization complete"
-    showNotification("Optimization finished.", type = "message")
+    showNotification("Optimization finished.", type = "message", duration = 5)
   })
   
   # --------------------------------------------------------------------------
