@@ -1185,9 +1185,12 @@ function(input, output, session) {
       verbose = TRUE
     )
     
-    
-    
-    if(rv$solve_result$objective_value == 0){
+    if(round(rv$solve_result$objective_value, 1) == 0){
+      showNotification(
+        paste0("Solver status: ", rv$solve_result$status,
+               " — Falling back to precomputed solution."),
+        type = "warning")
+      
       rv$ext         <- NULL
       rv$site_profit <- NULL
     }
