@@ -2,7 +2,6 @@ library(shiny)
 library(shinydashboard)
 library(shinyjs)
 library(plotly)
-library(leaflet)
 library(DT)
 
 # ==============================================================================
@@ -182,7 +181,7 @@ networkMapUI <- function(id) {
         status = "primary", solidHeader = TRUE, width = 8,
         helpText("Green markers = active AFS sites; orange = hubs/storages;
                  purple = industrial consumers. Line width ~ flow volume."),
-        leafletOutput(ns("map_network"), height = 560)
+        #leafletOutput(ns("map_network"), height = 560)
       ),
       box(
         title = "Result Summary",

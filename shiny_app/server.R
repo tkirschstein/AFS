@@ -9,9 +9,6 @@ library(tidyr)
 library(purrr)
 library(ggplot2)
 library(plotly)
-library(leaflet)
-library(leaflet.extras)
-library(leaflet.extras2)
 library(DT)
 library(networkD3)
 library(scales)
@@ -21,11 +18,10 @@ library(slam)
 library(ROI)
 library(yyjsonr)
 
-
 # ------------------------------------------------------------------------------
 # KONSTANTEN
 # ------------------------------------------------------------------------------
-RDS_PATH <- "result_lp_v11.rds"
+RDS_PATH <- "data/result_lp_v11.rds"
 OPP_SEED <- 123578L
 
 
@@ -59,6 +55,682 @@ prepare_solution_objects <- function(result) {
     rename(hub_id = j, period = t)
   
   ext
+}
+
+extract_site_profit <- function(res, scenario_name = NA_character_) {
+  
+  milp_instance <- res$milp_instance
+  ext           <- res$ext
+  setting       <- res$setting
+  
+  # Szenario-Parameter (Defaults falls nicht gesetzt)
+  scen_opp      <- if (!is.null(setting) && !any(is.na(setting))) setting$opp      else 150
+  scen_cost_log <- if (!is.null(setting) && !any(is.na(setting))) setting$cost.log else 1.0
+  scen_cost_est <- if (!is.null(setting) && !any(is.na(setting))) setting$cost.est else 1.0
+  scen_revenue  <- if (!is.null(setting) && !any(is.na(setting))) setting$revenue  else 1.0
+  
+  # ── Prüfung: keine aktiven Standorte ──────────────────────────────────────
+  if (is.null(ext$z) || nrow(ext$z) == 0 ||
+      !any(ext$z$arc_type == "harvest")) {
+    return(data.frame(
+      scenario         = scenario_name,
+      opp_cost         = scen_opp,
+      cost_log_level   = scen_cost_log,
+      cost_est_level   = scen_cost_est,
+      revenue_level    = scen_revenue,
+      profit_ha_yr     = NA_real_,
+      opp_cost_site    = NA_real_,
+      avg_dist_hub_km  = NA_real_,
+      avg_dist_consumer_km = NA_real_,
+      avg_rotation_yr  = NA_real_,
+      n_harvests       = NA_integer_,
+      share_p1         = NA_real_,
+      area_ha          = NA_real_,
+      area_afs         = NA_real_,
+      active_years     = NA_real_,
+      n_sites          = NA_integer_
+    ))
+  }
+  
+  # ── Site-Metadaten ────────────────────────────────────────────────────────
+  # HINWEIS: In v12 liefert prepare_solution_objects() bereits umbenannte Spalten
+  # ext$z:   site_id, a, s, t, arc_type, value
+  # ext$Xij: site_id, hub_id, p, period, value
+  # ext$Xjk: hub_id, consumer_id, src_product, del_product, period, value
+  # ext$S:   hub_id, p, period, value
+  
+  active_site_ids <- ext$z %>%
+    filter(arc_type == "harvest") %>%
+    pull(site_id) %>%
+    unique()
+  
+  site_meta <- milp_instance$sites %>%
+    mutate(site_id = row_number()) %>%
+    filter(site_id %in% active_site_ids)
+  
+  # ── Preistabelle ──────────────────────────────────────────────────────────
+  price_df <- as.data.frame(milp_instance$consumer_prices, stringsAsFactors = FALSE)
+  
+  if (ncol(price_df) < 3) {
+    stop("milp_instance$consumer_prices hat weniger als 3 Spalten.")
+  }
+  
+  price_df <- price_df[, 1:3, drop = FALSE]
+  names(price_df) <- c("consumer_id", "del_product", "price")
+  
+  if (any(is.na(names(price_df))) || any(names(price_df) == "")) {
+    stop("consumer_prices enthält fehlende Spaltennamen.")
+  }
+  
+  price_df <- price_df %>%
+    mutate(
+      consumer_id = as.integer(consumer_id),
+      del_product = as.integer(del_product),
+      price = as.numeric(price)
+    )
+  
+  
+  # ── Distanzmatrizen ───────────────────────────────────────────────────────
+  dist_ij_m <- as.matrix(milp_instance$d_ij)
+  dist_jk_m <- as.matrix(milp_instance$d_jk)
+  
+  # ── Hub-Anteile pro Standort und Periode ─────────────────────────────────
+  hub_site_share <- ext$Xij %>%
+    group_by(hub_id, period) %>%
+    mutate(hub_total = sum(value)) %>%
+    ungroup() %>%
+    mutate(share = ifelse(hub_total > 0, value / hub_total, 0)) %>%
+    select(site_id, hub_id, period, share)
+  
+  # ── Kosten je Standort ────────────────────────────────────────────────────
+  sc_est <- ext$z %>%
+    filter(arc_type == "establishment") %>%
+    left_join(site_meta, by = "site_id") %>%
+    mutate(cost = C_est * value) %>%
+    group_by(site_id) %>%
+    summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+    mutate(component = "Establishment")
+  
+  sc_harv <- ext$z %>%
+    filter(arc_type == "harvest") %>%
+    left_join(site_meta, by = "site_id") %>%
+    mutate(cost = C_harv * value) %>%
+    group_by(site_id) %>%
+    summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+    mutate(component = "Harvesting")
+  
+  sc_main <- ext$z %>%
+    filter(arc_type == "harvest") %>%
+    mutate(age_len = t - s) %>%
+    left_join(site_meta, by = "site_id") %>%
+    mutate(cost = C_main * value * age_len) %>%
+    group_by(site_id) %>%
+    summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+    mutate(component = "Maintenance")
+  
+  sc_opp <- ext$z %>%
+    filter(arc_type == "harvest") %>%
+    mutate(age_len = t - s) %>%
+    left_join(site_meta, by = "site_id") %>%
+    mutate(cost = C_opp * value * age_len) %>%
+    group_by(site_id) %>%
+    summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+    mutate(component = "Opportunity")
+  
+  sc_tr_raw <- ext$Xij %>%
+    mutate(dist_km = mapply(function(i, j) dist_ij_m[i, j], site_id, hub_id),
+           cost    = milp_instance$c_tr_raw * dist_km * value) %>%
+    group_by(site_id) %>%
+    summarise(cost = sum(cost, na.rm = TRUE), .groups = "drop") %>%
+    mutate(component = "Transport_raw")
+  
+  # v12-spezifisch: Xjk hat Spalten hub_id, consumer_id, src_product, del_product, period
+  sc_tr_pre <- ext$Xjk %>%
+    mutate(dist_km  = mapply(function(j, k) dist_jk_m[j, k], hub_id, consumer_id),
+           cost_jkt = milp_instance$c_tr_pre * dist_km * value) %>%
+    left_join(hub_site_share,
+              by = c("hub_id", "period"),
+              relationship = "many-to-many") %>%
+    mutate(site_cost = cost_jkt * share) %>%
+    group_by(site_id) %>%
+    summarise(cost = sum(site_cost, na.rm = TRUE), .groups = "drop") %>%
+    filter(!is.na(site_id)) %>%
+    mutate(component = "Transport_pre")
+  
+  # v12-spezifisch: S hat Spalten hub_id, p, period (p = Produktindex, nicht umbenannt)
+  sc_stor <- ext$S %>%
+    left_join(
+      milp_instance$storages %>%
+        mutate(hub_id = row_number()) %>%
+        select(hub_id, c_stor),
+      by = "hub_id"
+    ) %>%
+    mutate(stor_cost = c_stor * value) %>%
+    select(hub_id, period, stor_cost) %>%
+    left_join(hub_site_share,
+              by = c("hub_id", "period"),
+              relationship = "many-to-many") %>%
+    mutate(site_cost = stor_cost * share) %>%
+    group_by(site_id) %>%
+    summarise(cost = sum(site_cost, na.rm = TRUE), .groups = "drop") %>%
+    filter(!is.na(site_id)) %>%
+    mutate(component = "Storage")
+  
+  # ── Erlöse je Standort ────────────────────────────────────────────────────
+  # v12: Xjk hat del_product (statt del_product in paper – identisch nach rename)
+  site_revenue <- ext$Xjk %>%
+    left_join(price_df, by = c("consumer_id", "del_product")) %>%
+    mutate(rev_jkt = value * coalesce(price, 0)) %>%
+    left_join(hub_site_share,
+              by = c("hub_id", "period"),
+              relationship = "many-to-many") %>%
+    mutate(site_rev = rev_jkt * share) %>%
+    group_by(site_id, del_product) %>%
+    summarise(revenue = sum(site_rev, na.rm = TRUE), .groups = "drop") %>%
+    filter(!is.na(site_id)) %>% 
+    pivot_wider(names_from = del_product, values_from = revenue, names_prefix = "rev_P") %>% 
+    mutate(rev_P1 = coalesce(rev_P1, 0), rev_P2 = coalesce(rev_P2, 0), rev_P3 = coalesce(rev_P3, 0)) %>% 
+    mutate(revenue = rev_P1 + rev_P2 + rev_P3)
+  
+  # ── Normierung: €/ha/a ────────────────────────────────────────────────────
+  active_p <- ext$z %>%
+    filter(arc_type == "establishment") %>%
+    group_by(site_id) %>%
+    summarise(tot_value = sum(value), .groups = "drop")
+  
+  est_p <- ext$z %>%
+    filter(arc_type == "establishment") %>%
+    group_by(site_id) %>%
+    summarise(t_est = sum(t * value) / sum(value), .groups = "drop")
+  
+  term_p <- ext$z %>%
+    filter(arc_type == "termination") %>%
+    group_by(site_id) %>%
+    summarise(t_term = sum(s * value) / sum(value), .groups = "drop")
+  
+  site_norm <- site_meta %>%
+    left_join(active_p, by = "site_id") %>%
+    left_join(est_p,    by = "site_id") %>%
+    left_join(term_p,   by = "site_id") %>%
+    mutate(
+      t_term       = ifelse(is.na(t_term), milp_instance$n_periods, t_term),
+      active_years = pmax(t_term - t_est, 1L),
+      denom        = tot_value * active_years
+    )
+  
+  # ── Gesamtkosten ──────────────────────────────────────────────────────────
+  all_costs <- bind_rows(sc_est, sc_harv, sc_main, sc_opp,
+                         sc_tr_raw, sc_tr_pre, sc_stor) %>%
+    group_by(site_id) %>%
+    summarise(total_cost = sum(cost, na.rm = TRUE), .groups = "drop")
+  
+  # ── Durchschnittliche Distanzen ───────────────────────────────────────────
+  avg_dist_to_hub <- ext$Xij %>%
+    mutate(dist_km = mapply(function(i, j) dist_ij_m[i, j], site_id, hub_id)) %>%
+    group_by(site_id) %>%
+    summarise(avg_dist_hub_km = weighted.mean(dist_km, w = pmax(value, 0),
+                                              na.rm = TRUE),
+              .groups = "drop")
+  
+  avg_dist_to_consumer <- ext$Xjk %>%
+    mutate(dist_km = mapply(function(j, k) dist_jk_m[j, k], hub_id, consumer_id)) %>%
+    left_join(hub_site_share,
+              by = c("hub_id", "period"),
+              relationship = "many-to-many") %>%
+    filter(!is.na(site_id), share > 0) %>%
+    group_by(site_id) %>%
+    summarise(avg_dist_consumer_km = weighted.mean(dist_km,
+                                                   w = pmax(share * value, 0),
+                                                   na.rm = TRUE),
+              .groups = "drop")
+  
+  # ── Strukturelle Variablen ────────────────────────────────────────────────
+  avg_rotation <- ext$z %>%
+    filter(arc_type == "harvest") %>%
+    mutate(cycle_len = t - s) %>%
+    group_by(site_id) %>%
+    summarise(
+      avg_rotation_yr = sum(cycle_len * value) / sum(value),
+      n_harvests      = n(),
+      .groups = "drop"
+    )
+  
+  # p == 1 entspricht Produkt P1 (Stämme) — in v12 ist p der 1-basierte Produktindex
+  p1_share <- ext$Xij %>%
+    group_by(site_id) %>%
+    summarise(
+      vol_total = sum(value, na.rm = TRUE),
+      vol_p1    = sum(value[p == 1], na.rm = TRUE),
+      .groups   = "drop"
+    ) %>%
+    mutate(share_p1 = ifelse(vol_total > 0, vol_p1 / vol_total, NA_real_)) %>%
+    select(site_id, share_p1, vol_total)
+  
+  # ── Zusammenführen ────────────────────────────────────────────────────────
+  result_df <- site_norm %>%
+    left_join(site_revenue,         by = "site_id") %>%
+    left_join(all_costs,            by = "site_id") %>%
+    left_join(avg_dist_to_hub,      by = "site_id") %>%
+    left_join(avg_dist_to_consumer, by = "site_id") %>%
+    left_join(avg_rotation,         by = "site_id") %>%
+    left_join(p1_share,             by = "site_id") %>%
+    left_join(sc_est %>% 
+                select(site_id, cost) %>% 
+                rename(cost_est = cost) ,
+              by = "site_id") %>%
+    left_join(sc_harv %>% 
+                select(site_id, cost) %>% 
+                rename(cost_harv = cost) ,
+              by = "site_id") %>% 
+    left_join(sc_main %>% 
+                select(site_id, cost) %>% 
+                rename(cost_main = cost) ,
+              by = "site_id") %>% 
+    left_join(sc_opp %>% 
+                select(site_id, cost) %>% 
+                rename(cost_opp = cost) ,
+              by = "site_id") %>%
+    left_join(sc_tr_raw %>% 
+                select(site_id, cost) %>% 
+                rename(cost_tr_raw = cost) ,
+              by = "site_id") %>%
+    left_join(sc_tr_pre %>% 
+                select(site_id, cost) %>% 
+                rename(cost_tr_pre = cost) ,
+              by = "site_id") %>%
+    left_join(sc_stor %>% 
+                select(site_id, cost) %>% 
+                rename(cost_stor = cost) ,
+              by = "site_id") %>%
+    
+    mutate(
+      profit_ha_yr     = (coalesce(revenue, 0) - coalesce(total_cost, 0)) / denom,
+      profit           = (coalesce(revenue, 0) - coalesce(total_cost, 0)),
+      revenue          = coalesce(revenue, 0),
+      total_cost       = coalesce(total_cost, 0),
+      scenario         = scenario_name,
+      opp_cost         = scen_opp,
+      cost_log_level   = scen_cost_log,
+      cost_est_level   = scen_cost_est,
+      revenue_level    = scen_revenue,
+      opp_cost_site    = C_opp,
+      area_afs         = tot_value
+    ) %>%
+    select(site_id, scenario, profit_ha_yr,  
+           opp_cost, opp_cost_site, cost_log_level, cost_est_level, revenue_level,
+           avg_dist_hub_km, avg_dist_consumer_km,
+           avg_rotation_yr, n_harvests, share_p1,
+           area_ha, area_afs, active_years, n_sites,
+           cost_est, cost_harv, cost_main, cost_opp,
+           cost_tr_raw, cost_tr_pre, cost_stor,  
+           rev_P1, rev_P2, rev_P3, profit, revenue, total_cost, denom
+    )
+  
+  return(result_df)
+}
+
+gomp <- function(t, A, k = 0.194, t0 = 9.7) {
+  A * exp(-exp(-k * (t - t0)))
+}
+
+A_tree <- function(N, C_site = 4475, beta = -0.38) C_site * N^beta
+
+#' Stand-level asymptote (t DM/ha) = A_tree * N / 1000
+A_stand <- function(N, C_site = 4475, beta = -.38) A_tree(N, C_site , beta) * N #/ 1000
+
+# Scenario presets
+SCENARIOS <- list(
+  conservative = list(C_site = 4475, k = 0.194, t0 = 9.7,
+                      label = "Conservative (central EU, ~113 trees/ha)"),
+  good_site    = list(C_site = 6471, k = 0.173, t0 = 10.1,
+                      label = "Good site (~139 trees/ha, fertile soils)")
+)
+
+# ── 3. Aboveground / belowground split ───────────────────────────────────────
+AGB_FRAC <- 0.89   # aboveground fraction of total DM (Jha 2018)
+
+# ── 4. Biomass compartment fractions (age-dependent, linear) ─────────────────
+#' Returns named list of AGB fractions (stem, merch_branch, residue)
+#' Anchored to Civitarese 2019 (t=3,6,9) and Jha 2018 (t=13)
+#' Valid for t in [3, 20] years; winter harvest assumed (leaves shed)
+#' OLD STUFF ################################################################
+fractions_agb <- function(t) {
+  s <- -0.00524 * t + 0.8396   # stem fraction (raw)
+  m <-  0.00643 * t + 0.0562   # merchantable branch fraction (raw)
+  r <- -0.00119 * t + 0.1042   # residue fraction (raw)
+  tot <- s + m + r
+  list(stem         = s / tot,
+       merch_branch = m / tot,
+       residue      = r / tot)
+}
+#' OLD STUFF End ################################################################
+#' 
+# ── 5. Diameter-class merchantable fractions (logistic) ──────────────────────
+#' Fraction of stem biomass with d > 15 cm (merchantable timber)
+#' Fitted to Civitarese 2019 / Niemczyk 2021; r=0.467, t50=8.19 yr
+f_stem_merch <- function(t) .75 / (1 + exp(-0.467 * (t - 8.19)))
+f_branch_merch <- function(t) .15 / (1 + exp(-0.698 * (t - 7.55)))
+
+# ── 6. Fresh weight conversion ───────────────────────────────────────────────
+MC_FELLING <- 0.55   # moisture content at felling (Civitarese 2019)
+
+dm_to_fresh <- function(dm_t, mc = MC_FELLING) dm_t / (1 - mc)
+
+# ── 7. Master harvest function ───────────────────────────────────────────────
+#' Compute full harvest breakdown for an AFS stand
+
+harvest_biomass <- function(t, N, area_ha = 1,
+                            C_site = 4475, k = 0.194, t0 = 9.7) {
+  A        <- A_stand(N, C_site)
+  total_dm <- gomp(t, A, k, t0) * area_ha       # t DM total (incl. roots)
+  agb_dm   <- total_dm * AGB_FRAC               # t DM aboveground
+  
+  
+  stem_dm   <- agb_dm * f_stem_merch(t)
+  branch_dm <- agb_dm * f_branch_merch(t)
+  resid_dm  <- (agb_dm - branch_dm - stem_dm)
+  
+  data.frame(
+    compartment = c("Stem (d > 15 cm)",
+                    "Merch. branches (d > 7 cm)",
+                    "Residue / fine material"),
+    dm_t    = round(c(stem_merch_dm, branch_merch_dm, total_resid_dm), 1),
+    fresh_t = round(dm_to_fresh(
+      c(stem_merch_dm, branch_merch_dm, total_resid_dm)), 1)
+  )
+}
+
+# ── 8. Harvest scenario ───────────────────────────────────────────────
+#' Compute full harvest breakdown per ha for an AFS stand over time
+
+build_scenario_ts <- function(ages = seq(0, 20, by = 0.1), N = 113, C_site = 4475, k = 0.194, t0 = 9.7, label = "test") {
+  A   <- A_stand(N, C_site)
+  agb <- gomp(ages, A, k, t0) * AGB_FRAC
+  # fr  <- lapply(ages, fractions_agb)
+  # f_s <- sapply(fr, `[[`, "stem")
+  # f_b <- sapply(fr, `[[`, "merch_branch")
+  # f_r <- sapply(fr, `[[`, "residue")
+  # stem_total   <- agb * f_s
+  # branch_total <- agb * f_b
+  # resid_total  <- agb * f_r
+  
+  stem_total   <- agb * f_stem_merch(ages)
+  branch_total <- agb * f_branch_merch(ages)
+  resid_total  <- (agb - branch_total - stem_total)
+  
+  tibble(
+    age             = ages,
+    scenario        = label,
+    `Merch. stem`   = stem_total,
+    `Merch. branch` = branch_total,
+    `Residue`       = resid_total
+  )
+}
+
+
+# ── 8. Quick-reference table (Table 1 in paper) ──────────────────────────────
+#' Reproduce standard Table 1: 100 ha, t=10 yr, both scenarios
+table_harvest_100ha <- function(t = 10, area_ha = 100, N = 113) {
+  cons <- harvest_biomass(t, N, area_ha,
+                          C_site = 4475, k = 0.194, t0 = 9.7)
+  good <- harvest_biomass(t, N, area_ha,
+                          C_site = 6471, k = 0.173, t0 = 10.1)
+  cons$scenario <- "Conservative"
+  good$scenario <- "Good site"
+  rbind(cons, good)[, c("scenario","compartment","dm_t","fresh_t")]
+}
+
+# ── 9. Parameter overview (for inline reporting in text) ─────────────────────
+MODEL_PARAMS <- list(
+  A_cons      = A_stand(113, 4475),  # t DM/ha asymptote, conservative
+  A_good      = A_stand(139, 6471),  # t DM/ha asymptote, good site
+  beta_density = 0.380,              # competition exponent
+  k_cons      = 0.194,               # Gompertz k, conservative
+  k_good      = 0.173,               # Gompertz k, good site
+  t0_cons     = 9.7,                 # inflection yr, conservative
+  t0_good     = 10.1,                # inflection yr, good site
+  r_stem      = 0.467,               # logistic r, stem d > 15 cm
+  t50_stem    = 8.19,                # logistic t50, stem d > 15 cm
+  r_branch    = 0.698,               # logistic r, branch d > 7 cm
+  t50_branch  = 7.55,                # logistic t50, branch d > 7 cm
+  agb_frac    = AGB_FRAC,
+  mc_felling  = MC_FELLING
+)
+
+
+# ============================================================================
+# OPTIMIZATION INSTANCE BUILDER
+# ============================================================================
+
+build_optimization_instance <- function(data, params) {
+  
+  # check params completeness: n_periods, max_age,   min_age,  c_tr_raw,  c_tr_pre
+  required_params <- c("n_periods", "max_age", "min_age", "c_tr_raw", "c_tr_pre")
+  missing_params <- setdiff(required_params, names(params))
+  if (length(missing_params) > 0) {
+    stop(paste("Missing parameters:", paste(missing_params, collapse = ", "
+    )))
+  }
+  
+  # Extract parameters
+  n_periods <- params$n_periods
+  max_age <- params$max_age
+  min_age <- params$min_age
+  c_tr_raw <- params$c_tr_raw
+  c_tr_pre <- params$c_tr_pre
+  
+  # check data completeness: sites, storages, consumers, dist_ij, dist_jk, yields_by_age
+  required_data <- c("sites", "storages", "consumers", "dist_ij", "dist_jk","yields_by_age")
+  missing_data <- setdiff(required_data, names(data))
+  if (length(missing_data) > 0) {
+    stop(paste("Missing data components:", paste(missing_data, collapse = ", ")))
+  }
+  
+  # extract data objects
+  d_ij <- data$dist_ij
+  d_jk <- data$dist_jk
+  sites <- data$sites
+  storages <- data$storages
+  consumers <- data$consumers
+  yields_by_age <- data$yields_by_age
+  
+  
+  # check matching sizes and extract numbers of entities
+  n_sites <- nrow(sites)
+  n_storages <- nrow(storages)
+  n_consumers <- nrow(consumers)
+  n_products <- length(unique(yields_by_age$product))
+  
+  if (nrow(d_ij) != n_sites || ncol(d_ij) != n_storages) {
+    stop("Dimension mismatch: d_ij should be n_sites x n_storages")
+  }
+  if (nrow(d_jk) != n_storages || ncol(d_jk) != n_consumers) {
+    stop("Dimension mismatch: d_jk should be n_storages x n_consumers")
+  }
+  if (!all(c("product", "age", "yield_ha") %in% colnames(yields_by_age))) {
+    stop("yields_by_age must have columns: product, age, yield_ha")
+  }
+  
+  if (max(yields_by_age$age) > max_age) {
+    # set yields to 0 for ages > max_age
+    warning(paste("yields_by_age contains ages > max_age; setting yields to 0 for those ages"))
+    yields_by_age <- yields_by_age %>%  mutate(yield_ha = ifelse(age > max_age, 0, yield_ha))
+  }
+  
+  if (max(yields_by_age$product) > n_products) {
+    warning(paste("yields_by_age contains products > n_products; trimming to", n_products))
+    yields_by_age <- yields_by_age %>% filter(product <= n_products)
+  }  
+  
+  # check columns in sites: Should contain site_id, lat, lng, area_ha, C_est, C_harv, C_main, C_opp
+  required_site_cols <- c("site_id", "lat", "lng", "area_ha", "C_est", "C_harv", "C_main", "C_opp")
+  if (!all(required_site_cols %in% colnames(sites))) {
+    stop(paste("Sites data frame must contain columns:", paste(required_site_cols, collapse = ", ")))
+  }
+  
+  # check columns in storages: Should contain storage_id, CAP_stor, CAP_proc, c_stor
+  required_storage_cols <- c("storage_id", "CAP_stor", "CAP_proc", "c_stor")
+  if (!all(required_storage_cols %in% colnames(storages))) {
+    stop(paste("Storages data frame must contain columns:", paste(required_storage_cols, collapse = ",")))
+  }
+  
+  # check columns in consumers: Should contain consumer_id, demand_P1, demand_P2, demand_P3, P1, P2, P3
+  required_consumer_cols <- c("consumer_id", "demand_P1", "demand_P2", "demand_P3", "P1", "P2", "P3")
+  if (!all(required_consumer_cols %in% colnames(consumers))) {
+    stop(paste("Consumers data frame must contain columns:", paste(required_consumer_cols, collapse=","
+    )))
+  }    
+  
+  # ids to consecutive numbers (if not already)
+  sites <- sites %>% mutate(site_id = as.integer(factor(site_id)))
+  storages <- storages %>% mutate(storage_id = as.integer(factor(storage_id)))
+  consumers <- consumers %>% mutate(consumer_id = as.integer(factor(consumer_id)))
+  # distances should be numeric matrices with appropriate row/col names
+  if (!is.matrix(d_ij) || !is.numeric(d_ij)) {
+    stop("d_ij must be a numeric matrix")
+  }
+  if (!is.matrix(d_jk) || !is.numeric(d_jk)) {
+    stop("d_jk must be a numeric matrix")
+  }
+  # set row and col names of matrices to integers as ids
+  rownames(d_ij) <- as.character(1:n_sites)
+  colnames(d_ij) <- as.character(1:n_storages)
+  rownames(d_jk) <- as.character(1:n_storages)
+  colnames(d_jk) <- as.character(1:n_consumers)
+  
+  
+  # build time-exanded demand matrix based on consumers data (demand_P1 demand_P2 demand_P3) with columns consumer_id, product, period and demand
+  demand <- expand.grid(
+    consumer_id = consumers$consumer_id,
+    period = 1:n_periods
+  ) %>%
+    left_join(
+      consumers %>% 
+        select(consumer_id, demand_P1, demand_P2, demand_P3) %>%
+        pivot_longer(
+          cols = starts_with("demand_P"),
+          names_to = "product_col",
+          values_to = "D_max"
+        ) %>%
+        mutate(product = as.numeric(substring(product_col, nchar(product_col), nchar(product_col)))),
+      by = "consumer_id") %>%
+    select(consumer_id, product, period, D_max) 
+  #mutate(D_max = D_max / n_periods)  # distribute demand evenly across periods
+  
+  # ========================================================================
+  # PRICES: Extract from consumer table (P1, P2, P3) if available
+  # ========================================================================
+  
+  # Check if consumer table has price columns
+  price_cols <- c("P1", "P2", "P3")
+  has_prices <- all(price_cols %in% colnames(consumers))
+  
+  consumer_prices <- NULL
+  if (has_prices) {
+    # Create price table: consumer_id x product x price
+    consumer_prices <- consumers %>%
+      select(consumer_id, all_of(price_cols)) %>%
+      pivot_longer(
+        cols = all_of(price_cols),
+        names_to = "price_col",
+        values_to = "price"
+      ) %>%
+      mutate(
+        product = as.numeric(gsub("P", "", price_col))
+      ) %>%
+      select(consumer_id, product, price)
+  } else {
+    # Fallback: uniform prices by product (optional, can be set later)
+    consumer_prices <- expand.grid(
+      consumer_id = consumers$consumer_id,
+      product = 1:n_products
+    ) %>%
+      mutate(price = 100)  # Default uniform price
+  }
+  
+  
+  # Build instance list
+  list(
+    n_sites = n_sites,
+    n_storages = n_storages,
+    n_consumers = n_consumers,
+    n_periods = n_periods,
+    n_products = n_products,
+    max_age = max_age,
+    min_age = min_age,
+    sites = sites,
+    storages = storages,
+    consumers = consumers,
+    consumer_prices = consumer_prices,
+    yields_by_age = yields_by_age,
+    demand = demand,
+    d_ij = d_ij,
+    d_jk = d_jk,
+    c_tr_raw = c_tr_raw,
+    c_tr_pre = c_tr_pre
+  )
+}
+
+
+#######################################################################
+# Extract solutions
+#######################################################################
+extract_result <- function(opt_result){
+  
+  z_solution <- opt_result$solution$z
+  
+  # filter for z variables with value > 0.5 and drop col column
+  z_solution_filtered <- z_solution %>%
+    filter(value > 0.5) %>%
+    arrange(ii, s, t)
+  
+  # sites with AFS
+  
+  sites_est <- unique(z_solution_filtered$ii)
+  
+  # storage quantities
+  S_solution <- opt_result$solution$S
+  
+  S_solution_filtered <- S_solution %>% 
+    filter(value > 0.01) %>%
+    arrange(jj, tt, pprod)
+  
+  # Flows
+  xij <- opt_result$solution$Xij
+  
+  xij_filtered <- xij %>% 
+    filter(value > 0.01) %>% 
+    arrange(ii,jj,tt,pprod)
+  
+  xjk <- opt_result$solution$Xjk
+  
+  xjk_filtered <- xjk %>% 
+    filter(value > 0.01) %>% 
+    arrange(jj,kk,tt,pprod, pp)
+  
+  # Demand fulfillment
+  if("Dkpt" %in% names(opt_result$solution)){
+    Dkpt_solution <- opt_result$solution$Dkpt
+    Dkpt_solution <- Dkpt_solution %>% 
+      filter(value > 0.01) %>% 
+      arrange(k,p,t)
+  }else{
+    Dkpt_solution <- NULL
+  }
+  
+  
+  
+  # return results
+  list(
+    sites_est = sites_est, 
+    z = z_solution_filtered,
+    S = S_solution_filtered,
+    Xij = xij_filtered,
+    Xjk = xjk_filtered,
+    Dkpt_solution = Dkpt_solution
+  )
+  
+  
 }
 
 # ==============================================================================
@@ -245,230 +917,230 @@ biomassGrowthServer <- function(id, rv, input) {
 # ------------------------------------------------------------------------------
 networkMapServer <- function(id, rv, input) {
   moduleServer(id, function(input_m, output_m, session_m) {
-    output_m$map_network <- renderLeaflet({
-      req(rv$afs_workspace, rv$sites_leaflet, rv$sites, rv$storages, rv$consumers)
-      
-      COL_HUB <- "#c05000"
-      COL_P1  <- "#6a0dad"
-      COL_P2  <- "#08519c"
-      COL_P3  <- "#a50026"
-      
-      # ── Cluster-Zuordnung: site_id → hac_cluster ─────────────────────────────
-      cluster_assig <- rv$afs_workspace$site_cluster_assig %>%
-        select(site_id, hac_cluster)
-      
-      # ── Opportunitätskosten je Cluster (hac_cluster = site_id im MILP) ───────
-      opp_lookup <- if (!is.null(rv$milp_instance)) {
-        rv$milp_instance$sites %>%
-          select(site_id, C_opp) %>%
-          rename(hac_cluster = site_id)
-      } else {
-        tibble(hac_cluster = integer(0), C_opp = numeric(0))
-      }
-      
-      # ── Vollständige Lookup-Tabelle: Einzel-site_id → C_opp ─────────────────
-      site_opp_full <- cluster_assig %>%
-        left_join(opp_lookup, by = "hac_cluster")
-      # site_opp_full hat Spalten: site_id, hac_cluster, C_opp
-      
-      # ── Aktive Cluster-IDs ────────────────────────────────────────────────────
-      active_cluster_ids <- if (!is.null(rv$ext)) unique(rv$ext$Xij$site_id) else integer(0)
-      any_active         <- length(active_cluster_ids) > 0
-      
-      # ── Farbskala ─────────────────────────────────────────────────────────────
-      pal_opp <- leaflet::colorNumeric(
-        palette  = c("#1a9641", "#ffffbf", "#d7191c"),
-        domain   = range(opp_lookup$C_opp, na.rm = TRUE),
-        na.color = "#cccccc"
-      )
-      
-      # ── GeoJSON anreichern ────────────────────────────────────────────────────
-      geo <- jsonlite::fromJSON(rv$sites_leaflet, simplifyVector = FALSE)
-      
-      
-      geo$style <- list(
-        weight = .2,
-        color = "#bdbdbd",
-        opacity = .9,
-        fillOpacity = 0.8
-      )
-
-      geo$features <- lapply(geo$features, function(feat) {
-        sid     <- feat$properties$site_id
-        
-        # Über Cluster-Lookup auf C_opp und hac_cluster mappen
-        row     <- site_opp_full[site_opp_full$site_id == sid, ]
-        cluster <- if (nrow(row) > 0) row$hac_cluster[1] else NA_integer_
-        c_opp   <- if (nrow(row) > 0) row$C_opp[1]       else NA_real_
-        
-        is_active <- !is.na(cluster) && cluster %in% active_cluster_ids
-        
-        
-        feat$properties$hac_cluster  <- cluster
-        feat$properties$fill_color   <- if (!is.na(c_opp) && (!any_active || is_active)) {
-          pal_opp(c_opp)
-        } else if (any_active && !is_active) {
-          "#bdbdbd"
-        } else {
-          "#cccccc"
-        }
-        feat$properties$fill_opacity <- if (!any_active || is_active) 0.75 else 0.25
-        feat$properties$c_opp_label  <- if (!is.na(c_opp)) paste0(round(c_opp, 1), " €/ha") else "n/a"
-        feat$properties$status_label <- if (is_active) "✓ Aktiv" else "— Inaktiv"
-        
-        feat$properties$style$fillColor <- feat$properties$fill_color
-        feat$properties$style$fillOpacity <- feat$properties$fill_opacity
-        
-        # Popup-HTML direkt als Property schreiben
-        feat$properties$popup_html <- paste0(
-          "<div style='font-family:sans-serif;font-size:13px;line-height:1.7'>",
-          "<b>Cluster ", cluster, "</b>",
-          "<hr style='margin:3px 0;border-color:#ddd'>",
-          "<b>Opp. Kosten:</b> ", feat$properties$c_opp_label, "<br>",
-          "<b>Status:</b> ",      feat$properties$status_label, "<br>",
-          "<b>Site-ID:</b> ",     sid,
-          "</div>"
-        )
-        
-        feat
-      })
-      
-      #geojson_enriched <- jsonlite::toJSON(geo, auto_unbox = TRUE)
-      geojson_enriched <- yyjsonr::write_json_str(
-        geo,
-        opts = yyjsonr::opts_write_json(auto_unbox = TRUE)
-      )
-      
-      
-      # ── Storages aufbereiten ──────────────────────────────────────────────────
-      stor_sf <- rv$storages %>%
-        dplyr::arrange(storage_id) %>%
-        dplyr::mutate(
-          hub_nr    = paste0("Hub ", dplyr::row_number()),
-          ptsize    = 10,
-          popup_txt = paste0(
-            "<b>", hub_nr, "</b><br>",
-            "Storage-ID: ", storage_id, "<br>",
-            "Typ: ", type, "<br>",
-            "CAP Lager: ",   scales::comma(round(CAP_stor, 0)), " t<br>",
-            "CAP Prozess: ", scales::comma(round(CAP_proc, 0)), " t"
-          )
-        )
-      
-      # ── Consumers aufbereiten ─────────────────────────────────────────────────
-      cons_sf <- rv$consumers %>%
-        dplyr::mutate(
-          consumer_nr  = paste0("Consumer ", consumer_id),
-          total_demand = demand_P1 + demand_P2 + demand_P3,
-          kategorie = dplyr::case_when(
-            demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
-            demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
-            demand_P3 > 0                                                    ~ "Energy / Biogas (P3)",
-            TRUE                                                             ~ "Other"
-          ),
-          marker_color = dplyr::case_when(
-            kategorie == "Chemical / Pulp (P1)" ~ "purple",
-            kategorie == "Pulp / Paper (P2)"    ~ "blue",
-            kategorie == "Energy / Biogas (P3)" ~ "red",
-            TRUE                                ~ "gray"
-          ),
-          popup_txt = paste0(
-            "<b>", consumer_nr, "</b><br>",
-            "Name: ", name, "<br>",
-            "Typ: ", kategorie, "<br>",
-            "Nachfrage P1: ", round(demand_P1, 1), " kt<br>",
-            "Nachfrage P2: ", round(demand_P2, 1), " kt<br>",
-            "Nachfrage P3: ", round(demand_P3, 1), " kt<br>",
-            "Gesamt: ",       round(total_demand, 1), " kt"
-          )
-        )
-      
-      pal_cons <- leaflet::colorFactor(
-        palette = c(
-          "Chemical / Pulp (P1)" = COL_P1,
-          "Pulp / Paper (P2)"    = COL_P2,
-          "Energy / Biogas (P3)" = COL_P3,
-          "Other"                = "grey60"
-        ),
-        domain = cons_sf$kategorie
-      )
-      
-      # ── Karte aufbauen ────────────────────────────────────────────────────────
-      
-      leaflet::leaflet(
-        options = leaflet::leafletOptions(zoomControl = TRUE),
-        width   = "100%"
-      ) %>%
-        leaflet::addProviderTiles(leaflet::providers$Esri.WorldGrayCanvas) %>%
-        
-        leaflet.extras::addGeoJSONv2(
-          geojson        = geojson_enriched,
-          weight         = .8,
-          stroke         = F,
-          popupProperty  = "popup_html",      # ← Property-Name mit HTML-Inhalt
-          labelProperty  = "hac_cluster",     # ← Tooltip beim Hover
-          labelOptions   = leaflet::labelOptions(
-            style    = list("font-weight" = "bold", "font-size" = "12px"),
-            sticky   = FALSE
-          ),
-          pathOptions    = leaflet::pathOptions(clickable = TRUE)
-        ) %>% 
-        
-        leaflet::addCircleMarkers(
-          data        = stor_sf,
-          lng         = ~lng,
-          lat         = ~lat,
-          radius      = ~ptsize,
-          color       = COL_HUB,
-          stroke      = TRUE,
-          weight      = 2,
-          fillColor   = COL_HUB,
-          fillOpacity = 0.95,
-          popup       = ~popup_txt,
-          group       = "Hubs"
-        ) %>%
-        
-        leaflet::addAwesomeMarkers(
-          data  = cons_sf,
-          lng   = ~lng,
-          lat   = ~lat,
-          icon  = ~leaflet::awesomeIcons(
-            icon        = "industry",
-            library     = "fa",
-            markerColor = marker_color,
-            iconColor   = "white"
-          ),
-          popup = ~popup_txt,
-          label = ~name,
-          group = "Consumers"
-        ) %>%
-        
-        leaflet::addLegend(
-          position = "bottomright",
-          pal      = pal_opp,
-          values   = opp_lookup$C_opp,
-          title    = "Opp. Kosten (€/ha)",
-          opacity  = 0.85
-        ) %>%
-        
-        leaflet::addLegend(
-          position = "topright",
-          pal      = pal_cons,
-          values   = cons_sf$kategorie,
-          title    = "Consumer-Typ",
-          opacity  = 0.95
-        ) %>%
-        
-        leaflet::addLayersControl(
-          overlayGroups = c("AFS Sites", "Hubs", "Consumers"),
-          options       = leaflet::layersControlOptions(collapsed = FALSE)
-        ) %>%
-        
-        leaflet::fitBounds(
-          lng1 = 10.6, lat1 = 50.9,
-          lng2 = 13.2, lat2 = 52.8
-        )
-    })
+    #output_m$map_network <- renderLeaflet({
+      #req(rv$afs_workspace, rv$sites_leaflet, rv$sites, rv$storages, rv$consumers)
+      # 
+      # COL_HUB <- "#c05000"
+      # COL_P1  <- "#6a0dad"
+      # COL_P2  <- "#08519c"
+      # COL_P3  <- "#a50026"
+      # 
+      # # ── Cluster-Zuordnung: site_id → hac_cluster ─────────────────────────────
+      # cluster_assig <- rv$afs_workspace$site_cluster_assig %>%
+      #   select(site_id, hac_cluster)
+      # 
+      # # ── Opportunitätskosten je Cluster (hac_cluster = site_id im MILP) ───────
+      # opp_lookup <- if (!is.null(rv$milp_instance)) {
+      #   rv$milp_instance$sites %>%
+      #     select(site_id, C_opp) %>%
+      #     rename(hac_cluster = site_id)
+      # } else {
+      #   tibble(hac_cluster = integer(0), C_opp = numeric(0))
+      # }
+      # 
+      # # ── Vollständige Lookup-Tabelle: Einzel-site_id → C_opp ─────────────────
+      # site_opp_full <- cluster_assig %>%
+      #   left_join(opp_lookup, by = "hac_cluster")
+      # # site_opp_full hat Spalten: site_id, hac_cluster, C_opp
+      # 
+      # # ── Aktive Cluster-IDs ────────────────────────────────────────────────────
+      # active_cluster_ids <- if (!is.null(rv$ext)) unique(rv$ext$Xij$site_id) else integer(0)
+      # any_active         <- length(active_cluster_ids) > 0
+      # 
+      # # ── Farbskala ─────────────────────────────────────────────────────────────
+      # pal_opp <- leaflet::colorNumeric(
+      #   palette  = c("#1a9641", "#ffffbf", "#d7191c"),
+      #   domain   = range(opp_lookup$C_opp, na.rm = TRUE),
+      #   na.color = "#cccccc"
+      # )
+      # 
+      # # ── GeoJSON anreichern ────────────────────────────────────────────────────
+      # geo <- jsonlite::fromJSON(rv$sites_leaflet, simplifyVector = FALSE)
+      # 
+      # 
+      # geo$style <- list(
+      #   weight = .2,
+      #   color = "#bdbdbd",
+      #   opacity = .9,
+      #   fillOpacity = 0.8
+      # )
+      # 
+      # geo$features <- lapply(geo$features, function(feat) {
+      #   sid     <- feat$properties$site_id
+      #   
+      #   # Über Cluster-Lookup auf C_opp und hac_cluster mappen
+      #   row     <- site_opp_full[site_opp_full$site_id == sid, ]
+      #   cluster <- if (nrow(row) > 0) row$hac_cluster[1] else NA_integer_
+      #   c_opp   <- if (nrow(row) > 0) row$C_opp[1]       else NA_real_
+      #   
+      #   is_active <- !is.na(cluster) && cluster %in% active_cluster_ids
+      #   
+      #   
+      #   feat$properties$hac_cluster  <- cluster
+      #   feat$properties$fill_color   <- if (!is.na(c_opp) && (!any_active || is_active)) {
+      #     pal_opp(c_opp)
+      #   } else if (any_active && !is_active) {
+      #     "#bdbdbd"
+      #   } else {
+      #     "#cccccc"
+      #   }
+      #   feat$properties$fill_opacity <- if (!any_active || is_active) 0.75 else 0.25
+      #   feat$properties$c_opp_label  <- if (!is.na(c_opp)) paste0(round(c_opp, 1), " €/ha") else "n/a"
+      #   feat$properties$status_label <- if (is_active) "✓ Aktiv" else "— Inaktiv"
+      #   
+      #   feat$properties$style$fillColor <- feat$properties$fill_color
+      #   feat$properties$style$fillOpacity <- feat$properties$fill_opacity
+      #   
+      #   # Popup-HTML direkt als Property schreiben
+      #   feat$properties$popup_html <- paste0(
+      #     "<div style='font-family:sans-serif;font-size:13px;line-height:1.7'>",
+      #     "<b>Cluster ", cluster, "</b>",
+      #     "<hr style='margin:3px 0;border-color:#ddd'>",
+      #     "<b>Opp. Kosten:</b> ", feat$properties$c_opp_label, "<br>",
+      #     "<b>Status:</b> ",      feat$properties$status_label, "<br>",
+      #     "<b>Site-ID:</b> ",     sid,
+      #     "</div>"
+      #   )
+      #   
+      #   feat
+      # })
+      # 
+      # #geojson_enriched <- jsonlite::toJSON(geo, auto_unbox = TRUE)
+      # geojson_enriched <- yyjsonr::write_json_str(
+      #   geo,
+      #   opts = yyjsonr::opts_write_json(auto_unbox = TRUE)
+      # )
+      # 
+      # 
+      # # ── Storages aufbereiten ──────────────────────────────────────────────────
+      # stor_sf <- rv$storages %>%
+      #   dplyr::arrange(storage_id) %>%
+      #   dplyr::mutate(
+      #     hub_nr    = paste0("Hub ", dplyr::row_number()),
+      #     ptsize    = 10,
+      #     popup_txt = paste0(
+      #       "<b>", hub_nr, "</b><br>",
+      #       "Storage-ID: ", storage_id, "<br>",
+      #       "Typ: ", type, "<br>",
+      #       "CAP Lager: ",   scales::comma(round(CAP_stor, 0)), " t<br>",
+      #       "CAP Prozess: ", scales::comma(round(CAP_proc, 0)), " t"
+      #     )
+      #   )
+      # 
+      # # ── Consumers aufbereiten ─────────────────────────────────────────────────
+      # cons_sf <- rv$consumers %>%
+      #   dplyr::mutate(
+      #     consumer_nr  = paste0("Consumer ", consumer_id),
+      #     total_demand = demand_P1 + demand_P2 + demand_P3,
+      #     kategorie = dplyr::case_when(
+      #       demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
+      #       demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
+      #       demand_P3 > 0                                                    ~ "Energy / Biogas (P3)",
+      #       TRUE                                                             ~ "Other"
+      #     ),
+      #     marker_color = dplyr::case_when(
+      #       kategorie == "Chemical / Pulp (P1)" ~ "purple",
+      #       kategorie == "Pulp / Paper (P2)"    ~ "blue",
+      #       kategorie == "Energy / Biogas (P3)" ~ "red",
+      #       TRUE                                ~ "gray"
+      #     ),
+      #     popup_txt = paste0(
+      #       "<b>", consumer_nr, "</b><br>",
+      #       "Name: ", name, "<br>",
+      #       "Typ: ", kategorie, "<br>",
+      #       "Nachfrage P1: ", round(demand_P1, 1), " kt<br>",
+      #       "Nachfrage P2: ", round(demand_P2, 1), " kt<br>",
+      #       "Nachfrage P3: ", round(demand_P3, 1), " kt<br>",
+      #       "Gesamt: ",       round(total_demand, 1), " kt"
+      #     )
+      #   )
+      # 
+      # pal_cons <- leaflet::colorFactor(
+      #   palette = c(
+      #     "Chemical / Pulp (P1)" = COL_P1,
+      #     "Pulp / Paper (P2)"    = COL_P2,
+      #     "Energy / Biogas (P3)" = COL_P3,
+      #     "Other"                = "grey60"
+      #   ),
+      #   domain = cons_sf$kategorie
+      # )
+      # 
+      # # ── Karte aufbauen ────────────────────────────────────────────────────────
+      # 
+      # leaflet::leaflet(
+      #   options = leaflet::leafletOptions(zoomControl = TRUE),
+      #   width   = "100%"
+      # ) %>%
+      #   leaflet::addProviderTiles(leaflet::providers$Esri.WorldGrayCanvas) %>%
+      #   
+      #   leaflet.extras::addGeoJSONv2(
+      #     geojson        = geojson_enriched,
+      #     weight         = .8,
+      #     stroke         = F,
+      #     popupProperty  = "popup_html",      # ← Property-Name mit HTML-Inhalt
+      #     labelProperty  = "hac_cluster",     # ← Tooltip beim Hover
+      #     labelOptions   = leaflet::labelOptions(
+      #       style    = list("font-weight" = "bold", "font-size" = "12px"),
+      #       sticky   = FALSE
+      #     ),
+      #     pathOptions    = leaflet::pathOptions(clickable = TRUE)
+      #   ) %>% 
+      #   
+      #   leaflet::addCircleMarkers(
+      #     data        = stor_sf,
+      #     lng         = ~lng,
+      #     lat         = ~lat,
+      #     radius      = ~ptsize,
+      #     color       = COL_HUB,
+      #     stroke      = TRUE,
+      #     weight      = 2,
+      #     fillColor   = COL_HUB,
+      #     fillOpacity = 0.95,
+      #     popup       = ~popup_txt,
+      #     group       = "Hubs"
+      #   ) %>%
+      #   
+      #   leaflet::addAwesomeMarkers(
+      #     data  = cons_sf,
+      #     lng   = ~lng,
+      #     lat   = ~lat,
+      #     icon  = ~leaflet::awesomeIcons(
+      #       icon        = "industry",
+      #       library     = "fa",
+      #       markerColor = marker_color,
+      #       iconColor   = "white"
+      #     ),
+      #     popup = ~popup_txt,
+      #     label = ~name,
+      #     group = "Consumers"
+      #   ) %>%
+      #   
+      #   leaflet::addLegend(
+      #     position = "bottomright",
+      #     pal      = pal_opp,
+      #     values   = opp_lookup$C_opp,
+      #     title    = "Opp. Kosten (€/ha)",
+      #     opacity  = 0.85
+      #   ) %>%
+      #   
+      #   leaflet::addLegend(
+      #     position = "topright",
+      #     pal      = pal_cons,
+      #     values   = cons_sf$kategorie,
+      #     title    = "Consumer-Typ",
+      #     opacity  = 0.95
+      #   ) %>%
+      #   
+      #   leaflet::addLayersControl(
+      #     overlayGroups = c("AFS Sites", "Hubs", "Consumers"),
+      #     options       = leaflet::layersControlOptions(collapsed = FALSE)
+      #   ) %>%
+      #   
+      #   leaflet::fitBounds(
+      #     lng1 = 10.6, lat1 = 50.9,
+      #     lng2 = 13.2, lat2 = 52.8
+      #   )
+    #})
     })
 }
 
@@ -1083,14 +1755,12 @@ function(input, output, session) {
     showNotification("Loading workspace and source files ...", type = "message")
     
     # Explizite source()-Aufrufe — kein !-Präfix-Konvention
-    source("!afs_biomass_setup.r",          local = FALSE)
-    source("!helper_instance_builder_v8a.R",local = FALSE)
-    source("!helper_extract_site_profit.R", local = FALSE)
-    Rcpp::sourceCpp("build_and_solve_afs_lp_v12_highs.cpp")
+    source("sources/afs_biomass_setup.r")
+    source("sources/helper_instance_builder_v8a.R")
+    source("sources/helper_extract_site_profit.R")
+    Rcpp::sourceCpp("sources/build_and_solve_afs_lp_v12_highs.cpp")
     
-    load("afs_workspace_runtime3.RData")
-    
-    #browser()
+    load("data/afs_workspace_runtime3.RData")
     
     rv$afs_workspace <- afs_workspace
     rv$sites_leaflet <- afs_workspace$sites_geojson
@@ -1425,7 +2095,7 @@ function(input, output, session) {
   output$plot_fraction_shares     <- renderPlotly({ NULL })
   output$plot_growth_asymptotes   <- renderPlotly({ NULL })
   output$plot_growth_fractions    <- renderPlotly({ NULL })
-  output$map_network              <- renderLeaflet({ NULL })
+  #output$map_network              <- renderLeaflet({ NULL })
   output$plot_biomass_time        <- renderPlotly({ NULL })
   output$plot_sankey              <- renderPlotly({ NULL })
   output$plot_rev_consumer        <- renderPlotly({ NULL })
