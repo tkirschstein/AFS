@@ -63,7 +63,8 @@
 \newcommand{\Ic}{\mathcal{I}}
  \newcommand{\Jc}{\mathcal{J}}
  \newcommand{\Kc}{\mathcal{K}}
- \renewcommand{\problem}{AFS-SCD }
+ \renewcommand{\problem}{AFS-SCD}
+ \newcommand{\problemm}{AFS-SCD }
 
 \articletype{Research Article}%
 \received{Date Month Year}
@@ -136,7 +137,7 @@ Thomas Kirschstein
 
 \abstract[Abstract]{Agroforestry systems integrate fast-growing woody perennials into agricultural land forming a biological-industrial symbiosis. They simultaneously deliver multiple biomass fractions of differing quality to food, chemical, pulp-and-paper, as well as energy industries through a shared regional supply network. The woody biomass feedstock produced in agroforestry systems can be used to substitute fossil feedstocks particularly in chemical and energy industry. Additionally, biogenic carbon can be stored in long-lived products and agroforestry increases climate resiliency and sustainability of agricultural production. In contrast to the traditional forestry-based supply of woody biomass, agroforestry-based woody biomass shows substantial feedstock potentials as most land is used agriculture in central Europe. Despite these environmental and economic potentials, agroforestry is only applied in marginal scale in central European agriculture. A core challenge in fostering agroforestry is to establish economically viable regional bioeconomy networks which connect partners from agriculture as well as downstream industries. Such a agroforestry-based supply chain needs to be structured and organized in a way that allows all partners to benefit economically in the long run. This paper presents a supply chain design model that helps to support design decisions for agroforestry-based supply chains. Therefore, it models agroforestry establishment and harvest scheduling on farm-level in a large-scaled linear multi-echelon network design model. It relies on biomass growth models which describe the production of multiple biomass types in agroforestry systems. These biomass fractions are pretreated and transported to consumers from chemical, paper-and-pulp, and energy industry depending on quality and demand restrictions. The model is applied in a case study focussing on central Germany where a heterogenuous industrial cluster is located within a fertile and large agricultural production area. The optimization results indicate that agroforestry-based supply chains can be configured in an economically viable way. Agroforestry systems can serve as feedstock suppliers for industrial consumers in the same region at a considerable scale. Profitability of agroforestry-based agricultural practice seem to be competitive with traditional agricultural production and at the same time allow producing woody biomass at a competitive cost, provided transports are not too long.}
 
-\keywords{Industrial symbiosis, Agroforestry, Biomass cascading, Bioeconomy network, Supply chain optimisation, Biobased production}
+\keywords{Industrial symbiosis, Agroforestry, Biomass cascading, Bioeconomy network design, Supply chain optimisation, Biobased production}
 
 \jnlcitation{\cname{%
 \author{Thomas Kirschstein}}.
@@ -147,190 +148,53 @@ Thomas Kirschstein
 
 \section{Introduction}\label{introduction}
 
-The industrial ecology of biobased economies depends on connecting primary biological production systems to multiple industrial sectors through networks that efficiently allocate biomass fractions of varying quality to their highest-value application \cite{Hildebrandt2019}. Agroforestry systems (AFS) that deliberately integrate fast-growing woody perennials into agricultural land represent realisation of this principle. By co-producing heterogeneous biomass fractions like stems, branches, twigs, leaves etc. which are more or less suitable for chemical, paper-and-pulp industry, as well as energy generation, AFS create diverse feedstocks that can serve multiple industrial consumer sectors through a shared regional supply network \cite{Toensmeier2017_Carbon_Agroforestry}. This biological-industrial symbiosis substitutes fossil feedstocks with renewable bio-based alternatives and stores biogenic carbon in long-lived material products.
+The industrial bio-economy depends on connecting primary biological production systems to multiple industrial sectors through networks that efficiently allocate biomass fractions of varying quality to their highest-value application \cite{Hildebrandt2019}. Agroforestry systems (AFS) that deliberately integrate fast-growing woody perennials into agricultural land represent realisation of this principle. By co-producing heterogeneous biomass fractions like stems, branches, twigs, leaves etc. which are more or less suitable for chemical, paper-and-pulp industry, as well as energy generation, AFS create diverse feedstocks that can serve multiple industrial consumer sectors through a shared regional supply network \cite{Toensmeier2017_Carbon_Agroforestry}. This biological-industrial symbiosis substitutes fossil feedstocks with renewable bio-based alternatives and stores biogenic carbon in long-lived material products.
 
-Despite their ecological and industrial potentials, temperate AFS occupy only a marginal share of agricultural land in practice. In Germany, approximately 1,200 hectares of silvoarable AFS were established in 2025, accounting for barely 0.02\% of total agricultural land \cite{DEFAF}. This gap between supposed potentials and observed practices indicates implementation challenges which often root in economic, organizational, and regulatory obstacles. Establishing AFS at regional scale requires coordinated decisions on stand establishment, harvest scheduling, and biomass allocation across spatially distributed industrial consumers {[}REF{]}. E.g. farmers will only invest in AFS when they are convinced to generate revenues from selling wood to industrial customers at the time of harvest which is, however, 5-15 years after establishing an AFS. This long time span imposes a severe investment risk as investment cost are clear and immediate but revenue is uncertain and far away. On the side, industrial consumers perticularly in process industries like chemical and paper-and-pulp industry prefer reliable and high-volume biomass supply contracts which imposes a challenge for farmers as AFS growth depends on weather as do harvest decisions. Next to those, a lot of business decisions need to be made. Early harvests promise earlier revenues, but harvested biomass is dominated by small-scaled branches, twigs and leaves with limited usability in downstream industries and lower value {[}REFS{]}. At longer rotations, biomass quantity is higher and mostly composed of stems whose diameters surpass quality thresholds such tha the share of chemical- and paper-grade material rises markedly \cite{Huber2018_SRAFS_growth,Niemczyk2021_Poplar_Rotation}. The biomass feedstock quantity and quality in an AFS-based supply chain therefore depend on the rotation strategies and the industrial demand structures of multiple farms and industrial consumers. Current biomass supply chain models, reviewed in \autoref{sec:lit-sc}, often do not consider this aspect as biomass availability is usually given at exogenous time series or optimise a single downstream supply chain rather \cite{Zahraee2020_BSC_review,DeMeyer2016_tOPTIMASS}.
+Despite their ecological and industrial potentials, temperate AFS occupy only a marginal share of agricultural land in practice. In Germany, approximately 1,200 hectares of silvoarable AFS were established in 2025, accounting for barely 0.02\% of total agricultural land \cite{DEFAF}. This gap between supposed potentials and observed practices indicates implementation challenges which often root in economic, organizational, and regulatory obstacles. Establishing AFS at regional scale requires coordinated decisions on stand establishment, harvest scheduling, and biomass allocation across spatially distributed industrial consumers {[}REF{]}. E.g. farmers will only invest in AFS when they are convinced to generate revenues from selling wood to industrial customers at the time of harvest which is, however, 5-15 years after establishing an AFS. This long time span imposes a severe investment risk as investment cost are clear and immediate but revenue is uncertain and far away. On the side, industrial consumers particularly in process industries like chemical and paper-and-pulp industry prefer reliable and high-volume biomass supply contracts which imposes a challenge for farmers as AFS growth depends on weather as do harvest decisions. Next to those, a lot of business decisions need to be made. Early harvests promise earlier revenues, but harvested biomass is dominated by small-scaled branches, twigs and leaves with limited usability in downstream industries and lower value {[}REFS{]}. At longer rotations, biomass quantity is higher and mostly composed of stems whose diameters surpass quality thresholds such tha the share of chemical- and paper-grade material rises markedly \cite{Huber2018_SRAFS_growth,Niemczyk2021_Poplar_Rotation}. The biomass feedstock quantity and quality in an AFS-based supply chain therefore depend on the rotation strategies and the industrial demand structures of multiple farms and industrial consumers. Current biomass supply chain models, reviewed in \autoref{sec:lit-sc}, often do not consider this aspect as biomass availability is usually given at exogenous time series or optimise a single downstream supply chain rather \cite{Zahraee2020_BSC_review,DeMeyer2016_tOPTIMASS}.
 
-This paper closes this gap by developing the AFS Supply Chain Design (AFS-SCD) model, a linear programm for the integrated design and operation of an agroforestry biomass supply chain with multiple downstream industries. The model makes three contributions to industrial ecology literature. First, it
-endogenises the material flow structure of an AFS network by coupling age-class stand dynamics --- formalised through binary arc-based age-lag variables that enforce minimum and maximum rotation constraints at each site --- directly to regional logistics decisions, so that rotation
-length, harvest timing, and network configuration are optimised jointly.
-Second, it embeds component-specific Gompertz yield functions for stem,
-branch, and residue fractions, translating stand age into
-merchantable dry-matter quantities per hectare for each biomass type,
-thereby making the multi-fraction material flow endogenous to the
-optimisation. Third, it implements a product quality cascade across three
-industrial sectors --- chemical/biorefinery (P1), pulp and paper (P2), and
-energy/biogas (P3) --- within a unified multi-period network design model
-including storage, processing, and inter-sector substitution. The model
-is applied to a real-world industrial symbiosis context in the
-Saxony-Anhalt tri-state region of Germany, where a dense cluster of
-chemical and paper industries is undergoing a bio-based feedstock
-transition and seeks reliable regional woody biomass supply.
+This paper closes this gap by formulating an AFS supply chain design (\problem) problem. The linear programm integrates design and operation decisions of biomass production in AFS with multiple downstream industries via logistical processes. This way, interdependencies between biomass production decisions in AFS, logistical handling decisions, and biomass allocation decisions in down-stream processes are modeled explicitly. Biomass production decisions are based on growth models which estimate the quantity of biomass types in AFS. Thereby, biomass types are defined based on its suitability for downstream processing. Three different grades are distinguished: chemical/biorefinery grade, pulp and paper grade, and
+energy grade. Thereby, a quality cascade is assumed. I.e., biorefinery-grade biomass can also be used in pulp-and-paper as well as energy applications, but the reverse doesn't hold. Depending on stand age, quantities of these grades are available in AFS which guide harvest decisions. Once harvests are scheduled, biomass flows to pre-treatment and storage hubs are planned where biomass grades are allocated and transshipments to consumers are prepared depending on demand quantity and the consumers' willingness-to-pay. This way, the proposed \problemm configures a supply chain for a regional AFS-based industrial ecosystem. It helps to study effects of ecological, regulatory, and economic parameters on the profitability of AFS-based supply chains. Thereby, it integrates relevant decisions of different actors from various industries all relevant in AFS-based supply chains including farmers and land-owners, wood logistics, as well as industrial down-stream sectors (like chemicals, paper or energy).
 
-The remainder of the paper is structured as follows.
-\autoref{sec:litreview} reviews the relevant literature on
-agroforestry systems, biomass growth modelling, and biomass supply chain
-design, concluding with the identification of the modelling gap addressed
-here. \autoref{sec:milp} presents the AFS-SCD formulation.
-\autoref{sec-casestudy} describes the Saxony-Anhalt case study,
-presents the base-case optimisation results, and analyses the implications
-of alternative cost and revenue scenarios for regional cleaner
-production strategies. \autoref{sec:conclusion} concludes and
-discusses directions for integrating life cycle assessment into the
-framework.
+The remainder of the paper is structured as follows. Section \ref{sec:litreview} reviews the relevant literature on AFS, biomass growth modelling, and biomass supply chain design. Section \ref{sec:milp} presents the mathematical formulation of the AFS-SCD. Section \ref{sec-casestudy} describes a case study illustrating the application of the \problemm to a real-world problem. Section \ref{sec-conclusion} summarizes the findings of the paper and discusses directions for future research.
 
 \section{Literature review}\label{sec:litreview}
 
-Agroforestry biomass systems, stand-level growth models, and biomass
-supply chain optimisation have each been studied extensively, but they
-are rarely combined in an integrated framework that links age-dependent
-stand dynamics to regional product-cascading value chains
-\cite{Zahraee2020_BSC_review,Sharma2013_BSC_review,Espinoza2017_Biorefinery_SC_review}. This section reviews (i)
-agroforestry systems with emphasis on system types, economics, and the
-cascading use of biomass as the primary revenue driver; (ii) biomass
-growth models at tree and stand level with explicit attention to the
-allometric--diameter--stand-biomass pathway; and (iii) biomass supply
-chain design using mathematical programming. The section concludes by
-identifying the modelling gap addressed in this paper.
+Agroforestry biomass systems, stand-level growth models, and biomass supply chain optimisation have each been studied extensively, but they are rarely combined in an integrated framework that links age-dependent stand dynamics to regional product-cascading value chains. This section reviews literature on (i) agroforestry systems and economics, (ii) biomass growth models for AFS considering multiple biomass grades, and (iii) biomass supply chain design problems.
 
 \subsection{Agroforestry systems}\label{sec:lit-afs}
 
-Agroforestry deliberately integrates woody perennials with crops and/or
-livestock on the same management unit, with the aim of enhancing
-productivity, profitability, and environmental performance
-\cite{Nair1993_IntroAgroforestry,Toensmeier2017_Carbon_Agroforestry}. In
-the temperate zone, three distinct system types can be distinguished
-based on the spatial arrangement of trees and the rotation length at
-which woody biomass is harvested.
+Agroforestry deliberately integrates woody perennials with crops and/or livestock on the same management unit, with the aim of enhancing productivity, profitability, and environmental performance \cite{Nair1993_IntroAgroforestry,Toensmeier2017_Carbon_Agroforestry}. In temperate climate, three distinct system types can be distinguished based on the spatial arrangement of trees and the rotation length at which woody biomass is harvested.
 
-\textbf{Short-rotation coppice (SRC)} is defined as a monoculture plantation
-of fast-growing woody species covering the entire management unit, with
-planting densities of 8,000--20,000 cuttings per hectare. After each
-harvest the root system regenerates without replanting. Rotation cycles
-are typically 3--7 years and total stand lifetime is 20--25 years
-\cite{Trnka2008_Poplar_SRF,Faasch2012_SRC_Economics}. SRCs are no AFSs in
-the narrow sense, but it is helpful to benchmark biomass production.
+\textbf{Short-rotation coppice (SRC)} is defined as a monoculture plantation of fast-growing woody species covering the entire management unit, with planting densities of 8,000--20,000 trees per hectare. After each harvest, the root system regenerates without replanting. Rotation cycles
+are typically 3--7 years and total stand lifetime is 20--25 years \cite{Trnka2008_Poplar_SRF,Faasch2012_SRC_Economics}. SRCs are no AFS in the narrow sense, but it is helpful to benchmark biomass production.
 
-\textbf{Short-rotation agroforestry systems (SRAFS)} integrate SRC-type tree
-strips (typically 1--4 rows of the same fast-growing species like poplar
-or willow) into an otherwise arable field in an alley-cropping
-arrangement. Crop production continues in the inter-row strips
-\cite{Huber2018_SRAFS_growth,Graves2007_Agroforestry_Economics}. Thus,
-tree strips typically cover 10--30\% of the total parcel area. Rotation
-lengths and total stand lifetime in SRAFS are comparable to SRCs. In
-SRAFS all trees are effectively edge trees, exposed to higher light and
-water availability than interior SRC trees. This boundary effect raises
-individual-tree biomass accumulation but also intensifies competition
-with adjacent crop rows \cite{Huber2018_SRAFS_growth}.
+\textbf{Short-rotation agroforestry systems (SRAFS)} integrate SRC-type tree strips (typically 1--4 rows of the same fast-growing species like poplar or willow) into an otherwise arable field in an alley-cropping arrangement. Crop production continues in the inter-row strips \cite{Huber2018_SRAFS_growth}. Thus, tree strips typically cover 10--30\% of the total parcel area \cite{Graves2007_Agroforestry_Economics}. Rotation lengths and total stand lifetime in SRAFS are comparable to SRCs. In SRAFS most trees are effectively edge trees, exposed to higher light and water availability than interior SRC trees. This boundary effect raises individual-tree biomass accumulation but also intensifies competition with adjacent crop rows \cite{Huber2018_SRAFS_growth}.
 
-\textbf{Long-rotation agroforestry systems (LRAFS)} use the same
-alley-cropping spatial structure as SRAFS but with rotation cycles of
-12--15 years or longer \cite{Graves2007_Agroforestry_Economics,Nair1993_IntroAgroforestry}. At this rotation length, individual trees
-develop substantial stem diameters and the proportion of high-value
-timber increases markedly, enabling premium material uses (veneer,
-sawlogs, engineered wood products) that are inaccessible in
-short-rotation systems. Therefore, often timber-quality tree species
-(such as walnut, cherry, oak, or high-grade poplar clones) are planted.
+\textbf{Long-rotation agroforestry systems (LRAFS)} use the same alley-cropping spatial structure as SRAFS but with rotation cycles of 12--15 years or longer \cite{Graves2007_Agroforestry_Economics,Nair1993_IntroAgroforestry}. At this rotation length, individual trees develop substantial stem diameters and the proportion of high-value timber increases markedly, enabling premium material uses (veneer, sawlogs, engineered wood products). Therefore, also timber-quality tree species (such as walnut, cherry, oak, or high-grade poplar clones) are planted {[}REFS{]}.
 
-SRAFS and LRAFS are not clearly differentiated in practice. First, a
-clear cut-off age is hard to define and, more importantly, the intended
-use of AFS biomass is not always clear and can also change over time.
-Nonetheless, when establishing AFS, the structure of AFS and its
-intended use after harvest drives planting decisions and, subsequently,
-economic viability. Thus, in the present paper SRAFS and LRAFS are not
-considered as separate AFS systems, but the interplay of intended use,
-establishment, and harvesting decisions is analysed.
+SRAFS and LRAFS are not clearly differentiated in practice. First, a clear cut-off age is hard to define and, more importantly, the intended use of AFS biomass is not always clear when establishing the AFS and can also change over time. Nonetheless, when establishing AFS, the structure of AFS and its intended use after harvest affect economic viability substantially. Thus, in the present paper SRAFS and LRAFS are not considered as separate AFS systems, but the interplay of intended use, establishment, and harvesting decisions is analysed.
 
-\subsection{Economic rationale of landowners}\label{economic-rationale-of-landowners}
+The decision of a landowner to establish an AFS involves weighing substantial up-front costs and long-term opportunity costs against a diversified revenue stream. On the cost side, establishment requires site preparation, planting material, and planting labour, typically
+amounting to 1,500--3,500 €/ha for SRC or SRAFS \cite{Faasch2012_SRC_Economics,Testa2014_Poplar_Economics}. Recurrent harvest and refitting costs (machine hire, chipping, transport to roadside) add approximately 200--400 €/ha per rotation depending on stand density and equipment availability \cite{Testa2014_Poplar_Economics,Spinelli2009_SRC_Harvesting}. During the rotation, maintenance costs of AFS arise on a yearly basis. Next to expenses for establishment, maintenance and harvesting, opportunity costs arise as no revenues from crops are generated on tree strips. In regions with fertile soils and high cereal prices, yearly crop revenues may sum up to 400--600 €/ha \cite{Faasch2012_SRC_Economics,Graves2007_Agroforestry_Economics}. Thus, opportunity costs are often the dominant cost driver in SRAFS profitability analyses.
 
-The decision of a landowner to establish an AFS involves weighing
-substantial up-front costs and long-term opportunity costs against a
-diversified revenue stream. On the cost side, establishment requires
-site preparation, planting material, and planting labour, typically
-amounting to 1,500--3,500 €/ha for SRC or SRAFS
-\cite{Faasch2012_SRC_Economics,Testa2014_Poplar_Economics}. Recurrent
-harvest and refitting costs (machine hire, chipping, transport to
-roadside) add approximately 200--400 €/ha per rotation depending on
-stand density and equipment availability \cite{Testa2014_Poplar_Economics,Spinelli2009_SRC_Harvesting}. During the rotation, maintenance costs of
-AFS arise on a yearly basis. Next to expenses for establishment,
-maintenance and harvesting, opportunity costs arise as no revenues from
-crops are generated on tree strips. In regions with fertile soils and
-high cereal prices, yearly crop revenues may sum up to 400--600 €/ha
-\cite{Faasch2012_SRC_Economics,Graves2007_Agroforestry_Economics}. Thus,
-opportunity costs are often the dominant cost driver in SRAFS
-profitability analyses.
+On the benefit side, the primary revenue of AFS is the sale of harvested woody biomass, whose magnitude and frequency depends on rotation length, species, and site productivity. For poplar-based SRAFS in Central Europe, typical yields range from 10 to 25 t of dry matter biomass per ha for typical rotation lengths \cite{Huber2018_SRAFS_growth,Niemczyk2021_Poplar_Rotation}. Additionally, positive crop-yield effects in the inter-row strips of SRAFS and LRAFS may result. Tree rows act as windbreaks, reducing soil erosion and evapotranspiration. They provide partial shading that moderates heat stress during drought years and their root systems may improve water retention in top-level soil \cite{Graves2007_Agroforestry_Economics,Grunewald2007_Robinia_AFS}. Empirical measurements in Central European alley-cropping trials indicate that these microclimate effects can increase cereal yields in adjacent strips by 5--15\% relative to open-field controls, partially or fully compensating the loss of arable area occupied by the tree strips \cite{Graves2007_Agroforestry_Economics}. Beyond direct yield effects, AFS deliver broader ecosystem services (like soil organic matter accumulation, carbon sequestration, biodiversity enhancement) that may lead to agri-environment subsidies and carbon credits which have to be considered as additional financial benefits \cite{Toensmeier2017_Carbon_Agroforestry,Faasch2012_SRC_Economics}.
 
-On the \textbf{benefit side}, the primary revenue of AFS is the sale of
-harvested woody biomass, whose magnitude depends critically on rotation
-length, species, and site productivity. For poplar-based SRAFS in
-Central Europe, typical yields range from 10 to 25 t of dry matter
-biomass per ha for typical rotation lengths \cite{Huber2018_SRAFS_growth,Niemczyk2021_Poplar_Rotation}. Additionally, positive crop-yield
-effects in the inter-row strips of SRAFS and LRAFS may result. Tree rows
-act as windbreaks, reducing soil erosion and evapotranspiration; they
-provide partial shading that moderates heat stress during drought years;
-and their root systems may improve water retention in the topsoil
-\cite{Graves2007_Agroforestry_Economics,Grunewald2007_Robinia_AFS}.
-Empirical measurements in Central European alley-cropping trials
-indicate that these microclimate effects can increase cereal yields in
-adjacent strips by 5--15\% relative to open-field controls, partially or
-fully compensating the loss of arable area occupied by the tree strips
-\cite{Graves2007_Agroforestry_Economics}. Beyond direct yield effects, AFS
-deliver broader ecosystem services (like soil organic matter
-accumulation, carbon sequestration, biodiversity enhancement) that may
-lead to agri-environment subsidies and carbon credits
-\cite{Toensmeier2017_Carbon_Agroforestry,Faasch2012_SRC_Economics}.
+Nonetheless, economic attractiveness of AFS depends primarily on revenues of AFS biomass. Thereby, revenues are different for the types of biomass and in which value chain it is used. Often AFS biomasses are used energetically, i.e.~for heat and power generation, or anaerobic
+digestion, which typically creates low prices per tonne of biomass {[}REF{]}. Alternatively, woody parts of the biomass (i.e., the stem and large branches) can also be used as pulp and paper grade material as well as feedstock for chemical industry or as timber achieving higher prices
+\cite{Lamers2015_Feedstock_Design} {[}EXTEND REFS + Explain Forestry Product Classification{]}. Thus, fostering AFS establishment by maximizing economic returns from AFS biomass requires a strategy for allocating biomass fractions to the highest-value applications, while ensuring that the rotation length is aligned with the growth dynamics of the stand and the market demand for different biomass types \cite{Lamers2015_Feedstock_Design}.
 
-Nonetheless, economic attractiveness of AFS depends primarily on
-revenues of AFS biomass. Thereby, revenues are different for the types
-of biomass and in which value chain it is used. Often AFS biomasses are
-used energetically, i.e.~for heat and power generation, or anaerobic
-digestion, which typically creates low prices per tonne of biomass.{[}REF{]}
-Alternatively, woody parts of the biomass (i.e., the stem and large
-branches) can also be used as pulp and paper grade material as well as
-feedstock for chemical industry or as timber achieving higher prices
-\cite{Lamers2015_Feedstock_Design} {[}EXTEND REFS{]}. Thus, fostering
-AFS establishment by maximizing economic returns from AFS biomass
-requires a strategic approach to product cascading that allocates
-different biomass fractions to the highest-value applications, while
-ensuring that the rotation length is aligned with the growth dynamics of
-the stand and the market demand for different biomass types
-\cite{Lamers2015_Feedstock_Design}.
-
-Thus, for making educated decisions on AFS establishment and harvesting,
-the expected biomass quantities at harvest for stem, branches, and
-residues need to be estimated. Thereby, the shares of the biomass types
-change with stand age. E.g.\textasciitilde the share of stem weight rises from roughly
-55\% at age 4 to over 75\% at age 10 \cite{Huber2018_SRAFS_growth,Testa2014_Poplar_Economics}. Therefore, in Section
-\autoref{sec:lit-growth} growth modelling approaches are reviewed that
-capture the age-dependent growth dynamics of different biomass types in
-AFS.
+Thus, for making educated decisions on AFS establishment and harvesting, the expected biomass quantities at harvest for stem, branches, and residues need to be estimated. Thereby, the shares of the biomass types change with stand age. E.g.\textasciitilde the share of stem weight rises from roughly 55\% at age 4 to over 75\% at age 10 \cite{Huber2018_SRAFS_growth,Testa2014_Poplar_Economics}. Therefore, in \autoref{sec:lit-growth} growth modelling approaches are reviewed that capture the age-dependent growth dynamics of different biomass types in AFS.
 
 \subsection{Biomass growth models}\label{sec:lit-growth}
 
-Reliable estimation of stand-level biomass quantities and their age-dependent composition is a necessary prerequisite for any strategic
-analysis of AFS-based supply chains. Individual-tree biomass is commonly approximated by species-specific allometric power laws relating shoot
-dry matter to stem base diameter, and these relationships have been calibrated for Central European poplar clones under SRC and SRAFS conditions \cite{Huber2016_Allometric_SRAFS,Huber2018_SRAFS_growth}. For supply chain planning, however, the relevant quantity is stand-level
-biomass per hectare over a multi-decade rotation horizon, which requires a temporal growth model that captures the characteristic sigmoidal accumulation trajectory of woody biomass. Therefore, a set of variables is used summarized in \autoref{tab-notation-growth}.
+Reliable estimation of stand-level biomass quantities and their age-dependent composition is a necessary prerequisite for strategic analysis of AFS-based supply chains. Individual-tree biomass is commonly approximated by species-specific allometric power laws relating stem base diameter to tree biomass. Such relationships have been calibrated e.g.~for Central European poplar clones under SRC and SRAFS conditions \cite{Huber2016_Allometric_SRAFS,Huber2018_SRAFS_growth}. For supply chain planning, however, the relevant quantity is stand-level biomass per hectare over a multi-decade rotation horizon, which requires a temporal growth model. In the following, temporal biomass growth models for different biomass fractions are derived. Therefore, a set of variables is used which are summarized in \autoref{tab:tab-notation-growth} in the appendix.
 
-\subsubsection{Stand-level growth model}\label{stand-level-growth-model}
-
-Stand-level aboveground and belowground dry biomass per hectare,
-\(M(t)\), accumulates in a right-skewed sigmoidal pattern with a
-relatively early inflection point, driven by rapid juvenile shoot growth
-followed by self-thinning and competitive deceleration as canopy closure
-intensifies \cite{Niemczyk2021_Poplar_Rotation,Testa2014_Poplar_Economics}. This trajectory is described by a Gompertz
-model: \begin{equation}
+Stand-level biomass per hectare is denotes by \(M(t)\). Thereby, stand-level biomass growth can be described by different growth functions like the logistic, Gompertz, Bertallanfy, and Richards growth model {[}REFS{]}. All these functions show a right-skewed sigmoidal pattern. Thereby, the shape of these functions can be controlled by various parameters. The growth functions need more or less parameters whereby more parameters ususally imply a more flexible growth model {[}REF{]}. On the other side, more parameters require more calibration efforts which have to be counterweighted with modelling accuracy \cite{Tjorve2017}. Empirical studies like \cite{BarrioAnta2008_Poplar_Growth} and \cite{Paula2013} indicate that most growth models can be calibrated to empirical observations quite accurately. Therefore, in the following, a comparatively simple Gompertz model is chosen for modelling biomass quantity, which is defined as
+\begin{equation}
   M(t) \;=\; A(N) \cdot \exp\!\bigl(-\exp(-k \cdot (t - t_0))\bigr),
   \label{eq:gomp-stand}
-\end{equation} where \(t_0\) is the age of maximum instantaneous biomass
-increment and \(k\) determines how quickly the stand approaches its
-site-specific asymptote \(A(N)\). For Central European poplar under
-medium-rotation AFS management (10--20 yr), analysing
-empirical data from \cite{Huber2018_SRAFS_growth},
-\cite{Niemczyk2021_Poplar_Rotation}, and \cite{Jha2018_Poplar_AFS_Biomass} yields parameter intervals of
-\(k \in [0.17,0.2]\) and \(t_0 \in [9,10]\) years, depending on local specifications of the AFS under study.
-Parameter \(t_0\) indicates an upper bound on the optimal rotation age
-as growth slows down or diminishes entirely close to this age.
+\end{equation}
+where \(t_0\) is the age of maximum instantaneous biomass increment and \(k\) determines how quickly the stand approaches its site-specific asymptote \(A(N)\). For Central European poplar under medium-rotation AFS management (10--20 yr), analysing empirical data from \cite{Huber2018_SRAFS_growth},\cite{Niemczyk2021_Poplar_Rotation}, and \cite{Jha2018_Poplar_AFS_Biomass} yields parameter intervals of \(k \in [0.17,0.2]\) and \(t_0 \in [9,10]\) years, depending on local specifications of the AFS under study. Parameter \(t_0\) indicates an upper bound on the optimal rotation age as growth slows down or diminishes entirely close to this age.
 
 The asymptote \(A(N)\) depends largerly on planting density and can be modelled by a competition-density power law
 \cite{Shinozaki1961_CD_Effect}:
@@ -346,7 +210,7 @@ space. Parameters \(C_{\mathrm{site}}\) and \(\beta\) are highly site- and speci
 
 When assessing potential downstream application of AFS biomass, biomass fraction are to be defined meeting the requirements of downstream consumers. E.g. for timber and biochemical applications, stem diameters of AFS trees need to exceed a minimum threshold in order to qualify as a suitable feedstock. In the following three biomass fractions are distinguished: stems, branch wood, and residue. The stem fraction consists of stems with a diameter of at least 15 cm, while branch wood requires a diameter of at least 7 cm. The residue fraction comprises are smaler parts of the tree. To subdivide the total AFS biomass modelled by \eqref{eq:gomp-stand} into the three fractions depending on tree age, a logistic growth model is used:
 \begin{equation}
-  q_p(t) \;=\; \frac{f_p}{1 + \exp\!\bigl(-r_p \cdot (t - t_{50,p})\bigr)},
+  q_p(t) \;=\; \frac{f_p}{1 + e^{-r_p \cdot (t - t_{50,p})}},
   \label{eq:logistic-merch}
 \end{equation}
 where \(t_{50,p}\) is the age at which 50\% of compartment \(p\) biomass surpasses the diameter threshold and \(f_p\) denotes the asymptotic share of component \(p\) for mature trees. Using empirical data from data from \cite{Civitarese2019_Poplar_Harvest}, \cite{Jha2018_Poplar_AFS_Biomass} and \cite{Niemczyk2021_Poplar_Rotation}, \(r_{stem} = 0.467\),yr\(^{-1}\), \(t_{50,stem} = 8.19\) years, and \(f_{stem} = 0.75\) is estimated for the stem fraction (threshold \(d > 15\) cm) and \(r_{bran} = 0.698\) yr\(^{-1}\), \(t_{50,bran} = 7.55\),yr, and \(f_{bran} = 0.15\) for the branch fraction (diameter at least 7 cm at insertion). \autoref{fig:afs-model-functions} illustrates the development of the fraction shares over stand age.
@@ -355,7 +219,7 @@ Combining equations \eqref{eq:gomp-stand}--\eqref{eq:logistic-merch}, the dry bi
   \eta_p(t) \;=\; q_p(t)\cdot M(t),
   \label{eq:yield}
 \end{equation}
-with all non-merchantable fractions aggregated into the residue fraction. Fresh-weight yields at felling are obtained from dry matter yields via \(\eta_p^{\mathrm{fw}}(t) = \eta_p(t)/(1-\omega)\), where the moisture content at felling \(\omega = 0.55\) is taken from \cite{Civitarese2019_Poplar_Harvest}. \autoref{fig:afs-growth-curves} shows the fractions' stacked biomass quantities \(\eta_p(t)\) depending on stand age compared with empirical observations from \cite{Jha2018_Poplar_AFS_Biomass}
+with all non-merchantable fractions aggregated into the residue fraction. Fresh-weight yields at felling are obtained from dry matter yields via \(\eta_p^{\mathrm{fw}}(t) = \eta_p(t)/(1-\omega)\), where the moisture content at felling \(\omega = 0.55\) is taken from \cite{Civitarese2019_Poplar_Harvest}. \autoref{fig:afs-growth-curves} shows the fractions' stacked biomass quantities \(\eta_p(t)\) depending on stand age compared with empirical observations from \cite{Jha2018_Poplar_AFS_Biomass} and \cite{Huber2018_SRAFS_growth}.
 
 \begin{figure*}[htbp]
 
@@ -363,7 +227,7 @@ with all non-merchantable fractions aggregated into the residue fraction. Fresh-
 
 }
 
-\caption{Stand-level aboveground biomass components for poplar under AFS management with \(N=250\) trees, message=FALSE, warning=FALSE, ha\(^{.1}\). Grey band: typical medium.rotation harvest window (5..15 years).\label{fig:afs-growth-curves}}
+\caption{Stand-level aboveground biomass components for poplar under AFS management with \(N=250\) trees, ha\(^{.1}\). Grey band: typical rotation times (5-15 years).\label{fig:afs-growth-curves}}
 
 \end{figure*}%
 
@@ -785,7 +649,7 @@ It appears that net profitability of AFS ranges between 282 and 6 € per hectar
 
 As expected net margins of AFS depend heavily on a site's opportunity cost rate showing a clear negative trend. Moreover, it appears that AFS sizes vary quite heavily between 86 and 2794 hectare. Probably very small sites won't operate efficiently because cost for establishment, harvesting, and maintenance are assumed to scale with size, but are rather fixed below a certain critical threshold.
 
-\section{Conclusion}\label{conclusion}
+\section{Conclusion}\label{sec-conclusion}
 
 This paper has developed and applied the AFS-SCD model, a MILP
 formulation for the integrated design and operation of agroforestry

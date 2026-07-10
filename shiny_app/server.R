@@ -13,10 +13,12 @@ library(DT)
 library(networkD3)
 library(scales)
 library(Rcpp)
+library(RcppArmadillo)
 library(Matrix)
 library(slam)
 library(ROI)
 library(yyjsonr)
+library(highs)
 
 # ------------------------------------------------------------------------------
 # KONSTANTEN
@@ -228,7 +230,10 @@ extract_site_profit <- function(res, scenario_name = NA_character_) {
     group_by(site_id, del_product) %>%
     summarise(revenue = sum(site_rev, na.rm = TRUE), .groups = "drop") %>%
     filter(!is.na(site_id)) %>% 
-    pivot_wider(names_from = del_product, values_from = revenue, names_prefix = "rev_P") %>% 
+    pivot_wider(names_from = del_product, values_from = revenue,
+                names_prefix = "rev_P",
+                names_expand = TRUE,   # alle theoretischen Werte erzwingen
+                values_fill  = 0) %>%  # fehlende = 0, kein NA
     mutate(rev_P1 = coalesce(rev_P1, 0), rev_P2 = coalesce(rev_P2, 0), rev_P3 = coalesce(rev_P3, 0)) %>% 
     mutate(revenue = rev_P1 + rev_P2 + rev_P3)
   
@@ -1755,7 +1760,7 @@ function(input, output, session) {
     showNotification("Loading workspace and source files ...", type = "message")
     
     # Explizite source()-Aufrufe — kein !-Präfix-Konvention
-    source("sources/afs_biomass_setup.r")
+    source("sources/afs_biomass_setup.R")
     source("sources/helper_instance_builder_v8a.R")
     source("sources/helper_extract_site_profit.R")
     Rcpp::sourceCpp("sources/build_and_solve_afs_lp_v12_highs.cpp")
