@@ -379,9 +379,6 @@ Agroforestry biomass systems, stand-level growth models, and biomass supply chai
 
 Agroforestry deliberately integrates woody perennials with crops and/or livestock on the same management unit, with the aim of enhancing productivity, profitability, and environmental performance [@Nair1993_IntroAgroforestry; @Toensmeier2017_Carbon_Agroforestry]. In temperate climate, three distinct system types can be distinguished based on the spatial arrangement of trees and the rotation length at which woody biomass is harvested.
 
-**Short-rotation coppice (SRC)** is defined as a monoculture plantation of fast-growing woody species covering the entire management unit, with planting densities of 8,000--20,000 trees per hectare. After each harvest, the root system regenerates without replanting. Rotation cycles
-are typically 3--7 years and total stand lifetime is 20--25 years [@Trnka2008_Poplar_SRF; @Faasch2012_SRC_Economics]. SRCs are no AFS in the narrow sense, but it is helpful to benchmark biomass production.
-
 **Short-rotation agroforestry systems (SRAFS)** integrate SRC-type tree strips (typically 1--4 rows of the same fast-growing species like poplar or willow) into an otherwise arable field in an alley-cropping arrangement. Crop production continues in the inter-row strips [@Huber2018_SRAFS_growth]. Thus, tree strips typically cover 10--30% of the total parcel area [@Graves2007_Agroforestry_Economics]. Rotation lengths and total stand lifetime in SRAFS are comparable to SRCs. In SRAFS most trees are effectively edge trees, exposed to higher light and water availability than interior SRC trees. This boundary effect raises individual-tree biomass accumulation but also intensifies competition with adjacent crop rows [@Huber2018_SRAFS_growth].
 
 **Long-rotation agroforestry systems (LRAFS)** use the same alley-cropping spatial structure as SRAFS but with rotation cycles of 12--15 years or longer [@Graves2007_Agroforestry_Economics;
