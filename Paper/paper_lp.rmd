@@ -1977,22 +1977,28 @@ optimise AFS establishment timing, consecutive harvest scheduling under
 rotation-age constraints, and product-grade allocation across spatially
 heterogeneous consumer markets.
 
-The case study for the Saxony-Anhalt tri-state region demonstrates the
-practical relevance of the approach. The optimal supply chain
-concentrates AFS establishments in the Elbe and Saale floodplains,
-where high biomass productivity and proximity to large pulp mills create
-the most favourable economics. The sensitivity analysis confirms that
-profitability depends primarily on achievable gate prices for
-high-quality (P1) biomass grades: scenarios combining reduced revenue
-with high opportunity costs yield negative net profits, whereas
-scenarios with full or elevated prices remain viable under cost pressure.
-Opportunity cost is the dominant site-level discriminator, with parcels
-exceeding approximately 300 \euro{}\ ha$^{-1}$ yr$^{-1}$ rarely selected
-in the optimal solution. These findings underscore the importance of
-product cascading as a strategic lever for AFS viability: maximising
-the share of stem biomass directed to high-value chemical and pulp
-applications substantially improves profitability compared to
-energy-only offtake strategies.
+The case study for the tri-state region of Saxony-Anhalt, northern
+Thuringia, and northern Saxony demonstrates the practical relevance of
+the approach. The optimal supply chain establishes AFS on only a
+subset of the available sites and area, concentrating establishment on
+parcels with comparatively low opportunity cost while sites with high
+opportunity cost are rarely selected. Long-rotation AFS strategies
+dominate the optimal solution, as they maximise the share of
+large-diameter stem biomass eligible for the highest-value chemical-
+and pulp-grade markets; revenue is correspondingly dominated by
+chemical-grade biomass sales, while opportunity cost, establishment,
+and transport costs are the most relevant cost drivers. Break-even at
+the aggregate supply chain level is reached after about 20 years, once
+the first large-scale harvest occurs, underscoring that AFS adoption
+constitutes a long-term strategic commitment that depends on reliable
+off-take agreements with industrial partners. At the site level, net
+profitability is highly heterogeneous and correlates negatively with
+local opportunity cost, indicating that AFS viability is strongly
+conditioned by regional land-use competition. These findings underscore
+the importance of product cascading as a strategic lever for AFS
+viability: maximising the share of stem biomass directed to high-value
+chemical and pulp applications substantially improves profitability
+compared to energy-only offtake strategies.
 
 Methodologically, the AFS-SCD model bridges the gap between stand-level
 growth modelling and regional supply chain optimisation identified in
@@ -2016,7 +2022,7 @@ AFS --- including carbon sequestration, nitrate leaching reduction, and
 biodiversity enhancement --- are not monetised in the current objective.
 Integrating life cycle assessment indicators as additional objectives
 or constraints would support a more comprehensive sustainability
-evaluation, consistent with the cleaner production framing of this work.
+evaluation of AFS-based supply chains.
 
 
 # Author contributions {.bm .unnumbered}
@@ -2034,6 +2040,10 @@ This research was funded by the German Federal Ministry of Education and Researc
 # Conflict of interest {.bm .unnumbered}
 
 The author declares no potential conflict of interests.
+
+# Data availability statement {.bm .unnumbered}
+
+The interactive web application used to parameterise, run, and explore the AFS-SCD model developed in this study, together with the underlying case study data, is openly accessible at [https://tk-mlu-pl.shinyapps.io/DIP_SmartAgroforst_SCD/](https://tk-mlu-pl.shinyapps.io/DIP_SmartAgroforst_SCD/). All figures and results reported in this manuscript can be reproduced through this application.
 
 \bibliography{ {{< meta bibliography >}} }
 
