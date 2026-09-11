@@ -1,0 +1,16 @@
+	\begin{algorithmic}[1]
+		\Procedure{TourGen}{$AddRule$, $h$}
+			\State $T_0 \leftarrow (0,k,0)$ {\hfill \small \hspace{.6cm}$\triangleright \,$ simple shuttle tour}
+			\State $T_0 \leftarrow$ \textsc{LS($T_0$, $AddRule$)}   {\hfill \small \hspace{.6cm}$\triangleright \,$ improve shuttle tour}
+			\State select $h$ requests with largest allocation distances: $\Rc^{h} \subseteq \Rc\backslash\left\lbrace k\right\rbrace$
+	
+			\For{$i \in \Rc^{h} $} 
+				\State $T_i \leftarrow (0,k,i,0)\,or\,(0,i,k,0)$ {\hfill \small \hspace{.6cm}$\triangleright \,$ build atomic tour}
+				\State $T_i \leftarrow$ \textsc{LS($T_i$, $AddRule$)}   {\hfill \small \hspace{.6cm}$\triangleright \,$ improve initial tour}
+		%		\State $t_i \leftarrow$\textsc{RoutOpt($t_i$)} {\hfill \small \hspace{.6cm}$\triangleright \,$ check for improvements by route optimization}
+			\EndFor
+			\State 	\Return $\arg\min_{T_i} Z(T_i)$	{\hfill \small \hspace{.6cm}$\triangleright \,$ return best tour }
+		%
+		\EndProcedure
+	\end{algorithmic}
+

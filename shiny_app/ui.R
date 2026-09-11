@@ -357,6 +357,8 @@ dashboardPage(
        style = "color:#AAC800; margin:12px 12px 4px; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;"),
     sliderInput("N_trees",   "Tree density (trees/ha)",
                 min = 100, max = 500, value = 250, step = 25),
+    sliderInput("beta_trees",   "Competition coefficient",
+                min = 0.05, max = 1, value = 0.4, step = 0.05),
     sliderInput("C_site",    "Site quality C_site",
                 min = 3.0, max = 9.0, value = 6.5, step = 0.5),
     sliderInput("k_gomp",    "Gompertz k (growth rate)",

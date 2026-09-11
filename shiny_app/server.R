@@ -378,10 +378,10 @@ gomp <- function(t, A, k = 0.194, t0 = 9.7) {
   A * exp(-exp(-k * (t - t0)))
 }
 
-A_tree <- function(N, C_site = 4475, beta = -0.38) C_site * N^beta
+A_tree <- function(N, C_site = 4475, beta = 0.38) C_site * N^-beta
 
 #' Stand-level asymptote (t DM/ha) = A_tree * N / 1000
-A_stand <- function(N, C_site = 4475, beta = -.38) A_tree(N, C_site , beta) * N #/ 1000
+A_stand <- function(N, C_site = 4475, beta = .38) A_tree(N, C_site , beta) * N #/ 1000
 
 # Scenario presets
 SCENARIOS <- list(
@@ -448,8 +448,8 @@ harvest_biomass <- function(t, N, area_ha = 1,
 # ── 8. Harvest scenario ───────────────────────────────────────────────
 #' Compute full harvest breakdown per ha for an AFS stand over time
 
-build_scenario_ts <- function(ages = seq(0, 20, by = 0.1), N = 113, C_site = 4475, k = 0.194, t0 = 9.7, label = "test") {
-  A   <- A_stand(N, C_site)
+build_scenario_ts <- function(ages = seq(0, 20, by = 0.1), beta = 0.4, N = 113, C_site = 4475, k = 0.194, t0 = 9.7, label = "test") {
+  A   <- A_stand(N, C_site, beta)
   agb <- gomp(ages, A, k, t0) * AGB_FRAC
   # fr  <- lapply(ages, fractions_agb)
   # f_s <- sapply(fr, `[[`, "stem")
@@ -753,7 +753,7 @@ biomassGrowthServer <- function(id, rv, input) {
       req(rv$afs_workspace)
       age.vec <- seq(0, max(20, input$max_age), by = 0.1)
       tmp <- build_scenario_ts(
-        ages   = age.vec, N = input$N_trees, C_site = input$C_site,
+        ages   = age.vec, beta = input$beta_trees,  N = input$N_trees, C_site = input$C_site,
         k = input$k_gomp, t0 = input$t0_gomp, label = "Interactive scenario"
       )
       tmp %>%
@@ -922,230 +922,230 @@ biomassGrowthServer <- function(id, rv, input) {
 # ------------------------------------------------------------------------------
 networkMapServer <- function(id, rv, input) {
   moduleServer(id, function(input_m, output_m, session_m) {
-    #output_m$map_network <- renderLeaflet({
-      #req(rv$afs_workspace, rv$sites_leaflet, rv$sites, rv$storages, rv$consumers)
-      # 
-      # COL_HUB <- "#c05000"
-      # COL_P1  <- "#6a0dad"
-      # COL_P2  <- "#08519c"
-      # COL_P3  <- "#a50026"
-      # 
-      # # ── Cluster-Zuordnung: site_id → hac_cluster ─────────────────────────────
-      # cluster_assig <- rv$afs_workspace$site_cluster_assig %>%
-      #   select(site_id, hac_cluster)
-      # 
-      # # ── Opportunitätskosten je Cluster (hac_cluster = site_id im MILP) ───────
-      # opp_lookup <- if (!is.null(rv$milp_instance)) {
-      #   rv$milp_instance$sites %>%
-      #     select(site_id, C_opp) %>%
-      #     rename(hac_cluster = site_id)
-      # } else {
-      #   tibble(hac_cluster = integer(0), C_opp = numeric(0))
-      # }
-      # 
-      # # ── Vollständige Lookup-Tabelle: Einzel-site_id → C_opp ─────────────────
-      # site_opp_full <- cluster_assig %>%
-      #   left_join(opp_lookup, by = "hac_cluster")
-      # # site_opp_full hat Spalten: site_id, hac_cluster, C_opp
-      # 
-      # # ── Aktive Cluster-IDs ────────────────────────────────────────────────────
-      # active_cluster_ids <- if (!is.null(rv$ext)) unique(rv$ext$Xij$site_id) else integer(0)
-      # any_active         <- length(active_cluster_ids) > 0
-      # 
-      # # ── Farbskala ─────────────────────────────────────────────────────────────
-      # pal_opp <- leaflet::colorNumeric(
-      #   palette  = c("#1a9641", "#ffffbf", "#d7191c"),
-      #   domain   = range(opp_lookup$C_opp, na.rm = TRUE),
-      #   na.color = "#cccccc"
-      # )
-      # 
-      # # ── GeoJSON anreichern ────────────────────────────────────────────────────
-      # geo <- jsonlite::fromJSON(rv$sites_leaflet, simplifyVector = FALSE)
-      # 
-      # 
-      # geo$style <- list(
-      #   weight = .2,
-      #   color = "#bdbdbd",
-      #   opacity = .9,
-      #   fillOpacity = 0.8
-      # )
-      # 
-      # geo$features <- lapply(geo$features, function(feat) {
-      #   sid     <- feat$properties$site_id
-      #   
-      #   # Über Cluster-Lookup auf C_opp und hac_cluster mappen
-      #   row     <- site_opp_full[site_opp_full$site_id == sid, ]
-      #   cluster <- if (nrow(row) > 0) row$hac_cluster[1] else NA_integer_
-      #   c_opp   <- if (nrow(row) > 0) row$C_opp[1]       else NA_real_
-      #   
-      #   is_active <- !is.na(cluster) && cluster %in% active_cluster_ids
-      #   
-      #   
-      #   feat$properties$hac_cluster  <- cluster
-      #   feat$properties$fill_color   <- if (!is.na(c_opp) && (!any_active || is_active)) {
-      #     pal_opp(c_opp)
-      #   } else if (any_active && !is_active) {
-      #     "#bdbdbd"
-      #   } else {
-      #     "#cccccc"
-      #   }
-      #   feat$properties$fill_opacity <- if (!any_active || is_active) 0.75 else 0.25
-      #   feat$properties$c_opp_label  <- if (!is.na(c_opp)) paste0(round(c_opp, 1), " €/ha") else "n/a"
-      #   feat$properties$status_label <- if (is_active) "✓ Aktiv" else "— Inaktiv"
-      #   
-      #   feat$properties$style$fillColor <- feat$properties$fill_color
-      #   feat$properties$style$fillOpacity <- feat$properties$fill_opacity
-      #   
-      #   # Popup-HTML direkt als Property schreiben
-      #   feat$properties$popup_html <- paste0(
-      #     "<div style='font-family:sans-serif;font-size:13px;line-height:1.7'>",
-      #     "<b>Cluster ", cluster, "</b>",
-      #     "<hr style='margin:3px 0;border-color:#ddd'>",
-      #     "<b>Opp. Kosten:</b> ", feat$properties$c_opp_label, "<br>",
-      #     "<b>Status:</b> ",      feat$properties$status_label, "<br>",
-      #     "<b>Site-ID:</b> ",     sid,
-      #     "</div>"
-      #   )
-      #   
-      #   feat
-      # })
-      # 
-      # #geojson_enriched <- jsonlite::toJSON(geo, auto_unbox = TRUE)
-      # geojson_enriched <- yyjsonr::write_json_str(
-      #   geo,
-      #   opts = yyjsonr::opts_write_json(auto_unbox = TRUE)
-      # )
-      # 
-      # 
-      # # ── Storages aufbereiten ──────────────────────────────────────────────────
-      # stor_sf <- rv$storages %>%
-      #   dplyr::arrange(storage_id) %>%
-      #   dplyr::mutate(
-      #     hub_nr    = paste0("Hub ", dplyr::row_number()),
-      #     ptsize    = 10,
-      #     popup_txt = paste0(
-      #       "<b>", hub_nr, "</b><br>",
-      #       "Storage-ID: ", storage_id, "<br>",
-      #       "Typ: ", type, "<br>",
-      #       "CAP Lager: ",   scales::comma(round(CAP_stor, 0)), " t<br>",
-      #       "CAP Prozess: ", scales::comma(round(CAP_proc, 0)), " t"
-      #     )
-      #   )
-      # 
-      # # ── Consumers aufbereiten ─────────────────────────────────────────────────
-      # cons_sf <- rv$consumers %>%
-      #   dplyr::mutate(
-      #     consumer_nr  = paste0("Consumer ", consumer_id),
-      #     total_demand = demand_P1 + demand_P2 + demand_P3,
-      #     kategorie = dplyr::case_when(
-      #       demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
-      #       demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
-      #       demand_P3 > 0                                                    ~ "Energy / Biogas (P3)",
-      #       TRUE                                                             ~ "Other"
-      #     ),
-      #     marker_color = dplyr::case_when(
-      #       kategorie == "Chemical / Pulp (P1)" ~ "purple",
-      #       kategorie == "Pulp / Paper (P2)"    ~ "blue",
-      #       kategorie == "Energy / Biogas (P3)" ~ "red",
-      #       TRUE                                ~ "gray"
-      #     ),
-      #     popup_txt = paste0(
-      #       "<b>", consumer_nr, "</b><br>",
-      #       "Name: ", name, "<br>",
-      #       "Typ: ", kategorie, "<br>",
-      #       "Nachfrage P1: ", round(demand_P1, 1), " kt<br>",
-      #       "Nachfrage P2: ", round(demand_P2, 1), " kt<br>",
-      #       "Nachfrage P3: ", round(demand_P3, 1), " kt<br>",
-      #       "Gesamt: ",       round(total_demand, 1), " kt"
-      #     )
-      #   )
-      # 
-      # pal_cons <- leaflet::colorFactor(
-      #   palette = c(
-      #     "Chemical / Pulp (P1)" = COL_P1,
-      #     "Pulp / Paper (P2)"    = COL_P2,
-      #     "Energy / Biogas (P3)" = COL_P3,
-      #     "Other"                = "grey60"
-      #   ),
-      #   domain = cons_sf$kategorie
-      # )
-      # 
-      # # ── Karte aufbauen ────────────────────────────────────────────────────────
-      # 
-      # leaflet::leaflet(
-      #   options = leaflet::leafletOptions(zoomControl = TRUE),
-      #   width   = "100%"
-      # ) %>%
-      #   leaflet::addProviderTiles(leaflet::providers$Esri.WorldGrayCanvas) %>%
-      #   
-      #   leaflet.extras::addGeoJSONv2(
-      #     geojson        = geojson_enriched,
-      #     weight         = .8,
-      #     stroke         = F,
-      #     popupProperty  = "popup_html",      # ← Property-Name mit HTML-Inhalt
-      #     labelProperty  = "hac_cluster",     # ← Tooltip beim Hover
-      #     labelOptions   = leaflet::labelOptions(
-      #       style    = list("font-weight" = "bold", "font-size" = "12px"),
-      #       sticky   = FALSE
-      #     ),
-      #     pathOptions    = leaflet::pathOptions(clickable = TRUE)
-      #   ) %>% 
-      #   
-      #   leaflet::addCircleMarkers(
-      #     data        = stor_sf,
-      #     lng         = ~lng,
-      #     lat         = ~lat,
-      #     radius      = ~ptsize,
-      #     color       = COL_HUB,
-      #     stroke      = TRUE,
-      #     weight      = 2,
-      #     fillColor   = COL_HUB,
-      #     fillOpacity = 0.95,
-      #     popup       = ~popup_txt,
-      #     group       = "Hubs"
-      #   ) %>%
-      #   
-      #   leaflet::addAwesomeMarkers(
-      #     data  = cons_sf,
-      #     lng   = ~lng,
-      #     lat   = ~lat,
-      #     icon  = ~leaflet::awesomeIcons(
-      #       icon        = "industry",
-      #       library     = "fa",
-      #       markerColor = marker_color,
-      #       iconColor   = "white"
-      #     ),
-      #     popup = ~popup_txt,
-      #     label = ~name,
-      #     group = "Consumers"
-      #   ) %>%
-      #   
-      #   leaflet::addLegend(
-      #     position = "bottomright",
-      #     pal      = pal_opp,
-      #     values   = opp_lookup$C_opp,
-      #     title    = "Opp. Kosten (€/ha)",
-      #     opacity  = 0.85
-      #   ) %>%
-      #   
-      #   leaflet::addLegend(
-      #     position = "topright",
-      #     pal      = pal_cons,
-      #     values   = cons_sf$kategorie,
-      #     title    = "Consumer-Typ",
-      #     opacity  = 0.95
-      #   ) %>%
-      #   
-      #   leaflet::addLayersControl(
-      #     overlayGroups = c("AFS Sites", "Hubs", "Consumers"),
-      #     options       = leaflet::layersControlOptions(collapsed = FALSE)
-      #   ) %>%
-      #   
-      #   leaflet::fitBounds(
-      #     lng1 = 10.6, lat1 = 50.9,
-      #     lng2 = 13.2, lat2 = 52.8
-      #   )
-    #})
+    # output_m$map_network <- renderLeaflet({
+    # req(rv$afs_workspace, rv$sites_leaflet, rv$sites, rv$storages, rv$consumers)
+    # 
+    # COL_HUB <- "#c05000"
+    # COL_P1  <- "#6a0dad"
+    # COL_P2  <- "#08519c"
+    # COL_P3  <- "#a50026"
+    # 
+    # # ── Cluster-Zuordnung: site_id → hac_cluster ─────────────────────────────
+    # cluster_assig <- rv$afs_workspace$site_cluster_assig %>%
+    #   select(site_id, hac_cluster)
+    # 
+    # # ── Opportunitätskosten je Cluster (hac_cluster = site_id im MILP) ───────
+    # opp_lookup <- if (!is.null(rv$milp_instance)) {
+    #   rv$milp_instance$sites %>%
+    #     select(site_id, C_opp) %>%
+    #     rename(hac_cluster = site_id)
+    # } else {
+    #   tibble(hac_cluster = integer(0), C_opp = numeric(0))
+    # }
+    # 
+    # # ── Vollständige Lookup-Tabelle: Einzel-site_id → C_opp ─────────────────
+    # site_opp_full <- cluster_assig %>%
+    #   left_join(opp_lookup, by = "hac_cluster")
+    # # site_opp_full hat Spalten: site_id, hac_cluster, C_opp
+    # 
+    # # ── Aktive Cluster-IDs ────────────────────────────────────────────────────
+    # active_cluster_ids <- if (!is.null(rv$ext)) unique(rv$ext$Xij$site_id) else integer(0)
+    # any_active         <- length(active_cluster_ids) > 0
+    # 
+    # # ── Farbskala ─────────────────────────────────────────────────────────────
+    # pal_opp <- leaflet::colorNumeric(
+    #   palette  = c("#1a9641", "#ffffbf", "#d7191c"),
+    #   domain   = range(opp_lookup$C_opp, na.rm = TRUE),
+    #   na.color = "#cccccc"
+    # )
+    # 
+    # # ── GeoJSON anreichern ────────────────────────────────────────────────────
+    # geo <- jsonlite::fromJSON(rv$sites_leaflet, simplifyVector = FALSE)
+    # 
+    # 
+    # geo$style <- list(
+    #   weight = .2,
+    #   color = "#bdbdbd",
+    #   opacity = .9,
+    #   fillOpacity = 0.8
+    # )
+    # 
+    # geo$features <- lapply(geo$features, function(feat) {
+    #   sid     <- feat$properties$site_id
+    # 
+    #   # Über Cluster-Lookup auf C_opp und hac_cluster mappen
+    #   row     <- site_opp_full[site_opp_full$site_id == sid, ]
+    #   cluster <- if (nrow(row) > 0) row$hac_cluster[1] else NA_integer_
+    #   c_opp   <- if (nrow(row) > 0) row$C_opp[1]       else NA_real_
+    # 
+    #   is_active <- !is.na(cluster) && cluster %in% active_cluster_ids
+    # 
+    # 
+    #   feat$properties$hac_cluster  <- cluster
+    #   feat$properties$fill_color   <- if (!is.na(c_opp) && (!any_active || is_active)) {
+    #     pal_opp(c_opp)
+    #   } else if (any_active && !is_active) {
+    #     "#bdbdbd"
+    #   } else {
+    #     "#cccccc"
+    #   }
+    #   feat$properties$fill_opacity <- if (!any_active || is_active) 0.75 else 0.25
+    #   feat$properties$c_opp_label  <- if (!is.na(c_opp)) paste0(round(c_opp, 1), " €/ha") else "n/a"
+    #   feat$properties$status_label <- if (is_active) "✓ Aktiv" else "— Inaktiv"
+    # 
+    #   feat$properties$style$fillColor <- feat$properties$fill_color
+    #   feat$properties$style$fillOpacity <- feat$properties$fill_opacity
+    # 
+    #   # Popup-HTML direkt als Property schreiben
+    #   feat$properties$popup_html <- paste0(
+    #     "<div style='font-family:sans-serif;font-size:13px;line-height:1.7'>",
+    #     "<b>Cluster ", cluster, "</b>",
+    #     "<hr style='margin:3px 0;border-color:#ddd'>",
+    #     "<b>Opp. Kosten:</b> ", feat$properties$c_opp_label, "<br>",
+    #     "<b>Status:</b> ",      feat$properties$status_label, "<br>",
+    #     "<b>Site-ID:</b> ",     sid,
+    #     "</div>"
+    #   )
+    # 
+    #   feat
+    # })
+    # 
+    # #geojson_enriched <- jsonlite::toJSON(geo, auto_unbox = TRUE)
+    # geojson_enriched <- yyjsonr::write_json_str(
+    #   geo,
+    #   opts = yyjsonr::opts_write_json(auto_unbox = TRUE)
+    # )
+    # 
+    # 
+    # # ── Storages aufbereiten ──────────────────────────────────────────────────
+    # stor_sf <- rv$storages %>%
+    #   dplyr::arrange(storage_id) %>%
+    #   dplyr::mutate(
+    #     hub_nr    = paste0("Hub ", dplyr::row_number()),
+    #     ptsize    = 10,
+    #     popup_txt = paste0(
+    #       "<b>", hub_nr, "</b><br>",
+    #       "Storage-ID: ", storage_id, "<br>",
+    #       "Typ: ", type, "<br>",
+    #       "CAP Lager: ",   scales::comma(round(CAP_stor, 0)), " t<br>",
+    #       "CAP Prozess: ", scales::comma(round(CAP_proc, 0)), " t"
+    #     )
+    #   )
+    # 
+    # # ── Consumers aufbereiten ─────────────────────────────────────────────────
+    # cons_sf <- rv$consumers %>%
+    #   dplyr::mutate(
+    #     consumer_nr  = paste0("Consumer ", consumer_id),
+    #     total_demand = demand_P1 + demand_P2 + demand_P3,
+    #     kategorie = dplyr::case_when(
+    #       demand_P1 >= demand_P2 & demand_P1 >= demand_P3 & demand_P1 > 0 ~ "Chemical / Pulp (P1)",
+    #       demand_P2 >= demand_P1 & demand_P2 >= demand_P3 & demand_P2 > 0 ~ "Pulp / Paper (P2)",
+    #       demand_P3 > 0                                                    ~ "Energy / Biogas (P3)",
+    #       TRUE                                                             ~ "Other"
+    #     ),
+    #     marker_color = dplyr::case_when(
+    #       kategorie == "Chemical / Pulp (P1)" ~ "purple",
+    #       kategorie == "Pulp / Paper (P2)"    ~ "blue",
+    #       kategorie == "Energy / Biogas (P3)" ~ "red",
+    #       TRUE                                ~ "gray"
+    #     ),
+    #     popup_txt = paste0(
+    #       "<b>", consumer_nr, "</b><br>",
+    #       "Name: ", name, "<br>",
+    #       "Typ: ", kategorie, "<br>",
+    #       "Nachfrage P1: ", round(demand_P1, 1), " kt<br>",
+    #       "Nachfrage P2: ", round(demand_P2, 1), " kt<br>",
+    #       "Nachfrage P3: ", round(demand_P3, 1), " kt<br>",
+    #       "Gesamt: ",       round(total_demand, 1), " kt"
+    #     )
+    #   )
+    # 
+    # pal_cons <- leaflet::colorFactor(
+    #   palette = c(
+    #     "Chemical / Pulp (P1)" = COL_P1,
+    #     "Pulp / Paper (P2)"    = COL_P2,
+    #     "Energy / Biogas (P3)" = COL_P3,
+    #     "Other"                = "grey60"
+    #   ),
+    #   domain = cons_sf$kategorie
+    # )
+    # 
+    # # ── Karte aufbauen ────────────────────────────────────────────────────────
+    # 
+    # leaflet::leaflet(
+    #   options = leaflet::leafletOptions(zoomControl = TRUE),
+    #   width   = "100%"
+    # ) %>%
+    #   leaflet::addProviderTiles(leaflet::providers$Esri.WorldGrayCanvas) %>%
+    # 
+    #   leaflet.extras::addGeoJSONv2(
+    #     geojson        = geojson_enriched,
+    #     weight         = .8,
+    #     stroke         = F,
+    #     popupProperty  = "popup_html",      # ← Property-Name mit HTML-Inhalt
+    #     labelProperty  = "hac_cluster",     # ← Tooltip beim Hover
+    #     labelOptions   = leaflet::labelOptions(
+    #       style    = list("font-weight" = "bold", "font-size" = "12px"),
+    #       sticky   = FALSE
+    #     ),
+    #     pathOptions    = leaflet::pathOptions(clickable = TRUE)
+    #   ) %>%
+    # 
+    #   leaflet::addCircleMarkers(
+    #     data        = stor_sf,
+    #     lng         = ~lng,
+    #     lat         = ~lat,
+    #     radius      = ~ptsize,
+    #     color       = COL_HUB,
+    #     stroke      = TRUE,
+    #     weight      = 2,
+    #     fillColor   = COL_HUB,
+    #     fillOpacity = 0.95,
+    #     popup       = ~popup_txt,
+    #     group       = "Hubs"
+    #   ) %>%
+    # 
+    #   leaflet::addAwesomeMarkers(
+    #     data  = cons_sf,
+    #     lng   = ~lng,
+    #     lat   = ~lat,
+    #     icon  = ~leaflet::awesomeIcons(
+    #       icon        = "industry",
+    #       library     = "fa",
+    #       markerColor = marker_color,
+    #       iconColor   = "white"
+    #     ),
+    #     popup = ~popup_txt,
+    #     label = ~name,
+    #     group = "Consumers"
+    #   ) %>%
+    # 
+    #   leaflet::addLegend(
+    #     position = "bottomright",
+    #     pal      = pal_opp,
+    #     values   = opp_lookup$C_opp,
+    #     title    = "Opp. Kosten (€/ha)",
+    #     opacity  = 0.85
+    #   ) %>%
+    # 
+    #   leaflet::addLegend(
+    #     position = "topright",
+    #     pal      = pal_cons,
+    #     values   = cons_sf$kategorie,
+    #     title    = "Consumer-Typ",
+    #     opacity  = 0.95
+    #   ) %>%
+    # 
+    #   leaflet::addLayersControl(
+    #     overlayGroups = c("AFS Sites", "Hubs", "Consumers"),
+    #     options       = leaflet::layersControlOptions(collapsed = FALSE)
+    #   ) %>%
+    # 
+    #   leaflet::fitBounds(
+    #     lng1 = 10.6, lat1 = 50.9,
+    #     lng2 = 13.2, lat2 = 52.8
+    #   )
+    # })
     })
 }
 
@@ -1842,7 +1842,7 @@ function(input, output, session) {
   build_yields_reactive <- reactive({
     req(rv$afs_workspace)
     y <- build_scenario_ts(
-      ages   = 1:input$max_age, N = input$N_trees, C_site = input$C_site,
+      ages   = 1:input$max_age, beta = input$beta_trees, N = input$N_trees, C_site = input$C_site,
       k = input$k_gomp, t0 = input$t0_gomp, label = "Interactive scenario"
     )
     y %>%
@@ -1968,7 +1968,7 @@ function(input, output, session) {
     req(rv$afs_workspace)
     age.vec <- seq(0, max(20, input$max_age), by = 0.1)
     tmp <- build_scenario_ts(
-      ages = age.vec, N = input$N_trees, C_site = input$C_site,
+      ages = age.vec, beta = input$beta_trees, N = input$N_trees, C_site = input$C_site,
       k = input$k_gomp, t0 = input$t0_gomp, label = "x"
     )
     total_max <- tmp %>%
@@ -1984,7 +1984,7 @@ function(input, output, session) {
     req(rv$afs_workspace)
     age.vec <- seq(0, max(20, input$max_age), by = 0.1)
     tmp <- build_scenario_ts(
-      ages = age.vec, N = input$N_trees, C_site = input$C_site,
+      ages = age.vec, beta = input$beta_trees, N = input$N_trees, C_site = input$C_site,
       k = input$k_gomp, t0 = input$t0_gomp, label = "x"
     ) %>%
       pivot_longer(cols = c(`Merch. stem`, `Merch. branch`, Residue),
@@ -2006,7 +2006,7 @@ function(input, output, session) {
     req(rv$afs_workspace)
     age.vec <- seq(0, max(20, input$max_age), by = 0.1)
     tmp <- build_scenario_ts(
-      ages = age.vec, N = input$N_trees, C_site = input$C_site,
+      ages = age.vec, beta = input$beta_trees, N = input$N_trees, C_site = input$C_site,
       k = input$k_gomp, t0 = input$t0_gomp, label = "x"
     ) %>%
       pivot_longer(cols = c(`Merch. stem`, `Merch. branch`, Residue),
@@ -2022,7 +2022,7 @@ function(input, output, session) {
     req(rv$afs_workspace)
     age.vec <- seq(0, max(20, input$max_age), by = 0.1)
     tmp <- build_scenario_ts(
-      ages = age.vec, N = input$N_trees, C_site = input$C_site,
+      ages = age.vec, beta = input$beta_trees, N = input$N_trees, C_site = input$C_site,
       k = input$k_gomp, t0 = input$t0_gomp, label = "x"
     ) %>%
       pivot_longer(cols = c(`Merch. stem`, `Merch. branch`, Residue),

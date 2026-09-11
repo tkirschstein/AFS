@@ -1,0 +1,32 @@
+%	\line(1, 0){450}
+	%
+	\begin{algorithmic}[1]
+		\Procedure{DelReq}{$T$, $DelRule$}
+		\State determine set of deletion candidates: $\Rc'_T = \Rc_T\backslash\{k\}$
+		\If{$DelRule =$ 'greedy'}
+				\For{$i \in \Rc'_T$}
+				%	\State $T' \leftarrow T/r$ {\hfill \small \hspace{.6cm}$\triangleright \,$ delete $r$ from tour $T$}
+				\State $Z_i \leftarrow Z(T\backslash i)$ {\hfill \small \hspace{.6cm}$\triangleright \,$ determine objective value of tour without request $r$}
+				\EndFor
+				
+%			\State $\Rc^c_T = \left\{ r | Z_r \leq Z(T) \right\}$ {\hfill \small \hspace{.6cm}$\triangleright \,$determine set of improving deletion candidates}
+			%    \State determine set of improving deletions $\Rc_T^c \subseteq  \Rc'_T$    
+%			\If{$\Rc_T^c \neq \varnothing$}
+				\State $i^* \leftarrow \arg \min_{i \in \Rc'_T} Z_i$  {\hfill \small \hspace{.6cm}$\triangleright \,$ select request with best improvement }
+				\State $T \leftarrow T\backslash i^*${\hfill \small \hspace{.6cm}$\triangleright \,$ delete $r^*$ from tour $T$}
+%			\EndIf
+		\EndIf
+		\If{$DelRule =$ 'random'}
+			%    \State determine set of improving deletions $\Rc_T^c \subseteq  \Rc'_T$    
+			\State $i^* = Rand(\Rc'_T)$  {\hfill \small \hspace{.6cm}$\triangleright \,$ select $i^*$ randomly from $\Rc'_T$}
+			\State $T \leftarrow T\backslash i^*${\hfill \small \hspace{.6cm}$\triangleright \,$ delete $i^*$ from tour $T$}		
+		\EndIf
+		%    \If{$\min_{r \in \Rc_i} Z_r < \bar{Z}(t)$} 
+		%	    \State $t \leftarrow t / \arg\min_{r \in \Rc'_t} Z_r$ {\hfill \small $\triangleright \,$ update tour and remove request $\arg\min_{r \in \Rc_i} Z_p$}
+		%	\EndIf
+		\State 	\Return $T$
+		
+		\EndProcedure
+	\end{algorithmic}
+	%
+%	\line(1, 0){450}
