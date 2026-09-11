@@ -7,7 +7,8 @@ title-slide-attributes:
 subtitle: "Benefits of Agroforestry Systems for Defossilizing Chemical Industry"
 author: "Thomas Kirschstein and Nico Tauchnitz"
 institute: "Fraunhofer IKTS"
-date: "Frankfurt, am 16.9.2026"
+date: "Frankfurt, am 16. September 2026"
+  
 format: 
   revealjs:
     theme: [default, talk_kirschstein_revealjs.scss] # talk_kirschstein_revealjs.scss
@@ -856,40 +857,23 @@ For planning horizon $T=8$, $A^{\min}=3$, $A^{\max}=5$:
 
 ::: {style="font-size: 0.75em;"}
 $$\begin{aligned}
-\max\; Z \;=\;&
-  \sum_{k,\,p} R_{kp} \cdot\sum_{j,\,(p',p),\, t} X_{jkp'pt}  &\text{Revenue}  \\
-&- \sum_{i} c^{\text{est}}_i \cdot\sum_{(0,t)\in\mathcal{S}^{est}} z_{i0t} &\text{Establishment cost}\\
-&- \sum_{i} (c^{\text{main}}_i + c^{\text{opp}}_i) \cdot (t-s) \cdot \sum_{(s,t)\in\mathcal{S}^{harv}} z_{ist} &\text{Maintenance + Opportunity cost}\\
-&- \sum_{i} c^{\text{harv}}_i \cdot \sum_{(s,t)\in\mathcal{S}^{harv}} z_{ist} &\text{Harvest cost}\\
-&- \sum_{i,\,j,\,p,\,t} c^{\text{tr-raw}}_p \cdot d_{ij} \cdot X_{ijpt} &\text{Raw transport cost}\\
-&- \sum_{j,\,k,\,(p,p'),\,t} c^{\text{tr-pre}}_{p'} \cdot d_{jk} \cdot X_{jkpp't} &\text{Pre-processed transport cost}\\
-&- \sum_{j,\,p,\,t}  c^{\text{stor}}_j \cdot S_{jpt} &\text{Storage cost}
+\max\; \text{Total profit} \;=\;&
+  \text{Revenue}  \\
+&- \text{Establishment cost}\\
+&- \text{Maintenance}\\
+& - \text{Opportunity cost}\\
+&- \text{Harvest cost}\\
+&- \text{Raw wood transport cost}\\
+&- \text{Pre-processed wood transport cost}\\
+&- \text{Storage cost}
 \end{aligned}$$
 :::
 
 :::: {.callout-note icon="false" appearance="simple"}
 ::: {style="font-size: 1.8rem;"}
-$c^{\text{opp}}_i$ can be negative (subsidies / positive crop-yield spillovers) or positive (high-value arable land). Opportunity costs and transport costs are the two largest cost drivers `r Citep(bib, "Faasch2012_SRC_Economics")`.\]
+Opportunity cost can be negative (subsidies / positive crop-yield spillovers) or positive (lost profit due to crop loss).
 :::
 ::::
-
-------------------------------------------------------------------------
-
-## Some constraints {.tight-lines}
-
-::: {style="font-size: 0.75em;"}
-**Establishment per site:** $$\sum_{(0,t)\in\mathcal{S}^{est}} z_{i0t} \leq \text{AREA}_i \qquad \forall\; i$$
-
-**Flow conservation (path connectivity):** $$\sum_{(s,t)\in\mathcal{S}} z_{ist} = \sum_{(t,u)\in\mathcal{S}} z_{itu} \qquad \forall\; i,\; t$$
-
-**Age-dependent biomass yield:** $$\sum_{j} X_{ijpt} \leq \sum_{(s,t)\in\mathcal{S}^{harv}} \eta_{p(t-s)} \cdot z_{ist} \qquad \forall\; i,p,t$$
-
-where $\eta_{pa} = q_p(a) \cdot M(a)$ links Gompertz stand model to logistics flows.
-
-**Quality cascade demand:** $$\sum_{j,\,(p',p)\in\mathcal{Q}} X_{jkp'pt} \leq D^{\max}_{kpt} \qquad \forall\; k,p,t$$
-
-Higher-quality fractions (stems) can substitute lower-quality demands, not vice versa.
-:::
 
 ------------------------------------------------------------------------
 
@@ -922,8 +906,8 @@ Higher-quality fractions (stems) can substitute lower-quality demands, not vice 
 | Grade      | Consumers                 | Prices     |
 |------------|---------------------------|------------|
 | 1 Chemical | Mercer Stendal, UPM Leuna | 80–120 €/t |
-| 2 Pulp     | 6 smaller facilities      | 55–75 €/t  |
-| 3 Energy   | Residual absorbers        | 30–40 €/t  |
+| 2 Pulp     | saw mills, pellet producer   | 55–75 €/t  |
+| 3 Energy   | bio mass fermenters, composting facility | 30–40 €/t  |
 :::
 ::::::
 
@@ -934,10 +918,9 @@ Higher-quality fractions (stems) can substitute lower-quality demands, not vice 
 :::::: columns
 ::: {.column width="50%"}
 ```{r}
-#| label: fig-supply-chain-network-leaflet
 #| fig-width: 6
 #| out-width: "99%"
-#| cache: false
+#| cache: true
 #| echo: false
 
 COLSAW  <- "#e65c00"
@@ -1007,21 +990,21 @@ map_sc <- leaflet(
   height = 500,
   elementId = "leaflet-map-supply-chain-1"
 ) %>%
-  addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
-  addPolylines(
-     data = de_states,
-     color = "grey55", weight = 1.5,
-     group = "States"
-   ) %>%
-  addPolylines(
-    data = rivers_eu,
-    color = "#4292c6", weight = 1, opacity = 0.7,
-    group = "Rivers"
-  ) %>%
+  addProviderTiles(providers$Stadia.StamenTonerLite) %>%
+  # addPolylines(
+  #    data = de_states,
+  #    color = "grey55", weight = 1.5,
+  #    group = "States"
+  #  ) %>%
+  # addPolylines(
+  #   data = rivers_eu,
+  #   color = "#4292c6", weight = 1, opacity = 0.7,
+  #   group = "Rivers"
+  # ) %>%
   addPolygons(
     data = sites_sf_clust,
-    stroke = TRUE, color = "grey30", weight = 0.5,
-    fillColor = ~pal_opp(C_opp), fillOpacity = 0.85,
+    stroke = TRUE, color = "grey30", weight = 1.5,
+    fillColor = ~pal_opp(C_opp), fillOpacity = 1,
     popup = ~paste0(
       "<strong>Site ID</strong>: ", site_id,
       "<br><strong>Cluster</strong>: ", hac_cluster,
@@ -1031,9 +1014,9 @@ map_sc <- leaflet(
   ) %>%
   addCircleMarkers(
     data = storsf,
-    radius = ~ptsize,
-    color = COLHUB, stroke = TRUE, weight = 2,
-    fillColor = COLHUB, fillOpacity = 0.95,
+    radius = ~ptsize*.85,
+    color = COLHUB, stroke = TRUE, weight = 1,
+    fillColor = COLHUB, fillOpacity = 0.85,
     popup = ~paste0("<strong>Hub</strong>"),
     group = "Hubs"
   ) %>%
@@ -1133,7 +1116,7 @@ map_sc
 #| label: fig-results-sc-map
 #| fig-width: 6
 #| out-width: 99%
-#| cache: false
+#| cache: true
 #| echo: false
 
 crs_map <- 25833
@@ -1255,7 +1238,7 @@ ggplot() +
 
 ## Product Flows by Biomass Fraction and End Use
 
-```{r fig-results-harvest-gantt, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=4, out.width="90%", cache=TRUE}
+```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=3.75, out.width="90%", cache=TRUE}
 
 SRC_LABEL <- c("1" = "Stems", "2" = "Branches", "3" = "Residues")
 DEL_LABEL <- c("1" = "Industrial", "2" = "Pulp & Paper", "3" = "Energy")
@@ -1270,7 +1253,7 @@ flow_df <- ext$Xjk %>%
     del = factor(DEL_LABEL[as.character(del_product)], levels = DEL_LABEL)
   )
 
-ggplot(flow_df, aes(axis1 = src, axis2 = del, y = volume, fill = src)) +
+ggplot(flow_df, aes(axis1 = src, axis2 = del, y = volume/1000, fill = src)) +
   geom_alluvium(alpha = 0.72, width = 1/3, knot.pos = 0.45, curve_type = "sigmoid") +
   geom_stratum(width = 1/3, fill = "grey94", colour = "grey50", linewidth = 0.3) +
   geom_text(stat = "stratum", aes(label = after_stat(stratum)),
@@ -1280,7 +1263,7 @@ ggplot(flow_df, aes(axis1 = src, axis2 = del, y = volume, fill = src)) +
            fontface = "bold", colour = "grey30") +
   scale_fill_manual(name = "Biomass fraction", values = P_COLS_SRC) +
   scale_x_discrete(expand = expansion(add = c(0.25, 0.25))) +
-  scale_y_continuous(name = "Volume (t dry matter)",
+  scale_y_continuous(name = "wood quantity (kt)",
                      labels = comma_format(big.mark = ".", decimal.mark = ",")) +
   coord_cartesian(clip = "off") +
   theme_minimal(base_size = 9) +
@@ -1290,40 +1273,7 @@ ggplot(flow_df, aes(axis1 = src, axis2 = del, y = volume, fill = src)) +
         plot.margin = margin(t = 6, r = 6, b = 28, l = 6))
 ```
 
-------------------------------------------------------------------------
-
-## Harvesting Cycle Distribution
-
-```{r fig-results-harvest-cycle-dist, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=3.5, out.width="90%", cache=TRUE}
-
-cycle_df <- ext$z %>%
-  filter(arc_type == "harvest") %>%
-  mutate(cycle_length = t - s)
-
-mean_cl  <- mean(cycle_df$cycle_length)
-med_cl   <- median(cycle_df$cycle_length)
-n_events <- nrow(cycle_df)
-n_sites  <- length(unique(cycle_df$site_id))
-
-ggplot(cycle_df, aes(x = cycle_length)) +
-  geom_bar(fill = "#1b9e77", colour = "white", linewidth = 0.25, width = 0.75) +
-  geom_vline(xintercept = mean_cl, linetype = "dashed", colour = "grey30", linewidth = 0.6) +
-  annotate("text", x = mean_cl + 0.25, y = Inf,
-           label = paste0("Mean = ", round(mean_cl, 1), " yr"),
-           hjust = 0, vjust = 1.5, size = 2.8, colour = "grey20") +
-  scale_x_continuous(name = "Harvesting cycle length (years)",
-                     breaks = seq(params_obj$min_age, params_obj$max_age, by = 1),
-                     limits = c(params_obj$min_age - 0.5, params_obj$max_age + 0.5)) +
-  scale_y_continuous(name = "Number of harvest events",
-                     expand = expansion(mult = c(0, 0.12))) +
-  labs(caption = paste0(n_events, " harvest events across ", n_sites,
-                        " active sites; median = ", med_cl, " yr")) +
-  theme_minimal(base_size = 9) +
-  theme(panel.grid.major.x = element_blank(), panel.grid.minor = element_blank(),
-        plot.caption = element_text(size = 7, colour = "grey40", hjust = 0))
-```
-
-Majority of harvests at ages 4–10 years (trade-off: yield growth vs. opportunity cost). Secondary peak at 12–15 years for sites near P1 consumers with low opportunity costs.
+$\rightarrow$ average yearly wood production from AFS: `r round(sum(flow_df$volume)/40000)` kt  of which `r round(sum(flow_df$volume[flow_df$src == "Stems"])/40000)` kt is stem wood
 
 ------------------------------------------------------------------------
 
@@ -2164,4 +2114,85 @@ Fraunhofer IKTS thomas.kirschstein\@ikts.fraunhofer.de
 ```{r references, results="asis", echo=FALSE}
 PrintBibliography(bib)
 ```
+:::
+
+------------------------------------------------------------------------
+
+# Appendix
+
+------------------------------------------------------------------------
+
+## Harvesting Cycle Distribution
+
+```{r fig-results-harvest-cycle-dist, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=3.5, out.width="90%", cache=TRUE}
+
+cycle_df <- ext$z %>%
+  filter(arc_type == "harvest") %>%
+  mutate(cycle_length = t - s)
+
+mean_cl  <- mean(cycle_df$cycle_length)
+med_cl   <- median(cycle_df$cycle_length)
+n_events <- nrow(cycle_df)
+n_sites  <- length(unique(cycle_df$site_id))
+
+ggplot(cycle_df, aes(x = cycle_length)) +
+  geom_bar(fill = "#1b9e77", colour = "white", linewidth = 0.25, width = 0.75) +
+  geom_vline(xintercept = mean_cl, linetype = "dashed", colour = "grey30", linewidth = 0.6) +
+  annotate("text", x = mean_cl + 0.25, y = Inf,
+           label = paste0("Mean = ", round(mean_cl, 1), " yr"),
+           hjust = 0, vjust = 1.5, size = 2.8, colour = "grey20") +
+  scale_x_continuous(name = "Harvesting cycle length (years)",
+                     breaks = seq(params_obj$min_age, params_obj$max_age, by = 1),
+                     limits = c(params_obj$min_age - 0.5, params_obj$max_age + 0.5)) +
+  scale_y_continuous(name = "Number of harvest events",
+                     expand = expansion(mult = c(0, 0.12))) +
+  labs(caption = paste0(n_events, " harvest events across ", n_sites,
+                        " active sites; median = ", med_cl, " yr")) +
+  theme_minimal(base_size = 9) +
+  theme(panel.grid.major.x = element_blank(), panel.grid.minor = element_blank(),
+        plot.caption = element_text(size = 7, colour = "grey40", hjust = 0))
+```
+
+Majority of harvests at ages 4–10 years (trade-off: yield growth vs. opportunity cost). Secondary peak at 12–15 years for sites near P1 consumers with low opportunity costs.
+
+------------------------------------------------------------------------
+
+## Objective Function (AFS-SCD)
+
+::: {style="font-size: 0.75em;"}
+$$\begin{aligned}
+\max\; Z \;=\;&
+  \sum_{k,\,p} R_{kp} \cdot\sum_{j,\,(p',p),\, t} X_{jkp'pt}  &\text{Revenue}  \\
+&- \sum_{i} c^{\text{est}}_i \cdot\sum_{(0,t)\in\mathcal{S}^{est}} z_{i0t} &\text{Establishment cost}\\
+&- \sum_{i} (c^{\text{main}}_i + c^{\text{opp}}_i) \cdot (t-s) \cdot \sum_{(s,t)\in\mathcal{S}^{harv}} z_{ist} &\text{Maintenance + Opportunity cost}\\
+&- \sum_{i} c^{\text{harv}}_i \cdot \sum_{(s,t)\in\mathcal{S}^{harv}} z_{ist} &\text{Harvest cost}\\
+&- \sum_{i,\,j,\,p,\,t} c^{\text{tr-raw}}_p \cdot d_{ij} \cdot X_{ijpt} &\text{Raw transport cost}\\
+&- \sum_{j,\,k,\,(p,p'),\,t} c^{\text{tr-pre}}_{p'} \cdot d_{jk} \cdot X_{jkpp't} &\text{Pre-processed transport cost}\\
+&- \sum_{j,\,p,\,t}  c^{\text{stor}}_j \cdot S_{jpt} &\text{Storage cost}
+\end{aligned}$$
+:::
+
+:::: {.callout-note icon="false" appearance="simple"}
+::: {style="font-size: 1.8rem;"}
+$c^{\text{opp}}_i$ can be negative (subsidies / positive crop-yield spillovers) or positive (high-value arable land).
+:::
+::::
+
+
+------------------------------------------------------------------------
+
+## Some constraints {.tight-lines}
+
+::: {style="font-size: 0.75em;"}
+**Establishment per site:** $$\sum_{(0,t)\in\mathcal{S}^{est}} z_{i0t} \leq \text{AREA}_i \qquad \forall\; i$$
+
+**Flow conservation (path connectivity):** $$\sum_{(s,t)\in\mathcal{S}} z_{ist} = \sum_{(t,u)\in\mathcal{S}} z_{itu} \qquad \forall\; i,\; t$$
+
+**Age-dependent biomass yield:** $$\sum_{j} X_{ijpt} \leq \sum_{(s,t)\in\mathcal{S}^{harv}} \eta_{p(t-s)} \cdot z_{ist} \qquad \forall\; i,p,t$$
+
+where $\eta_{pa} = q_p(a) \cdot M(a)$ links Gompertz stand model to logistics flows.
+
+**Quality cascade demand:** $$\sum_{j,\,(p',p)\in\mathcal{Q}} X_{jkp'pt} \leq D^{\max}_{kpt} \qquad \forall\; k,p,t$$
+
+Higher-quality fractions (stems) can substitute lower-quality demands, not vice versa.
 :::

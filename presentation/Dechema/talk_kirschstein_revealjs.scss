@@ -12,7 +12,7 @@ $body-bg:         #ffffff;
 $body-color:      $text-main;
 $font-family-sans-serif: "Source Sans 3", "Calibri", Arial, sans-serif;
 $presentation-heading-font: "Source Serif 4", Georgia, serif;
-$presentation-heading-color: #ffffff;
+$presentation-heading-color: $text-main;   // ← statt #ffffff
 $link-color: $fhg;
 
 /*-- scss:rules --*/
@@ -79,12 +79,12 @@ $link-color: $fhg;
 .reveal .slides section.title-slide h1 {
   color:          $fhg;
   font-family:    "Source Serif 4", Georgia, serif;
-  font-size:      1.9em;          /* ← vergrößert */
-  font-weight:    700;
+  font-size:      1.6em;          /* ← vergrößert */
+  font-weight:    500;
   border:         none;
   background:     none;
-  padding:        0;
-  margin:         0.2em 0 0.3em 0;
+  padding:        0.2em;
+  margin:         0.3em 0 0.4em 0;
   text-align:     center;
   line-height:    1.25;
 }
@@ -117,7 +117,9 @@ $link-color: $fhg;
   font-size:   1.5em;
 }
 
-.reveal p.date {
+.reveal p.date,
+.reveal .quarto-title-block .date,
+.reveal .date {
   color:     $text-muted;
   font-size: 1.5em;
 }
@@ -133,17 +135,22 @@ $link-color: $fhg;
 
 .reveal .slides section.section-divider h1,
 .reveal .slides section.section-divider h2 {
-  color:          #ffffff;
-  font-family:    "Source Serif 4", Georgia, serif;
-  font-size:      1.4em;
-  font-weight:    700;
-  background:     none !important;
-  border:         none !important;
-  border-bottom:  3px solid rgba(255,255,255,0.6) !important;
-  padding:        0 0 0.25em 0 !important;
-  margin:         0 0 0.4em 0 !important;
-  text-align:     left;
+  color: #ffffff;
 }
+
+//.reveal .slides section.section-divider h1,
+//.reveal .slides section.section-divider h2 {
+//  color:          #ffffff;
+//  font-family:    "Source Serif 4", Georgia, serif;
+//  font-size:      1.4em;
+//  font-weight:    700;
+//  background:     none !important;
+//  border:         none !important;
+//  border-bottom:  3px solid rgba(255,255,255,0.6) !important;
+//  padding:        0 0 0.25em 0 !important;
+//  margin:         0 0 0.4em 0 !important;
+//  text-align:     left;
+//}
 
 // ============================================================
 // AUFZÄHLUNG
