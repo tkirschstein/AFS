@@ -18,6 +18,8 @@ output:
       countIncrementalSlides: false
       slideNumberFormat: "%current% / %total%"
     seal: true
+    self_contained: true
+    embed-resources: true   # ← neu: alle Assets
 ---
 
 

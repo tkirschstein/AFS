@@ -1,7 +1,7 @@
 ---
 title: "Agroforestry Biomass Supply Chain Design"
 title-slide-attributes:
-  data-background-image: /fig/!logos_bg.png
+  data-background-image: fig/!logos_bg.png
   data-background-size: contain
   data-background-opacity: "0.8"
 subtitle: "Benefits of Agroforestry Systems for Defossilizing Chemical Industry"
@@ -928,7 +928,7 @@ Opportunity cost can be negative (subsidies / positive crop-yield spillovers) or
 ```{r}
 #| fig-width: 6
 #| out-width: "99%"
-#| cache: true
+#| cache: false
 #| echo: false
 
 COLSAW  <- "#e65c00"
@@ -992,23 +992,18 @@ pal_cons <- colorFactor(
   domain = conssf$kategorie
 )
 
-map_sc <- leaflet(
-  options = leafletOptions(zoomControl = TRUE, preferCanvas = FALSE),
+map_sc <- map_sc <- leaflet(
+  options = leafletOptions(
+    zoomControl = TRUE,
+    attributionControl = TRUE
+  ),
   width = "100%",
   height = 500,
   elementId = "leaflet-map-supply-chain-1"
 ) %>%
-  addProviderTiles(providers$Stadia.StamenTonerLite) %>%
-  # addPolylines(
-  #    data = de_states,
-  #    color = "grey55", weight = 1.5,
-  #    group = "States"
-  #  ) %>%
-  # addPolylines(
-  #   data = rivers_eu,
-  #   color = "#4292c6", weight = 1, opacity = 0.7,
-  #   group = "Rivers"
-  # ) %>%
+  addProviderTiles(
+    providers$Esri.WorldGrayCanvas
+    ) %>%
   addPolygons(
     data = sites_sf_clust,
     stroke = TRUE, color = "grey30", weight = 1.5,
