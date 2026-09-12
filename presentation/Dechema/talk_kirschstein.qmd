@@ -20,7 +20,7 @@ format:
     self_contained: true
     embed-resources: true   # ← neu: alle Assets inline einbetten
     scrollable: false          # Scrollbars auf Folien verhindern
-    fig-responsive: false      # Plotly-Responsive-Mechanismus deaktivieren
+    #fig-responsive: false      # Plotly-Responsive-Mechanismus deaktivieren
     html-math-method: mathjax
 editor: visual
 ---
@@ -896,7 +896,7 @@ Opportunity cost can be negative (subsidies / positive crop-yield spillovers) or
 . . .
 
 :::::: columns
-:::: {.column width="45%"}
+:::: {.column width="42%"}
 ::: columns
 **Sites** $\mathcal{I}$
 
@@ -905,13 +905,13 @@ Opportunity cost can be negative (subsidies / positive crop-yield spillovers) or
 :::
 ::::
 
-::: {.column .fragment width="55%"}
+::: {.column .fragment width="57%"}
 
 **Consumers** $\mathcal{K}$:
 
 ::: {.medium}
 | Grade      | Consumers                 | Prices     |
-|------------|-------------------------|------------|
+|--------------|-----------------------|------------|
 | 1 Chemical | Mercer Stendal, UPM Leuna | `r round(price.range.tab$min[price.range.tab$product == "1"])`-`r round(price.range.tab$max[price.range.tab$product == "1"])` €/t |
 | 2 Pulp     | saw mills, pellet producer   | `r round(price.range.tab$min[price.range.tab$product == "2"])`-`r round(price.range.tab$max[price.range.tab$product == "2"])` €/t  |
 | 3 Energy   | bio mass fermenters, composting facility | `r round(price.range.tab$min[price.range.tab$product == "3"])`-`r round(price.range.tab$max[price.range.tab$product == "3"])` €/t  |
@@ -1104,7 +1104,7 @@ map_sc
 | Raw transport $c^{tr\text{-}raw}$ | `r milp_instance$c_tr_raw` €/(t·km) |
 | Pre-treated transport $c^{tr\text{-}pre}$ | `r milp_instance$c_tr_pre` €/(t·km) |
 | Establishment cost $c^{est}$ | `r milp_instance$sites$C_est[1]` €/ha |
-| Harvest cost $c^{harv}$ | `r `milp_instance$sites$C_harv[1]` €/ha |
+| Harvest cost $c^{harv}$ | `r milp_instance$sites$C_harv[1]` €/ha |
 | Mean opportunity cost $c^{opp}$ | `r round(mean(milp_instance$sites$C_opp), 0)` €/ha/yr |
 :::
 ::::
@@ -1245,7 +1245,7 @@ ggplot() +
 
 ## Product Flows by Biomass Fraction and End Use
 
-```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.25, out.width="99%", cache=TRUE}
+```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.25, out.width="99%", cache=FALSE}
 
 SRC_LABEL <- c("1" = "Stems", "2" = "Branches", "3" = "Residues")
 DEL_LABEL <- c("1" = "Industrial", "2" = "Pulp & Paper", "3" = "Energy")
@@ -1287,7 +1287,14 @@ ggplotly(pp) |>
 
 ## Biomass Volumes over Planning Horizon
 
-```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=9, fig.height=5, out.width="99%", cache=TRUE}
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| cache: false
+#| fig-width: 9
+#| fig-height: 5
+#| out-width: "99%"
 
 prod_labels <- c("1" = "Stem (P1)", "2" = "Branches (P2)", "3" = "Residues (P3)")
 
@@ -1314,8 +1321,158 @@ pp <- ggplot(delivery_ts, aes(x = period, y = volume, fill = product)) +
   theme_minimal(base_size = 9) +
   theme(legend.position = "right", panel.grid.minor = element_blank())
 
-ggplotly(pp) |> 
-  layout(width= 1000, height = 480)
+pp
+
+# 
+# 
+# # ── Produktnamen und Farbpalette ──────────────────────────────────────────────
+# prod_labels <- c(
+#   "1" = "Stem (P1)",
+#   "2" = "Branches (P2)",
+#   "3" = "Residues (P3)"
+# )
+# 
+# prod_cols <- c(
+#   "1" = "#1b9e77",
+#   "2" = "#d95f02",
+#   "3" = "#7570b3"
+# )
+# 
+# prod_order <- c("1", "2", "3")
+# 
+# # ── Zeitreihen: Lieferungen Hub → Kunde nach ausgeliefertem Produkt ───────────
+# delivery_ts <- ext$Xjk %>%
+#   mutate(product = as.character(del_product)) %>%
+#   group_by(period, product) %>%
+#   summarise(volume = sum(value, na.rm = TRUE) / 1000, .groups = "drop") %>%
+#   tidyr::complete(
+#     period  = seq_len(milp_instance$n_periods),
+#     product = prod_order,
+#     fill    = list(volume = 0)
+#   ) %>%
+#   mutate(
+#     product = factor(product, levels = prod_order),
+#     label   = unname(prod_labels[as.character(product)])
+#   ) %>%
+#   arrange(product, period)
+# 
+# # Rohholzmenge: Standort → Hub
+# shipped_ts <- ext$Xij %>%
+#   group_by(period) %>%
+#   summarise(shipped = sum(value, na.rm = TRUE) / 1000, .groups = "drop") %>%
+#   tidyr::complete(
+#     period = seq_len(milp_instance$n_periods),
+#     fill = list(shipped = 0)
+#   )
+# 
+# # ── Plotly: gestapelte Flächen ─────────────────────────────────────────────────
+# fig_biomass <- plot_ly()
+# 
+# for (p in prod_order) {
+# 
+#   df_p <- delivery_ts %>%
+#     filter(as.character(product) == p)
+# 
+#   fig_biomass <- fig_biomass %>%
+#     add_trace(
+#       data      = df_p,
+#       x         = ~period,
+#       y         = ~volume,
+#       type      = "scatter",
+#       mode      = "lines",
+#       stackgroup = "deliveries",
+#       name      = prod_labels[[p]],
+#       legendgroup = p,
+#       fillcolor = scales::alpha(prod_cols[[p]], 0.80),
+#       line      = list(
+#         color = "white",
+#         width = 0.5
+#       ),
+#       text = ~paste0(
+#         "<b>", prod_labels[[p]], "</b><br>",
+#         "Planning period: ", period, "<br>",
+#         "Delivered volume: ", scales::comma(round(volume, 2)), " kt"
+#       ),
+#       hoverinfo = "text"
+#     )
+# }
+# 
+# # Gestrichelte Referenzlinie: Rohholztransport Standort → Hub
+# fig_biomass <- fig_biomass %>%
+#   add_trace(
+#     data       = shipped_ts,
+#     x          = ~period,
+#     y          = ~shipped,
+#     type       = "scatter",
+#     mode       = "lines",
+#     name       = "Raw shipped (site → hub)",
+#     legendgroup = "raw_shipped",
+#     line       = list(
+#       color = "#636363",
+#       width = 1.5,
+#       dash  = "dash"
+#     ),
+#     text = ~paste0(
+#       "<b>Raw shipped (site → hub)</b><br>",
+#       "Planning period: ", period, "<br>",
+#       "Raw wood volume: ", scales::comma(round(shipped, 2)), " kt"
+#     ),
+#     hoverinfo = "text"
+#   )
+# 
+# # ── Annotation an der Endperiode ───────────────────────────────────────────────
+# last_period  <- max(shipped_ts$period, na.rm = TRUE)
+# last_shipped <- shipped_ts %>%
+#   filter(period == last_period) %>%
+#   pull(shipped)
+# 
+# fig_biomass %>%
+#   layout(
+#     xaxis = list(
+#       title      = "Planning period (year)",
+#       tickmode   = "array",
+#       tickvals   = seq(1, milp_instance$n_periods, by = 2),
+#       zeroline   = FALSE,
+#       showgrid   = TRUE,
+#       gridcolor  = "#e5e5e5"
+#     ),
+#     yaxis = list(
+#       title      = "Volume (kt)",
+#       tickformat = ",.0f",
+#       rangemode  = "tozero",
+#       zeroline   = FALSE,
+#       showgrid   = TRUE,
+#       gridcolor  = "#e5e5e5"
+#     ),
+#     annotations = list(
+#       list(
+#         x          = last_period - 1,
+#         y          = last_shipped * 0.95,
+#         text       = "Raw shipped<br>(site → hub)",
+#         showarrow  = FALSE,
+#         xanchor    = "right",
+#         yanchor    = "middle",
+#         font       = list(size = 11, color = "#636363"),
+#         align      = "right"
+#       )
+#     ),
+#     legend = list(
+#       title       = list(text = "Product"),
+#       orientation = "h",
+#       x           = .5,
+#       y           = 1,
+#       xanchor     = "left",
+#       yanchor     = "top",
+#       font        = list(size = 14)
+#     ),
+#     paper_bgcolor = "white",
+#     plot_bgcolor  = "white",
+#     margin        = list(l = 60, r = 150, t = 20, b = 60),
+#     hovermode     = "x unified",
+#     autosize      = TRUE
+#   )
+# 
+
 ```
 
 
@@ -1672,7 +1829,6 @@ subplot(p_wf, p_cf, nrows = 1, widths = c(0.37, 0.55),
 ## Site profitability
 
 ```{r}
-
 #| fig-height: 5
 #| out-width: "100%"
 #| cache: false

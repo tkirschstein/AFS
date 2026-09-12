@@ -467,3 +467,27 @@ $link-color: $fhg;
 //  height:    auto;
 //  display:   block;
 //}
+
+
+/* Plotly modebar: von globaler RevealJS-/SVG-Skalierung isolieren */
+.reveal .plotly.html-widget .modebar {
+  transform: none !important;
+  scale: 1 !important;
+  zoom: 1 !important;
+  font-size: 12px !important;
+}
+
+.reveal .plotly.html-widget .modebar-btn {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  padding: 0 !important;
+}
+
+.reveal .plotly.html-widget .modebar-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+  max-width: none !important;
+  max-height: none !important;
+}
