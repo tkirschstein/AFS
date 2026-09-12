@@ -2192,7 +2192,13 @@ dist_jk_m <- as.matrix(milp_instance$d_jk)
 # ── 1. Liefermengen je Standort × Fraktion (Rohholz, t Frischgewicht) ─────────
 vol_site_frac <- ext$Xij %>%
   group_by(site_id, p) %>%
-  summarise(vol_raw_t = sum(value, na.rm = TRUE), .groups = "drop") %>%
+   mutate(
+    dist_km = mapply(function(i, j) dist_ij_m[i, j], site_id, hub_id),
+    ) %>%
+  summarise(
+    avg_dist_site_km = mean(dist_km, na.rm = TRUE),
+    vol_raw_t = sum(value, na.rm = TRUE),
+    .groups = "drop") %>%
   ungroup() %>%
   group_by(site_id) %>%
   mutate(vol_total = sum(vol_raw_t)) |> 
@@ -2246,6 +2252,8 @@ unit_costs <- prod_costs %>%
     vol_del_t    = coalesce(vol_del_t, 0),
     C_tr_pre     = coalesce(C_tr_pre, 0),
     avg_dist_km  = coalesce(avg_dist_km, NA_real_),
+    avg_dist_site_km  = coalesce(avg_dist_site_km, NA_real_),
+    avg_dist_km_total = avg_dist_site_km+avg_dist_km,
 
     # ── Stückkosten (€/t) ────────────────────────────────────────────────────
     # c_prod_p,i  = allokierte Produktionskosten / gelieferte Menge
@@ -2265,38 +2273,12 @@ unit_costs <- prod_costs %>%
   ) %>%
   filter(!is.na(c_prod))   # nur Standorte mit tatsächlicher Lieferung
 
-# ── 5. Zusammenfassung: Median-Stückkosten je Fraktion ────────────────────────
-unit_cost_summary <- unit_costs %>%
-  group_by(fraction, product) %>%
-  summarise(
-    n_sites        = n(),
-    median_c_prod  = median(c_prod,       na.rm = TRUE),
-    median_c_tr    = median(c_tr,         na.rm = TRUE),
-    median_c_unit  = median(c_unit_total, na.rm = TRUE),
-    .groups = "drop"
-  )
 
-# Ausgabe zur Kontrolle
-unit_cost_summary %>%
-  mutate(across(where(is.numeric), ~ round(.x, 1))) %>%
-  knitr::kable(
-    caption = "Stückkosten je Fraktion (Median über alle aktiven Standorte)",
-    col.names = c("Fraktion", "p", "n Sites",
-                  "c_prod (€/t)", "c_tr (€/t)", "SC (€/t)"
-                  )
-  )
-# ══════════════════════════════════════════════════════════════════════════════
-# AUSGABE-OBJEKTE (für nachfolgende Chunks verfügbar):
-#   prod_costs        – 1 Zeile/Standort, alle Kostenkomponenten absolut + €/ha/a
-#   prod_costs_long   – long-format für Stacked-Bar-Charts
-#   prod_costs_frac   – Fraktionsallokation: c_prod_p je Standort × Fraktion (€/t)
-#   alloc_weights     – Allokationsgewichte w_p je Fraktion
-# ══════════════════════════════════════════════════════════════════════════════
+
 ```
 
 
 ```{r}
-#| label: fig-unit-costs-scatter
 #| fig-width: 9
 #| fig-height: 5.5
 #| out-width: "99%"
@@ -2324,7 +2306,7 @@ for (frac in levels(unit_costs$fraction)) {
   fig_uc <- fig_uc %>%
     add_trace(
       data      = df_f,
-      x         = ~avg_dist_km,
+      x         = ~avg_dist_km_total,
       y         = ~c_unit_total,
       type      = "scatter",
       mode      = "markers",
@@ -2352,11 +2334,11 @@ for (frac in levels(unit_costs$fraction)) {
 
   # Volumengewichtete Regressionslinie
   if (nrow(df_f) >= 3) {
-    lm_f  <- lm(c_unit_total ~ avg_dist_km, data = df_f, weights = df_f$vol_raw_t)
-    x_seq <- seq(min(df_f$avg_dist_km, na.rm = TRUE),
-                 max(df_f$avg_dist_km, na.rm = TRUE),
+    lm_f  <- lm(c_unit_total ~ avg_dist_km_total, data = df_f, weights = df_f$vol_raw_t)
+    x_seq <- seq(min(df_f$avg_dist_km_total, na.rm = TRUE),
+                 max(df_f$avg_dist_km_total, na.rm = TRUE),
                  length.out = 80)
-    y_hat <- predict(lm_f, newdata = data.frame(avg_dist_km = x_seq))
+    y_hat <- predict(lm_f, newdata = data.frame(avg_dist_km_total = x_seq))
 
     fig_uc <- fig_uc %>%
       add_lines(
@@ -2372,22 +2354,25 @@ for (frac in levels(unit_costs$fraction)) {
 
 # ── Horizontale Preisreferenzlinien ───────────────────────────────────────────
 
-x_seq <- round(c(min(unit_costs$avg_dist_km, na.rm = TRUE), max(unit_costs$avg_dist_km, na.rm = TRUE)))
+x_seq <- round(c(min(unit_costs$avg_dist_km_total, na.rm = TRUE), max(unit_costs$avg_dist_km_total, na.rm = TRUE)))
 
 fig_uc <- fig_uc |> 
   add_trace(x = x_seq, y = rep(price.range.tab$min[1],2), type = "scatter", mode = "lines" ,
             line     = list(color = PAL_FRAC[1], width = 0.5 ), showlegend=F) |> 
-  add_trace(x = x_seq, y = rep(price.range.tab$max[1],2), fill = 'tonexty', fillcolor = "#1b9e7720",  line = list(color = PAL_FRAC[1], width = 0.5), showlegend=T, name="Price range Stems (P1)")
+  add_trace(x = x_seq, y = rep(price.range.tab$max[1],2), type = "scatter", mode = "lines", fill = 'tonexty', fillcolor = "#1b9e7720",  
+            line = list(color = PAL_FRAC[1], width = 0.5), showlegend=T, name="Price range Stems (P1)")
   
 fig_uc <- fig_uc |> 
   add_trace(x = x_seq, y = rep(price.range.tab$min[2],2), type = "scatter", mode = "lines",
             line     = list(color = PAL_FRAC[2], width = 0.5 ), showlegend=F) |> 
-  add_trace(x = x_seq, y = rep(price.range.tab$max[2],2), fill = 'tonexty', fillcolor = "#d95f0220",  line = list(color = PAL_FRAC[2], width = 0.5), showlegend=T, name="Price range Branches (P2)")
+  add_trace(x = x_seq, y = rep(price.range.tab$max[2],2), type = "scatter", mode = "lines", fill = 'tonexty', fillcolor = "#d95f0220",  
+            line = list(color = PAL_FRAC[2], width = 0.5), showlegend=T, name="Price range Branches (P2)")
 
 fig_uc <- fig_uc |> 
   add_trace(x = x_seq, y = rep(price.range.tab$min[3],2), type = "scatter", mode = "lines",
             line     = list(color = PAL_FRAC[3], width = 0.5 ), showlegend=F) |> 
-  add_trace(x = x_seq, y = rep(price.range.tab$max[3],2), fill = 'tonexty', fillcolor = "#7570b320",  line = list(color = PAL_FRAC[3], width = 0.5), showlegend=T, name="Price range Residues (P3)")
+  add_trace(x = x_seq, y = rep(price.range.tab$max[3],2), type = "scatter", mode = "lines", fill = 'tonexty', fillcolor = "#7570b320",  
+            line = list(color = PAL_FRAC[3], width = 0.5), showlegend=T, name="Price range Residues (P3)")
 
 
 
@@ -2400,17 +2385,16 @@ fig_uc %>%
       dtick    = 100
     ),
     yaxis = list(
-      title     = "Unit cost SC<sub>p,i</sub> (€/t)",
-      rangemode = "tozero"
+      title     = "Unit cost SC<sub>p,i</sub> (€/t)"
     ),
     legend      = list(orientation = "h", x = 0, y = -0.18,
                        font = list(size = 12)),
     paper_bgcolor = "white",
     plot_bgcolor  = "#f9f9f9",
     autosize = FALSE,
-    width    = 880,
-    height   = 480,
-    margin   = list(l = 55, r = 140, t = 20, b = 80)
+    width    = 1000,
+    height   = 500#,
+    #margin   = list(l = 55, r = 140, t = 20, b = 00)
   )
 ```
 
@@ -2418,8 +2402,6 @@ fig_uc %>%
 
 ## Site profitability & opportunity cost
 
-:::: columns
-::: {.column width="90%"}
 ```{r}
 #| fig-width: 9
 #| fig-height: 5
@@ -2480,14 +2462,13 @@ plot_ly(
     paper_bgcolor = "white",
     plot_bgcolor  = "#f9f9f9",
     autosize = FALSE,
-    width    = 900,      # NULL = von CSS gesteuert
+    width    = 1000,      # NULL = von CSS gesteuert
     height   = 480,       # px – passend für Reveal.js-Folie mit Titel
     margin   = list(l = 40, r = 20, t = 30, b = 40)
   )
 
 ```
-:::
-::::
+
 
 ------------------------------------------------------------------------
 
